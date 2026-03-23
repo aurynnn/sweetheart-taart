@@ -1,0 +1,63 @@
+{
+  "collections": [
+    {
+      "id": "feestcollectie",
+      "title": "Feestcollectie",
+      "description": "Feestelijke taarten voor elke gelegenheid. Van verjaardag tot jubileum, onze feesttaarten maken elk moment speciaal.",
+      "href": "/feestcollectie",
+      "badge": "Populair",
+      "features": [
+        "Vanaf 8 personen",
+        "Luchtige biscuit",
+        "Heerlijke mousse-vullingen",
+        "Botercreme of ganache"
+      ]
+    },
+    {
+      "id": "vaste-collectie",
+      "title": "Vaste Collectie",
+      "description": "Geniet van onze klassieke favorieten. Altijd beschikbaar, altijd even heerlijk.",
+      "href": "/vaste-collectie",
+      "features": [
+        "Seizoensgebonden aanbod",
+        "Klassieke smaken",
+        "Perfect voor dagelijks genieten"
+      ]
+    },
+    {
+      "id": "mini-collectie",
+      "title": "Mini-collectie",
+      "description": "Klein maar fijn! Cupcakes, tartelettes en kleine pavlova's voor een elegante traktatie.",
+      "href": "/mini-collectie",
+      "badge": "Nieuw",
+      "features": [
+        "Cupcakes",
+        "Tartelettes",
+        "Pavlova's",
+        "Op maat te maken"
+      ]
+    },
+    {
+      "id": "koekjescollectie",
+      "title": "Koekjescollectie",
+      "description": "Knap knapperig en prachtig versierd. Perfect voor geboorte, verjaardag, communie of als traktatie.",
+      "href": "/koekjescollectie",
+      "features": [
+        "Koekjes op stok",
+        "Verschillende verpakkingen",
+        "Vanaf €2 per koekje"
+      ]
+    },
+    {
+      "id": "afternoon-tea",
+      "title": "Afternoon Tea",
+      "description": "Een heerlijke selectie voor uw afternoon tea. Perfect voor bijeenkomsten en vieringen.",
+      "href": "/afternoon-tea",
+      "features": [
+        "Mini gebakjes",
+        "Hartig & zoet",
+        "Op maat samengesteld"
+      ]
+    }
+  ]
+}

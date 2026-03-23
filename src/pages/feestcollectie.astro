@@ -1,0 +1,156 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+import GalleryModal from '../components/GalleryModal.svelte';
+
+const galleryImages = [
+  { src: '/images/feestcollectie/trouwtaargeknipt-e1668952116982.png', alt: 'Feesttaart', caption: 'Prachtige trouwtaart' },
+  { src: '/images/feestcollectie/IMG_8459-scaled.jpg', alt: 'Feestelijke taart', caption: 'Verjaardagstaart' },
+  { src: '/images/feestcollectie/F84329C2-DC88-4C4D-B108-ABFA9063F14C.jpeg', alt: 'Taart met versiering', caption: 'Versierde feesttaart' },
+  { src: '/images/feestcollectie/ED3ECB1E-2A63-4BC2-BF3E-ADA09B099148.jpeg', alt: 'Meerdere taarten', caption: 'Taarten voor elk feest' },
+  { src: '/images/feestcollectie/41908692-270229280276676-3216813078232314041-n-2.jpg', alt: 'Stapeltaart', caption: 'Stapeltaart voor grote feesten' },
+  { src: '/images/feestcollectie/2A3D6276-778E-4A47-8D0C-610917FA8BEF.jpeg', alt: 'Taart detail', caption: 'Perfect versierd' },
+  { src: '/images/feestcollectie/4E91E3C1-4888-4CE7-9646-5CCA6D22A721.jpeg', alt: 'Feestelijke taart', caption: 'Feestelijke creatie' },
+  { src: '/images/feestcollectie/5229CD0C-327E-4C34-8238-65935DB1CB3A.jpeg', alt: 'Taart viering', caption: 'Voor elke viering' }
+];
+---
+
+<Layout title="Feestcollectie" description="Feestelijke taarten voor elke gelegenheid. Van verjaardag tot jubileum, met heerlijke mousse-vullingen en ambachtelijke afwerking.">
+  <Header />
+
+  <main id="feestcollectie-main">
+    <!-- Combined Hero + Features + About Section -->
+    <section id="feestcollectie-hero" class="pt-32 pb-16 bg-gradient-to-b from-[var(--color-secondary)] to-[var(--color-background)]">
+      <div id="feestcollectie-hero-content" class="container">
+        <!-- Title & Intro -->
+        <div id="feestcollectie-hero-header" class="max-w-3xl mx-auto text-center mb-12 animate-on-scroll">
+          <span id="feestcollectie-badge" class="inline-block px-4 py-1 text-sm font-semibold bg-[var(--color-primary)] text-white rounded-full mb-4">
+            Feestcollectie
+          </span>
+          <h1 id="feestcollectie-title" class="font-heading text-4xl md:text-5xl lg:text-6xl font-semibold text-[var(--color-text)] mb-6">
+            de prachtigste feesttaarten
+          </h1>
+          <p id="feestcollectie-subtitle" class="text-lg text-[var(--color-text-muted)]">
+            Mijn mooie, vrolijke feesttaarten bestaan uit een luchtige biscuit met heerlijke mousse-vullingen.
+          </p>
+        </div>
+
+        <!-- Features Grid - Merged into Hero -->
+        <div id="feestcollectie-features" class="max-w-4xl mx-auto mb-12 animate-on-scroll stagger-1">
+          <div id="feestcollectie-features-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div id="feestcollectie-feature-8person" class="bg-white rounded-2xl p-5 text-center shadow-md hover:shadow-lg transition-shadow">
+              <div id="feestcollectie-feature-8person-icon" class="w-12 h-12 mx-auto mb-3 rounded-full bg-[var(--color-secondary)] flex items-center justify-center">
+                <span id="feestcollectie-feature-8person-emoji">🎂</span>
+              </div>
+              <h3 id="feestcollectie-feature-8person-title" class="font-semibold text-[var(--color-text)] text-sm">Vanaf 8 personen</h3>
+              <p id="feestcollectie-feature-8person-text" class="text-xs text-[var(--color-text-muted)] mt-1">Eénlaagstaart</p>
+            </div>
+
+            <div id="feestcollectie-feature-15person" class="bg-white rounded-2xl p-5 text-center shadow-md hover:shadow-lg transition-shadow">
+              <div id="feestcollectie-feature-15person-icon" class="w-12 h-12 mx-auto mb-3 rounded-full bg-[var(--color-secondary)] flex items-center justify-center">
+                <span id="feestcollectie-feature-15person-emoji">🏰</span>
+              </div>
+              <h3 id="feestcollectie-feature-15person-title" class="font-semibold text-[var(--color-text)] text-sm">Vanaf 15 personen</h3>
+              <p id="feestcollectie-feature-15person-text" class="text-xs text-[var(--color-text-muted)] mt-1">Stapeltaart</p>
+            </div>
+
+            <div id="feestcollectie-feature-height" class="bg-white rounded-2xl p-5 text-center shadow-md hover:shadow-lg transition-shadow">
+              <div id="feestcollectie-feature-height-icon" class="w-12 h-12 mx-auto mb-3 rounded-full bg-[var(--color-secondary)] flex items-center justify-center">
+                <span id="feestcollectie-feature-height-emoji">📏</span>
+              </div>
+              <h3 id="feestcollectie-feature-height-title" class="font-semibold text-[var(--color-text)] text-sm">8 cm hoog</h3>
+              <p id="feestcollectie-feature-height-text" class="text-xs text-[var(--color-text-muted)] mt-1">Ruime porties</p>
+            </div>
+
+            <div id="feestcollectie-feature-custom" class="bg-white rounded-2xl p-5 text-center shadow-md hover:shadow-lg transition-shadow">
+              <div id="feestcollectie-feature-custom-icon" class="w-12 h-12 mx-auto mb-3 rounded-full bg-[var(--color-secondary)] flex items-center justify-center">
+                <span id="feestcollectie-feature-custom-emoji">✨</span>
+              </div>
+              <h3 id="feestcollectie-feature-custom-title" class="font-semibold text-[var(--color-text)] text-sm">Op maat</h3>
+              <p id="feestcollectie-feature-custom-text" class="text-xs text-[var(--color-text-muted)] mt-1">Per laag andere smaak</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- About Text -->
+        <div id="feestcollectie-about" class="max-w-2xl mx-auto text-center animate-on-scroll stagger-2">
+          <p id="feestcollectie-about-text" class="text-[var(--color-text-muted)] leading-relaxed">
+            Ze worden gevuld met een heerlijke vruchten- of chocolademousse. Als basis bied ik u aardbeien, frambozen, bananen of bosvruchtenmousse aan. Dit geheel wordt afgesmeerd met botercreme of chocoladeganache voor een perfecte afwerking.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="feestcollectie-gallery" class="section bg-[var(--color-surface)]">
+      <div id="feestcollectie-gallery-content" class="container">
+        <div id="feestcollectie-gallery-header" class="text-center mb-8">
+          <h2 id="feestcollectie-gallery-title" class="font-heading text-2xl md:text-3xl font-semibold text-[var(--color-text)] mb-4">
+            Bekijk onze creaties
+          </h2>
+        </div>
+        <div id="feestcollectie-gallery-modal">
+          <GalleryModal 
+            client:load 
+            images={galleryImages}
+            triggerText="Bekijk foto's"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Order Section -->
+    <section id="feestcollectie-order" class="section">
+      <div id="feestcollectie-order-content" class="container">
+        <div id="feestcollectie-order-wrapper" class="max-w-xl mx-auto">
+          <div id="feestcollectie-order-card" class="card p-8 bg-[var(--color-surface)]">
+            <h3 id="feestcollectie-order-title" class="font-heading text-xl font-semibold text-[var(--color-text)] mb-6 flex items-center gap-3">
+              <span id="feestcollectie-order-icon">📋</span>
+              Bestellen
+            </h3>
+
+            <div id="feestcollectie-order-text" class="space-y-4 text-[var(--color-text-muted)]">
+              <p id="feestcollectie-order-intro">
+                Bestellen doet u het beste zodra u het feest heeft gepland. Ik neem bestellingen aan volgens mijn agenda.
+              </p>
+
+              <div id="feestcollectie-order-info" class="border-t border-[var(--color-border)] pt-4 mt-4">
+                <h4 id="feestcollectie-order-info-title" class="font-semibold text-[var(--color-text)] mb-3">Wat u moet weten:</h4>
+                <ul id="feestcollectie-order-list" class="space-y-3">
+                  <li id="feestcollectie-order-item-1" class="flex items-start gap-3">
+                    <span id="feestcollectie-order-check-1" class="text-[var(--color-accent)]">✓</span>
+                    <span id="feestcollectie-order-text-1">Taarten worden geleverd in aangepaste dozen</span>
+                  </li>
+                  <li id="feestcollectie-order-item-2" class="flex items-start gap-3">
+                    <span id="feestcollectie-order-check-2" class="text-[var(--color-accent)]">✓</span>
+                    <span id="feestcollectie-order-text-2">Bewaren: koel en droog</span>
+                  </li>
+                  <li id="feestcollectie-order-item-3" class="flex items-start gap-3">
+                    <span id="feestcollectie-order-check-3" class="text-[var(--color-accent)]">✓</span>
+                    <span id="feestcollectie-order-text-3">Per laag kan een verschillende smaak gekozen worden</span>
+                  </li>
+                  <li id="feestcollectie-order-item-4" class="flex items-start gap-3">
+                    <span id="feestcollectie-order-check-4" class="text-[var(--color-accent)]">✓</span>
+                    <span id="feestcollectie-order-text-4">Allergieën? Ik denk graag mee!</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div id="feestcollectie-order-button-wrapper" class="mt-6">
+                <a id="feestcollectie-order-button" href="/bestellen" class="btn btn-primary w-full justify-center">
+                  Bestel nu uw feesttaart
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <ContactCTA id="feestcollectie-contact" />
+  </main>
+
+  <Footer id="feestcollectie-footer" />
+</Layout>
