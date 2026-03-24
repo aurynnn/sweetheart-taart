@@ -26,6 +26,7 @@ const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
     <div class="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/80 via-[var(--color-bg)]/60 to-[var(--color-bg)]/90"></div>
   </div>
 
+  <!-- Content -->
   <div class="container relative z-10 text-center py-32 px-4">
     <!-- Main heading -->
     <h1 class="font-heading text-5xl md:text-6xl lg:text-7xl font-semibold text-white mb-6 animate-on-scroll text-balance drop-shadow-lg">
@@ -39,12 +40,9 @@ const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
 
     <!-- CTA Buttons -->
     {showCTA && (
-      <div class="flex flex-col sm:flex-row gap-4 justify-center animate-on-scroll stagger-3">
+      <div class="flex justify-center animate-on-scroll stagger-3">
         <a href="/feestcollectie" class="btn btn-primary text-lg px-8 py-4">
           Bekijk collecties
-        </a>
-        <a href="/bestellen" class="btn btn-secondary text-lg px-8 py-4 bg-white/20 text-white border border-white/30 hover:bg-white/30">
-          Bestel nu
         </a>
       </div>
     )}

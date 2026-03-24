@@ -75,6 +75,14 @@ function getVideoThumbnail(item) {
   return item.thumbnail || item.src;
 }
 
+// Compute partial row info for blur
+// Always blur the LAST ROW of current view (whether partial or complete)
+let shouldBlur = $derived({
+  enabled: hasMore,
+  lastRowStart: currentVisibleCount - minItemsPerRow,
+  isPartial: (currentVisibleCount % minItemsPerRow) > 0
+});
+
 function getItemStyle(index) {
   // Returns empty - blur is handled by CSS class
   return '';
@@ -114,7 +122,7 @@ function getItemStyle(index) {
   <div class="thumbnails-grid">
     {#each filteredImages.slice(0, currentVisibleCount) as img, i}
       <button 
-        class="thumbnail {i >= fullRowsVisible && hasMore ? 'blurred' : ''}"
+        class="thumbnail {(shouldBlur.enabled && i >= shouldBlur.lastRowStart) ? 'blurred' : ''}"
         onclick={() => openGallery(i)}
         style={getItemStyle(i)}
       >
