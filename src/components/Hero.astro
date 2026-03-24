@@ -10,13 +10,15 @@ const {
   subtitle = "fijnste koekjes en heerlijkste cake, met liefde gebakken in Oostende",
   showCTA = true
 } = Astro.props;
+
+const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
 ---
 
 <section class="relative min-h-screen flex items-center justify-center overflow-hidden">
   <!-- Background image -->
   <div class="absolute inset-0 z-0">
     <img 
-      src="/images/feestcollectie/trouwtaargeknipt-e1668952116982.png" 
+      src={`${R2_BASE}/feestcollectie/images/trouwtaargeknipt-e1668952116982.png`}
       alt="Prachtige taart" 
       class="w-full h-full object-cover object-center"
     />

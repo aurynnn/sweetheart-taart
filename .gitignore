@@ -30,3 +30,5 @@ public/videos/
 *.webm
 *.mov
 *.avi
+.env
+.wrangler/

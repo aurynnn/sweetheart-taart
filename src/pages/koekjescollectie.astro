@@ -4,14 +4,39 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import GalleryModal from '../components/GalleryModal.svelte';
+import fs from 'fs';
+import path from 'path';
 
-const galleryImages = [
-  { src: '/images/koekjescollectie/koek_slot.jpg', alt: 'Koekjes op stok', caption: 'Versierde koekjes op stok' },
-  { src: '/images/koekjescollectie/koek_wit_thumb.jpg', alt: 'Witte koekjes', caption: 'Zachte witte koekjes' },
-  { src: '/images/koekjescollectie/koek_geel.jpg', alt: 'Gele koekjes', caption: 'Heerlijk gele koekjes' },
-  { src: '/images/koekjescollectie/pecanpeggy.jpg', alt: 'Pecan koekjes', caption: 'Knapperige pecan koekjes' },
-  { src: '/images/koekjescollectie/koekejs.png', alt: 'Koekjes collectie', caption: 'Versierde koekjes' }
-];
+// Dynamically load all images from koekjescollectie folder
+const imagesDir = path.join(process.cwd(), 'public', 'images', 'koekjescollectie');
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm', '.mov'];
+const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
+
+let galleryImages: Array<{src: string, alt: string, caption: string, type?: string}> = [];
+
+try {
+  const files = fs.readdirSync(imagesDir);
+  galleryImages = files
+    .filter(file => {
+      const ext = path.extname(file).toLowerCase();
+      return imageExtensions.includes(ext) && !file.includes(':Zone.Identifier');
+    })
+    .map(file => {
+      const ext = path.extname(file).toLowerCase();
+      const isVideo = ['.mp4', '.webm', '.mov'].includes(ext);
+      const name = path.basename(file, ext).replace(/[-_]/g, ' ').substring(0, 50);
+      const r2Path = `${R2_BASE}/koekjescollectie/${isVideo ? 'videos' : 'images'}/${file}`;
+      return {
+        src: r2Path,
+        alt: name,
+        caption: name,
+        type: isVideo ? 'video' : 'image'
+      };
+    })
+    .sort((a, b) => a.src.localeCompare(b.src));
+} catch (e) {
+  console.error('Error loading gallery images:', e);
+}
 ---
 
 <Layout title="Koekjescollectie" description="Knap knapperig en prachtig versierd! Koekjes op stok, in zakjes of op schaaltjes. Perfect voor geboorte, verjaardag, communie of trouw.">

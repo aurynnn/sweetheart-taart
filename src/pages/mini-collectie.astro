@@ -4,17 +4,39 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import GalleryModal from '../components/GalleryModal.svelte';
+import fs from 'fs';
+import path from 'path';
 
-const galleryImages = [
-  { src: '/images/mini-collectie/cupcakes1.png', alt: 'Cupcakes', caption: 'Prachtig versierde cupcakes' },
-  { src: '/images/feestcollectie/41908692-270229280276676-3216813078232314041-n-2.jpg', alt: 'Mini taarten', caption: 'Luchtige schuimgebakjes' },
-  { src: '/images/mini-collectie/mini_flamingos_thumb.jpg', alt: 'Flamingo cupcakes', caption: 'Flamingo flamingo cupcakes' },
-  { src: '/images/koekjescollectie/pecanpeggy.jpg', alt: 'Pecan koekjes', caption: 'Knapperige pecan koekjes' },
-  { src: '/images/feestcollectie/IMG_8459-scaled.jpg', alt: 'Mini gebak', caption: 'Assortiment mini gebak' },
-  { src: '/images/koekjescollectie/koek_wit_thumb.jpg', alt: 'Witte koekjes', caption: 'Zachte witte koekjes' },
-  { src: '/images/koekjescollectie/koekejs.png', alt: 'Koekjes collectie', caption: 'Versierde koekjes op stok' },
-  { src: '/images/feestcollectie/ED3ECB1E-2A63-4BC2-BF3E-ADA09B099148.jpeg', alt: 'Traktatie', caption: 'Feestelijke traktaties' }
-];
+// Dynamically load all images from mini-collectie folder
+const imagesDir = path.join(process.cwd(), 'public', 'images', 'mini-collectie');
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm', '.mov'];
+const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
+
+let galleryImages: Array<{src: string, alt: string, caption: string, type?: string}> = [];
+
+try {
+  const files = fs.readdirSync(imagesDir);
+  galleryImages = files
+    .filter(file => {
+      const ext = path.extname(file).toLowerCase();
+      return imageExtensions.includes(ext) && !file.includes(':Zone.Identifier');
+    })
+    .map(file => {
+      const ext = path.extname(file).toLowerCase();
+      const isVideo = ['.mp4', '.webm', '.mov'].includes(ext);
+      const name = path.basename(file, ext).replace(/[-_]/g, ' ').substring(0, 50);
+      const r2Path = `${R2_BASE}/mini-collectie/${isVideo ? 'videos' : 'images'}/${file}`;
+      return {
+        src: r2Path,
+        alt: name,
+        caption: name,
+        type: isVideo ? 'video' : 'image'
+      };
+    })
+    .sort((a, b) => a.src.localeCompare(b.src));
+} catch (e) {
+  console.error('Error loading gallery images:', e);
+}
 ---
 
 <Layout title="Mini-collectie" description="Klein maar fijn! Cupcakes, tartelettes en kleine pavlova's. Op maat te maken met heerlijke smaken zoals lavendel, rozentoets of koffielikeur.">
@@ -104,7 +126,7 @@ const galleryImages = [
               </h3>
 
               <p id="mini-flavors-intro" class="text-[var(--color-text-muted)] mb-6">
-                Denk voor smaken aan多样化 opties. Alles is op maat te maken!
+                Denk voor smaken aanopties opties. Alles is op maat te maken!
               </p>
 
               <div id="mini-flavors-list" class="space-y-4">

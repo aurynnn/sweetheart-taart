@@ -10,11 +10,14 @@ interface Props {
 
 const { title, description, href, image, imageAlt = '', badge } = Astro.props;
 
-// Real images from sweetheart-taart.com
+// R2 bucket base URL from env
+const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
+
+// Real images from sweetheart-taart.com on R2
 const realImages: Record<string, string> = {
-  'feestcollectie': '/images/trouwtaargeknipt-e1668952116982.png',
-  'mini-collectie': '/images/cupcakes1.png',
-  'koekjescollectie': '/images/koekejs.png',
+  'feestcollectie': `${R2_BASE}/feestcollectie/images/trouwtaargeknipt-e1668952116982.png`,
+  'mini-collectie': `${R2_BASE}/mini-collectie/images/cupcakes1.png`,
+  'koekjescollectie': `${R2_BASE}/koekjescollectie/images/koekejs.png`,
   'afternoon-tea': '/images/IMG_8459-scaled.jpg',
   'vaste-collectie': '/images/F84329C2-DC88-4C4D-B108-ABFA9063F14C.jpeg',
 };
@@ -23,7 +26,7 @@ const realImages: Record<string, string> = {
 const displayImage = image || realImages[href.replace('/', '')] || null;
 ---
 
-<a href={href} class="card group block overflow-hidden">
+<a href={href} class="card group block overflow-hidden h-full flex flex-col">
   <!-- Image -->
   <div class="aspect-[4/3] overflow-hidden relative">
     {displayImage ? (
@@ -44,7 +47,7 @@ const displayImage = image || realImages[href.replace('/', '')] || null;
   </div>
 
   <!-- Content -->
-  <div class="p-6 bg-white">
+  <div class="p-6 bg-white flex-grow">
     {badge && (
       <span class="inline-block px-3 py-1 text-xs font-semibold bg-[var(--color-secondary)] text-[var(--color-primary)] rounded-full mb-3">
         {badge}

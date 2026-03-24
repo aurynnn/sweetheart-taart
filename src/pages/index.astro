@@ -14,9 +14,9 @@ const collections = collectionsData.collections.filter(c => c.id !== 'vaste-coll
 const testimonials = testimonialsData.testimonials;
 
 const customerPhotos: Record<string, string> = {
-  'Gilles Cresis': '/images/gilles.jpg',
-  'Sofie Missiaen': '/images/sofie.jpg',
-  'Vanessa Anaïs Verkempynck': '/images/vanessa.jpg',
+  'Gilles Cresis': '/images/mini-collectie/gilles.jpg',
+  'Sofie Missiaen': '/images/mini-collectie/sofie.jpg',
+  'Vanessa Anaïs Verkempynck': '/images/mini-collectie/vanessa.jpg',
 };
 ---
 
@@ -76,9 +76,9 @@ const customerPhotos: Record<string, string> = {
           </p>
         </div>
 
-        <div id="home-collections-grid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div id="home-collections-grid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           {collections.slice(0, 4).map((collection, index) => (
-            <div id={`home-collection-card-${collection.id}`} class={`animate-on-scroll stagger-${index + 1}`}>
+            <div id={`home-collection-card-${collection.id}`} class={`animate-on-scroll stagger-${index + 1} flex`}>
               <CollectionCard
                 title={collection.title}
                 description={collection.description}
