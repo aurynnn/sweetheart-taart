@@ -110,7 +110,7 @@ import Footer from '../components/Footer.astro';
 
               <!-- Event Type -->
               <div id="feesttaart-fields">
-                <label for="event" class="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <label for="event" class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
                   Type gelegenheid
                 </label>
                 <div class="flex items-center gap-3">
@@ -136,7 +136,7 @@ import Footer from '../components/Footer.astro';
 
               <!-- Date -->
               <div>
-                <label for="date" class="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <label for="date" class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
                   Gewenste datum ophaling
                 </label>
                 <div class="flex items-center gap-3">
@@ -155,7 +155,7 @@ import Footer from '../components/Footer.astro';
 
               <!-- Persons -->
               <div id="feesttaart-persons">
-                <label for="persons" class="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <label for="persons" class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
                   Aantal personen
                 </label>
                 <div class="flex items-center gap-3">
@@ -178,7 +178,7 @@ import Footer from '../components/Footer.astro';
 
               <!-- Flavor -->
               <div id="feesttaart-flavor">
-                <label for="flavor" class="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <label for="flavor" class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
                   Smaak voorkeur (vulling)
                 </label>
                 <div class="flex items-center gap-3">
@@ -223,38 +223,54 @@ import Footer from '../components/Footer.astro';
               </div>
 
               <!-- Optional Fields Row -->
-              <div class="grid grid-cols-2 gap-4">
-                <!-- Allergies -->
-                <div class="flex flex-col gap-2">
-                  <label class="flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
-                    <div class="w-8 h-8 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A]">
-                      <i class="fa-solid fa-exclamation-circle text-sm"></i>
-                    </div>
-                    Allergieën
-                  </label>
+              <div class="space-y-2">
+                <!-- Buttons Row -->
+                <div class="grid grid-cols-2 gap-4">
+                  <!-- Allergies -->
+                  <button type="button" class="optional-toggle flex items-center justify-between gap-2 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-colors" onclick="toggleOptional('allergies-content', this)">
+                    <span class="flex items-center gap-2">
+                      <div class="w-8 h-8 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A]">
+                        <i class="fa-solid fa-exclamation-circle text-sm"></i>
+                      </div>
+                      <span class="text-sm">Allergieën</span>
+                    </span>
+                    <svg class="w-4 h-4 transition-transform flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+                    </svg>
+                  </button>
+
+                  <!-- Message -->
+                  <button type="button" class="optional-toggle flex items-center justify-between gap-2 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-colors" onclick="toggleOptional('message-content', this)">
+                    <span class="flex items-center gap-2">
+                      <div class="w-8 h-8 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A]">
+                        <i class="fa-solid fa-comment text-sm"></i>
+                      </div>
+                      <span class="text-sm">Opmerkingen</span>
+                    </span>
+                    <svg class="w-4 h-4 transition-transform flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Expanded Content (full width) -->
+                <div id="allergies-content" class="optional-content hidden">
                   <textarea
                     id="allergies"
                     name="allergies"
                     rows="2"
                     class="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all resize-none"
-                    placeholder="Bijv. lactose-intolerantie..."
+                    placeholder="Bijv. lactose-intolerantie, glutenallergie..."
                   ></textarea>
                 </div>
 
-                <!-- Message -->
-                <div class="flex flex-col gap-2">
-                  <label class="flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
-                    <div class="w-8 h-8 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A]">
-                      <i class="fa-solid fa-comment text-sm"></i>
-                    </div>
-                    Opmerkingen
-                  </label>
+                <div id="message-content" class="optional-content hidden">
                   <textarea
                     id="message"
                     name="message"
-                    rows="2"
+                    rows="3"
                     class="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all resize-none"
-                    placeholder="Vertel ons meer..."
+                    placeholder="Vertel ons meer over uw wensen..."
                   ></textarea>
                 </div>
               </div>
@@ -405,16 +421,25 @@ import Footer from '../components/Footer.astro';
     dateInput.setAttribute('min', today);
   }
 
-  // Toggle optional fields
+  // Toggle optional fields (mutually exclusive)
   (window as any).toggleOptional = function(id: string, btn: HTMLButtonElement) {
     const content = document.getElementById(id);
-    if (content) {
-      content.classList.toggle('hidden');
-      btn.classList.toggle('active');
+    const isHidden = content?.classList.contains('hidden');
+    
+    // Close all optional contents
+    document.querySelectorAll('.optional-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.optional-toggle').forEach(el => {
+      el.classList.remove('active');
+      const svg = el.querySelector('svg');
+      if (svg) svg.style.transform = '';
+    });
+    
+    // If it was hidden, open only this one
+    if (isHidden && content) {
+      content.classList.remove('hidden');
+      btn.classList.add('active');
       const svg = btn.querySelector('svg');
-      if (svg) {
-        svg.style.transform = content.classList.contains('hidden') ? '' : 'rotate(180deg)';
-      }
+      if (svg) svg.style.transform = 'rotate(180deg)';
     }
   };
 </script>
