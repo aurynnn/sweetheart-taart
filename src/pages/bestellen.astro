@@ -35,7 +35,7 @@ import Footer from '../components/Footer.astro';
               
               <!-- Product Type Cards -->
               <div id="product-selection" class="product-type-cards grid grid-cols-3 gap-4 mb-6">
-                <button type="button" class="product-card selected" data-product="feesttaart">
+                <button type="button" class="product-card" data-product="feesttaart">
                   <span class="product-icon">
                     <i class="fa-solid fa-cake-candles"></i>
                   </span>
@@ -63,7 +63,7 @@ import Footer from '../components/Footer.astro';
                 </button>
               </div>
 
-              <!-- Order Info Section (filled once) -->
+              <!-- Order Info Section (filled once - hidden after first item added) -->
               <div id="order-info-section">
                 <!-- Name -->
                 <div class="flex items-center gap-3">
@@ -95,8 +95,16 @@ import Footer from '../components/Footer.astro';
                 </div>
               </div>
 
-              <!-- Item Details Section (per item) -->
-              <div id="item-details-section">
+              <!-- Added Items Summary (clickable to edit) -->
+              <div id="items-summary" class="hidden">
+                <p class="text-sm text-[var(--color-text-muted)] mb-2">Toegevoegde items:</p>
+                <div class="flex flex-wrap gap-2">
+                  <!-- Filled items will appear here -->
+                </div>
+              </div>
+
+              <!-- Item Details Section (per item - hidden until product selected) -->
+              <div id="item-details-section" class="hidden">
                 <!-- Event Type (feesttaart only) -->
                 <div id="feesttaart-fields" class="feesttaart-only">
                   <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type gelegenheid</label>
@@ -186,17 +194,10 @@ import Footer from '../components/Footer.astro';
               </div>
 
               <!-- Add Item Button -->
-              <button type="button" id="add-item-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 hidden">
+              <button type="button" id="add-item-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 opacity-50 cursor-not-allowed" disabled>
                 <i class="fa-solid fa-plus"></i>
                 Voeg nog een item toe
               </button>
-
-              <!-- Added Items Summary (at bottom) -->
-              <div id="items-summary" class="hidden">
-                <div class="flex flex-wrap gap-2">
-                  <!-- Filled items will appear here -->
-                </div>
-              </div>
 
               <!-- Submit -->
               <button type="submit" class="btn btn-primary w-full justify-center text-lg py-4">
@@ -252,10 +253,12 @@ import Footer from '../components/Footer.astro';
   <script>
     // State
     const addedItems = [];
-    let currentProduct = 'feesttaart';
+    let currentProduct = null;
+    let isFirstItem = true;
 
     // Elements
     const productSelection = document.getElementById('product-selection');
+    const orderInfoSection = document.getElementById('order-info-section');
     const itemDetailsSection = document.getElementById('item-details-section');
     const addItemBtn = document.getElementById('add-item-btn');
     const itemsSummary = document.getElementById('items-summary');
@@ -282,8 +285,11 @@ import Footer from '../components/Footer.astro';
         card.classList.add('selected');
         currentProduct = card.getAttribute('data-product');
         updateFeesttaartFields();
-        // Show add item button when product is selected
-        addItemBtn.classList.remove('hidden');
+        // Show item details section
+        itemDetailsSection.classList.remove('hidden');
+        // Enable add button when product is selected
+        addItemBtn.disabled = false;
+        addItemBtn.classList.remove('opacity-50', 'cursor-not-allowed');
       });
     });
 
@@ -294,18 +300,68 @@ import Footer from '../components/Footer.astro';
       });
     }
 
-    // Initialize feesttaart fields
-    updateFeesttaartFields();
-
     // Set min date
     const dateInput = document.getElementById('date-input');
     if (dateInput) {
       dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
     }
 
+    // Load item into form for editing
+    function loadItemIntoForm(index) {
+      const item = addedItems[index];
+      if (!item) return;
+      
+      currentProduct = item.product;
+      
+      // Select product card
+      productCards.forEach(c => c.classList.remove('selected'));
+      productSelection.querySelector(`[data-product="${item.product}"]`).classList.add('selected');
+      updateFeesttaartFields();
+      
+      // Show item details section
+      itemDetailsSection.classList.remove('hidden');
+      
+      // Fill form
+      document.getElementById('event-select').value = item.event || '';
+      document.getElementById('persons-select').value = item.persons || '';
+      document.getElementById('flavor-select').value = item.flavor || '';
+      document.getElementById('allergies-input').value = item.allergies || '';
+      document.getElementById('message-input').value = item.message || '';
+      
+      // Remove from array
+      addedItems.splice(index, 1);
+      updateSummary();
+      
+      // Hide add button until product changes
+      addItemBtn.disabled = true;
+      addItemBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    // Update summary display
+    function updateSummary() {
+      if (addedItems.length === 0) {
+        itemsSummary.classList.add('hidden');
+        return;
+      }
+      
+      itemsSummary.classList.remove('hidden');
+      const summaryContainer = itemsSummary.querySelector('.flex');
+      summaryContainer.innerHTML = addedItems.map((item, idx) => 
+        `<button type="button" class="summary-item inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FDEEF0] text-[#E8788A] text-sm hover:bg-[#F5D5D8] transition-colors" data-index="${idx}">${productIcons[item.product]} 1x ${productNames[item.product]} <i class="fa-solid fa-pen text-xs ml-1"></i></button>`
+      ).join('');
+      
+      // Add click handlers to summary items
+      summaryContainer.querySelectorAll('.summary-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.getAttribute('data-index'));
+          loadItemIntoForm(idx);
+        });
+      });
+    }
+
     // Add item button
     addItemBtn.addEventListener('click', () => {
-      // Collect current item data (not date - it's in order-info)
+      // Collect current item data
       const itemData = {
         product: currentProduct,
         event: document.getElementById('event-select').value,
@@ -317,28 +373,21 @@ import Footer from '../components/Footer.astro';
 
       // Add to list
       addedItems.push(itemData);
+      updateSummary();
 
-      // Show summary
-      itemsSummary.classList.remove('hidden');
-      const summaryContainer = itemsSummary.querySelector('.flex');
-      const badge = document.createElement('span');
-      badge.className = 'inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FDEEF0] text-[#E8788A] text-sm';
-      badge.innerHTML = `${productIcons[itemData.product]} 1x ${productNames[itemData.product]}`;
-      summaryContainer.appendChild(badge);
+      // Hide order info for subsequent items
+      orderInfoSection.classList.add('hidden');
+      isFirstItem = false;
 
-      // Reset item details section only, keep order info and product cards
-      resetItemDetails();
-    });
-
-    // Reset item details section (not order info or product cards)
-    function resetItemDetails() {
-      // Reset product cards to default (feesttaart selected)
+      // Reset product cards to no selection
       productCards.forEach(c => c.classList.remove('selected'));
-      productSelection.querySelector('[data-product="feesttaart"]').classList.add('selected');
-      currentProduct = 'feesttaart';
+      currentProduct = null;
       updateFeesttaartFields();
 
-      // Clear item details inputs only
+      // Hide item details section
+      itemDetailsSection.classList.add('hidden');
+
+      // Clear item details inputs
       document.getElementById('event-select').selectedIndex = 0;
       document.getElementById('persons-select').selectedIndex = 0;
       document.getElementById('flavor-select').selectedIndex = 0;
@@ -349,9 +398,10 @@ import Footer from '../components/Footer.astro';
       document.getElementById('preview-image').classList.add('hidden');
       document.getElementById('upload-placeholder').classList.remove('hidden');
 
-      // Hide add button
-      addItemBtn.classList.add('hidden');
-    }
+      // Disable add button until new product is selected
+      addItemBtn.disabled = true;
+      addItemBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    });
 
     // Image upload
     const imageUploadArea = document.getElementById('image-upload-area');
