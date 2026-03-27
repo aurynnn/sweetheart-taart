@@ -33,167 +33,155 @@ import Footer from '../components/Footer.astro';
             
             <form id="order-form" class="space-y-6">
               
-              <!-- Added Items Summary -->
-              <div id="items-summary" class="hidden">
-                <div class="flex flex-wrap gap-2 mb-4">
-                  <!-- Filled items will appear here -->
-                </div>
+              <!-- Product Type Cards -->
+              <div id="product-selection" class="product-type-cards grid grid-cols-3 gap-4 mb-6">
+                <button type="button" class="product-card selected" data-product="feesttaart">
+                  <span class="product-icon">
+                    <i class="fa-solid fa-cake-candles"></i>
+                  </span>
+                  <span class="product-name">Feesttaarten</span>
+                </button>
+                <button type="button" class="product-card" data-product="koekjes">
+                  <span class="product-icon">
+                    <i class="fa-solid fa-cookie-bite"></i>
+                  </span>
+                  <span class="product-name">Koekjes</span>
+                </button>
+                <button type="button" class="product-card" data-product="mini-gebak">
+                  <span class="product-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m10.09 22.5-.95-7.64a2.87 2.87 0 0 0-5.73 0l2.86 7.64h11.46l2.86-7.64a2.87 2.87 0 0 0-5.73 0l-.95 7.64"/>
+                      <path d="M10.09 4.36h.26"/>
+                      <path d="M13.91 4.36h-.26a3.82 3.82 0 0 1 3.82 3.82"/>
+                      <path d="M14.81 15.46a4 4 0 0 0 0-.59 1 1 0 0 0-5.72 0 4 4 0 0 0 0 .59h0"/>
+                      <path d="M17.73 8.18v.17a2.86 2.86 0 0 1 1.91 2.7V13"/>
+                      <path d="M4.36 13v-1.9a2.86 2.86 0 0 1 1.91-2.7A3.82 3.82 0 0 1 10 4.18"/>
+                      <circle cx="12" cy="3.41" r="1.91"/>
+                    </svg>
+                  </span>
+                  <span class="product-name">Mini-gebak</span>
+                </button>
               </div>
 
-              <!-- Contact Info - Always Visible -->
-              <div class="contact-section">
+              <!-- Order Info Section (filled once) -->
+              <div id="order-info-section">
+                <!-- Name -->
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
                     <i class="fa-solid fa-user"></i>
                   </div>
                   <input type="text" name="name" required placeholder="Uw naam" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                 </div>
+                <!-- Email -->
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
                     <i class="fa-solid fa-envelope"></i>
                   </div>
                   <input type="email" name="email" required placeholder="uw@email.be" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                 </div>
+                <!-- Phone -->
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
                     <i class="fa-solid fa-phone"></i>
                   </div>
                   <input type="tel" name="phone" required placeholder="+32 xxx xx xx xx" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                 </div>
+                <!-- Date -->
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                    <i class="fa-solid fa-calendar"></i>
+                  </div>
+                  <input type="date" id="date-input" name="date" required class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
+                </div>
               </div>
 
-              <!-- Work Space -->
-              <div id="work-space">
-                
-                <!-- Product Type Cards - Always Visible -->
-                <div id="product-selection" class="product-type-cards grid grid-cols-3 gap-4 mb-6">
-                  <button type="button" class="product-card selected" data-product="feesttaart">
-                    <span class="product-icon">
-                      <i class="fa-solid fa-cake-candles"></i>
-                    </span>
-                    <span class="product-name">Feesttaarten</span>
-                  </button>
-                  <button type="button" class="product-card" data-product="koekjes">
-                    <span class="product-icon">
-                      <i class="fa-solid fa-cookie-bite"></i>
-                    </span>
-                    <span class="product-name">Koekjes</span>
-                  </button>
-                  <button type="button" class="product-card" data-product="mini-gebak">
-                    <span class="product-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m10.09 22.5-.95-7.64a2.87 2.87 0 0 0-5.73 0l2.86 7.64h11.46l2.86-7.64a2.87 2.87 0 0 0-5.73 0l-.95 7.64"/>
-                        <path d="M10.09 4.36h.26"/>
-                        <path d="M13.91 4.36h-.26a3.82 3.82 0 0 1 3.82 3.82"/>
-                        <path d="M14.81 15.46a4 4 0 0 0 0-.59 1 1 0 0 0-5.72 0 4 4 0 0 0 0 .59h0"/>
-                        <path d="M17.73 8.18v.17a2.86 2.86 0 0 1 1.91 2.7V13"/>
-                        <path d="M4.36 13v-1.9a2.86 2.86 0 0 1 1.91-2.7A3.82 3.82 0 0 1 10 4.18"/>
-                        <circle cx="12" cy="3.41" r="1.91"/>
-                      </svg>
-                    </span>
-                    <span class="product-name">Mini-gebak</span>
-                  </button>
+              <!-- Item Details Section (per item) -->
+              <div id="item-details-section">
+                <!-- Event Type (feesttaart only) -->
+                <div id="feesttaart-fields" class="feesttaart-only">
+                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type gelegenheid</label>
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                      <i class="fa-solid fa-star"></i>
+                    </div>
+                    <select id="event-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                      <option value="">Selecteer een optie</option>
+                      <option value="verjaardag">Verjaardag</option>
+                      <option value="jubileum">Jubileum</option>
+                      <option value="huwelijk">Huwelijk</option>
+                      <option value="communie">Communie</option>
+                      <option value="doopsel">Doopsel</option>
+                      <option value="babyshower">Baby shower</option>
+                      <option value="anders">Anders</option>
+                    </select>
+                  </div>
                 </div>
 
-                <!-- Item Details - Form fields (always visible after product cards) -->
-                <div id="item-details" class="">
-                  <!-- Event Type (feesttaart only) -->
-                  <div id="feesttaart-fields" class="feesttaart-only">
-                    <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type gelegenheid</label>
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                        <i class="fa-solid fa-star"></i>
-                      </div>
-                      <select id="event-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                        <option value="">Selecteer een optie</option>
-                        <option value="verjaardag">Verjaardag</option>
-                        <option value="jubileum">Jubileum</option>
-                        <option value="huwelijk">Huwelijk</option>
-                        <option value="communie">Communie</option>
-                        <option value="doopsel">Doopsel</option>
-                        <option value="babyshower">Baby shower</option>
-                        <option value="anders">Anders</option>
-                      </select>
+                <!-- Persons (feesttaart only) -->
+                <div id="feesttaart-persons" class="feesttaart-only">
+                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal personen</label>
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                      <i class="fa-solid fa-users"></i>
                     </div>
+                    <select id="persons-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                      <option value="">Selecteer aantal</option>
+                      <option value="8-14">8-14 personen (1 laag)</option>
+                      <option value="15-25">15-25 personen (2 lagen)</option>
+                      <option value="25-40">25-40 personen (3 lagen)</option>
+                      <option value="40+">40+ personen (meerlagen)</option>
+                    </select>
                   </div>
+                </div>
 
-                  <!-- Date -->
-                  <div>
-                    <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Gewenste datum ophaling</label>
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                        <i class="fa-solid fa-calendar"></i>
-                      </div>
-                      <input type="date" id="date-input" required class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
+                <!-- Flavor -->
+                <div>
+                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak voorkeur (vulling)</label>
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                      <i class="fa-solid fa-wine-glass"></i>
                     </div>
+                    <select id="flavor-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                      <option value="">Geen voorkeur (ik adviseer)</option>
+                      <option value="aardbei">Aardbei</option>
+                      <option value="framboos">Framboos</option>
+                      <option value="banaan">Banaan</option>
+                      <option value="bosvruchten">Bosvruchten</option>
+                      <option value="chocolade">Chocolade</option>
+                      <option value="anders">Anders (specificeer hieronder)</option>
+                    </select>
                   </div>
+                </div>
 
-                  <!-- Persons (feesttaart only) -->
-                  <div id="feesttaart-persons" class="feesttaart-only">
-                    <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal personen</label>
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                        <i class="fa-solid fa-users"></i>
-                      </div>
-                      <select id="persons-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                        <option value="">Selecteer aantal</option>
-                        <option value="8-14">8-14 personen (1 laag)</option>
-                        <option value="15-25">15-25 personen (2 lagen)</option>
-                        <option value="25-40">25-40 personen (3 lagen)</option>
-                        <option value="40+">40+ personen (meerlagen)</option>
-                      </select>
-                    </div>
+                <!-- Image Upload -->
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
+                    <i class="fa-solid fa-image"></i>
                   </div>
+                  <div id="image-upload-area" class="image-upload-area flex-1">
+                    <input type="file" id="image-input" accept="image/*" class="hidden" />
+                    <div id="upload-placeholder" class="upload-placeholder">
+                      <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--color-text-muted)] mb-1"></i>
+                      <p class="text-xs text-[var(--color-text-muted)]">Voeg een voorbeeld toe</p>
+                    </div>
+                    <img id="preview-image" class="preview-image hidden" alt="Upload preview" />
+                  </div>
+                </div>
 
-                  <!-- Flavor -->
-                  <div>
-                    <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak voorkeur (vulling)</label>
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                        <i class="fa-solid fa-wine-glass"></i>
-                      </div>
-                      <select id="flavor-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                        <option value="">Geen voorkeur (ik adviseer)</option>
-                        <option value="aardbei">Aardbei</option>
-                        <option value="framboos">Framboos</option>
-                        <option value="banaan">Banaan</option>
-                        <option value="bosvruchten">Bosvruchten</option>
-                        <option value="chocolade">Chocolade</option>
-                        <option value="anders">Anders (specificeer hieronder)</option>
-                      </select>
-                    </div>
+                <!-- Allergies -->
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
+                    <i class="fa-solid fa-exclamation-circle"></i>
                   </div>
+                  <textarea id="allergies-input" rows="2" placeholder="Allergieën (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
+                </div>
 
-                  <!-- Image Upload -->
-                  <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
-                      <i class="fa-solid fa-image"></i>
-                    </div>
-                    <div id="image-upload-area" class="image-upload-area flex-1">
-                      <input type="file" id="image-input" accept="image/*" class="hidden" />
-                      <div id="upload-placeholder" class="upload-placeholder">
-                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--color-text-muted)] mb-1"></i>
-                        <p class="text-xs text-[var(--color-text-muted)]">Voeg een voorbeeld toe</p>
-                      </div>
-                      <img id="preview-image" class="preview-image hidden" alt="Upload preview" />
-                    </div>
+                <!-- Opmerkingen -->
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
+                    <i class="fa-solid fa-comment"></i>
                   </div>
-
-                  <!-- Allergies -->
-                  <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
-                      <i class="fa-solid fa-exclamation-circle"></i>
-                    </div>
-                    <textarea id="allergies-input" rows="2" placeholder="Allergieën (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
-                  </div>
-
-                  <!-- Opmerkingen -->
-                  <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
-                      <i class="fa-solid fa-comment"></i>
-                    </div>
-                    <textarea id="message-input" rows="2" placeholder="Opmerkingen (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
-                  </div>
+                  <textarea id="message-input" rows="2" placeholder="Opmerkingen (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
                 </div>
               </div>
 
@@ -202,6 +190,13 @@ import Footer from '../components/Footer.astro';
                 <i class="fa-solid fa-plus"></i>
                 Voeg nog een item toe
               </button>
+
+              <!-- Added Items Summary (at bottom) -->
+              <div id="items-summary" class="hidden">
+                <div class="flex flex-wrap gap-2">
+                  <!-- Filled items will appear here -->
+                </div>
+              </div>
 
               <!-- Submit -->
               <button type="submit" class="btn btn-primary w-full justify-center text-lg py-4">
@@ -261,7 +256,7 @@ import Footer from '../components/Footer.astro';
 
     // Elements
     const productSelection = document.getElementById('product-selection');
-    const itemDetails = document.getElementById('item-details');
+    const itemDetailsSection = document.getElementById('item-details-section');
     const addItemBtn = document.getElementById('add-item-btn');
     const itemsSummary = document.getElementById('items-summary');
     const productCards = productSelection.querySelectorAll('.product-card');
@@ -310,21 +305,15 @@ import Footer from '../components/Footer.astro';
 
     // Add item button
     addItemBtn.addEventListener('click', () => {
-      // Collect current item data
+      // Collect current item data (not date - it's in order-info)
       const itemData = {
         product: currentProduct,
         event: document.getElementById('event-select').value,
-        date: document.getElementById('date-input').value,
         persons: document.getElementById('persons-select').value,
         flavor: document.getElementById('flavor-select').value,
         allergies: document.getElementById('allergies-input').value,
         message: document.getElementById('message-input').value
       };
-
-      if (!itemData.date) {
-        alert('Vul alstublieft een datum in');
-        return;
-      }
 
       // Add to list
       addedItems.push(itemData);
@@ -337,21 +326,20 @@ import Footer from '../components/Footer.astro';
       badge.innerHTML = `${productIcons[itemData.product]} 1x ${productNames[itemData.product]}`;
       summaryContainer.appendChild(badge);
 
-      // Reset form but keep product cards visible
-      resetWorkSpace();
+      // Reset item details section only, keep order info and product cards
+      resetItemDetails();
     });
 
-    // Reset work space (reset product cards so user can pick new product)
-    function resetWorkSpace() {
+    // Reset item details section (not order info or product cards)
+    function resetItemDetails() {
       // Reset product cards to default (feesttaart selected)
       productCards.forEach(c => c.classList.remove('selected'));
       productSelection.querySelector('[data-product="feesttaart"]').classList.add('selected');
       currentProduct = 'feesttaart';
       updateFeesttaartFields();
 
-      // Clear all inputs
+      // Clear item details inputs only
       document.getElementById('event-select').selectedIndex = 0;
-      document.getElementById('date-input').value = '';
       document.getElementById('persons-select').selectedIndex = 0;
       document.getElementById('flavor-select').selectedIndex = 0;
       document.getElementById('allergies-input').value = '';
@@ -405,7 +393,7 @@ import Footer from '../components/Footer.astro';
       e.preventDefault();
       
       // If there's a current item not yet added, add it first
-      if (!itemDetails.classList.contains('hidden') && !addItemBtn.classList.contains('hidden')) {
+      if (!addItemBtn.classList.contains('hidden')) {
         addItemBtn.click();
       }
 
@@ -453,19 +441,19 @@ import Footer from '../components/Footer.astro';
       text-align: center;
     }
 
-    .contact-section > div {
+    #order-info-section > div {
       margin-bottom: 0.75rem;
     }
 
-    .contact-section > div:last-child {
+    #order-info-section > div:last-child {
       margin-bottom: 0;
     }
 
-    #item-details > div {
+    #item-details-section > div {
       margin-bottom: 0.75rem;
     }
 
-    #item-details > div:last-child {
+    #item-details-section > div:last-child {
       margin-bottom: 0;
     }
 
