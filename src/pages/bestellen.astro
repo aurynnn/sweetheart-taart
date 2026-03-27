@@ -30,266 +30,189 @@ import Footer from '../components/Footer.astro';
       <div id="bestellen-form-container" class="container">
         <div id="bestellen-form-wrapper" class="max-w-2xl mx-auto">
           <div id="bestellen-form-card" class="card p-8 md:p-12 animate-on-scroll">
+            
             <form id="order-form" class="space-y-6">
-              <!-- Product Type Cards -->
-              <div id="product-type-cards" class="grid grid-cols-3 gap-4 mb-8">
-                <button type="button" class="product-card selected" data-product="feesttaart">
-                  <span class="product-icon">
-                    <i class="fa-solid fa-cake-candles"></i>
-                  </span>
-                  <span class="product-name">Feesttaarten</span>
-                </button>
-                <button type="button" class="product-card" data-product="koekjes">
-                  <span class="product-icon">
-                    <i class="fa-solid fa-cookie-bite"></i>
-                  </span>
-                  <span class="product-name">Koekjes</span>
-                </button>
-                <button type="button" class="product-card" data-product="mini-gebak">
-                  <span class="product-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="m10.09 22.5-.95-7.64a2.87 2.87 0 0 0-5.73 0l2.86 7.64h11.46l2.86-7.64a2.87 2.87 0 0 0-5.73 0l-.95 7.64"/>
-                      <path d="M10.09 4.36h.26"/>
-                      <path d="M13.91 4.36h-.26a3.82 3.82 0 0 1 3.82 3.82"/>
-                      <path d="M14.81 15.46a4 4 0 0 0 0-.59 1 1 0 0 0-5.72 0 4 4 0 0 0 0 .59h0"/>
-                      <path d="M17.73 8.18v.17a2.86 2.86 0 0 1 1.91 2.7V13"/>
-                      <path d="M4.36 13v-1.9a2.86 2.86 0 0 1 1.91-2.7A3.82 3.82 0 0 1 10 4.18"/>
-                      <circle cx="12" cy="3.41" r="1.91"/>
-                    </svg>
-                  </span>
-                  <span class="product-name">Mini-gebak</span>
-                </button>
-              </div>
-
-              <input type="hidden" id="product-type" name="productType" value="feesttaart" />
-
-              <!-- Name -->
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                  <i class="fa-solid fa-user"></i>
+              
+              <!-- Added Items Summary -->
+              <div id="items-summary" class="hidden">
+                <div class="flex flex-wrap gap-2 mb-4">
+                  <!-- Filled items will appear here -->
                 </div>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  required
-                  class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-                  placeholder="Uw naam"
-                />
               </div>
 
-              <!-- Email -->
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                  <i class="fa-solid fa-envelope"></i>
-                </div>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  required
-                  class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-                  placeholder="uw@email.be"
-                />
-              </div>
-
-              <!-- Phone -->
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                  <i class="fa-solid fa-phone"></i>
-                </div>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  required
-                  class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-                  placeholder="+32 xxx xx xx xx"
-                />
-              </div>
-
-              <!-- Event Type -->
-              <div id="feesttaart-fields">
-                <label for="event" class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
-                  Type gelegenheid
-                </label>
+              <!-- Contact Info - Always Visible -->
+              <div class="contact-section">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-user"></i>
                   </div>
-                  <select
-                    id="event"
-                    name="event"
-                    class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-                  >
-                    <option value="">Selecteer een optie</option>
-                    <option value="verjaardag">Verjaardag</option>
-                    <option value="jubileum">Jubileum</option>
-                    <option value="huwelijk">Huwelijk</option>
-                    <option value="communie">Communie</option>
-                    <option value="doopsel">Doopsel</option>
-                    <option value="babyshower">Baby shower</option>
-                    <option value="anders">Anders</option>
-                  </select>
+                  <input type="text" name="name" required placeholder="Uw naam" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                 </div>
-              </div>
-
-              <!-- Date -->
-              <div>
-                <label for="date" class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
-                  Gewenste datum ophaling
-                </label>
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                    <i class="fa-solid fa-calendar"></i>
+                    <i class="fa-solid fa-envelope"></i>
                   </div>
-                  <input
-                    type="date"
-                    id="date"
-                    name="date"
-                    required
-                    class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-                  />
+                  <input type="email" name="email" required placeholder="uw@email.be" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                 </div>
-              </div>
-
-              <!-- Persons -->
-              <div id="feesttaart-persons">
-                <label for="persons" class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
-                  Aantal personen
-                </label>
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                    <i class="fa-solid fa-users"></i>
+                    <i class="fa-solid fa-phone"></i>
                   </div>
-                  <select
-                    id="persons"
-                    name="persons"
-                    class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-                  >
-                    <option value="">Selecteer aantal</option>
-                    <option value="8-14">8-14 personen (1 laag)</option>
-                    <option value="15-25">15-25 personen (2 lagen)</option>
-                    <option value="25-40">25-40 personen (3 lagen)</option>
-                    <option value="40+">40+ personen (meerlagen)</option>
-                  </select>
+                  <input type="tel" name="phone" required placeholder="+32 xxx xx xx xx" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                 </div>
               </div>
 
-              <!-- Flavor -->
-              <div id="feesttaart-flavor">
-                <label for="flavor" class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
-                  Smaak voorkeur (vulling)
-                </label>
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                    <i class="fa-solid fa-wine-glass"></i>
-                  </div>
-                  <select
-                    id="flavor"
-                    name="flavor"
-                    class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-                  >
-                    <option value="">Geen voorkeur (ik adviseer)</option>
-                    <option value="aardbei">Aardbei</option>
-                    <option value="framboos">Framboos</option>
-                    <option value="banaan">Banaan</option>
-                    <option value="bosvruchten">Bosvruchten</option>
-                    <option value="chocolade">Chocolade</option>
-                    <option value="anders">Anders (specificeer hieronder)</option>
-                  </select>
+              <!-- Work Space -->
+              <div id="work-space">
+                
+                <!-- Product Type Cards - Always Visible -->
+                <div id="product-selection" class="product-type-cards grid grid-cols-3 gap-4 mb-6">
+                  <button type="button" class="product-card selected" data-product="feesttaart">
+                    <span class="product-icon">
+                      <i class="fa-solid fa-cake-candles"></i>
+                    </span>
+                    <span class="product-name">Feesttaarten</span>
+                  </button>
+                  <button type="button" class="product-card" data-product="koekjes">
+                    <span class="product-icon">
+                      <i class="fa-solid fa-cookie-bite"></i>
+                    </span>
+                    <span class="product-name">Koekjes</span>
+                  </button>
+                  <button type="button" class="product-card" data-product="mini-gebak">
+                    <span class="product-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m10.09 22.5-.95-7.64a2.87 2.87 0 0 0-5.73 0l2.86 7.64h11.46l2.86-7.64a2.87 2.87 0 0 0-5.73 0l-.95 7.64"/>
+                        <path d="M10.09 4.36h.26"/>
+                        <path d="M13.91 4.36h-.26a3.82 3.82 0 0 1 3.82 3.82"/>
+                        <path d="M14.81 15.46a4 4 0 0 0 0-.59 1 1 0 0 0-5.72 0 4 4 0 0 0 0 .59h0"/>
+                        <path d="M17.73 8.18v.17a2.86 2.86 0 0 1 1.91 2.7V13"/>
+                        <path d="M4.36 13v-1.9a2.86 2.86 0 0 1 1.91-2.7A3.82 3.82 0 0 1 10 4.18"/>
+                        <circle cx="12" cy="3.41" r="1.91"/>
+                      </svg>
+                    </span>
+                    <span class="product-name">Mini-gebak</span>
+                  </button>
                 </div>
-              </div>
 
-              <!-- Image Upload -->
-              <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
-                  <i class="fa-solid fa-image"></i>
-                </div>
-                <div id="image-upload-area" class="image-upload-area flex-1">
-                  <input
-                    type="file"
-                    id="image"
-                    name="image"
-                    accept="image/*"
-                    class="hidden"
-                  />
-                  <div id="upload-placeholder" class="upload-placeholder">
-                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--color-text-muted)] mb-1"></i>
-                    <p class="text-xs text-[var(--color-text-muted)]">Voeg een voorbeeld toe</p>
+                <!-- Item Details - Form fields (always visible after product cards) -->
+                <div id="item-details" class="">
+                  <!-- Event Type (feesttaart only) -->
+                  <div id="feesttaart-fields" class="feesttaart-only">
+                    <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type gelegenheid</label>
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                        <i class="fa-solid fa-star"></i>
+                      </div>
+                      <select id="event-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                        <option value="">Selecteer een optie</option>
+                        <option value="verjaardag">Verjaardag</option>
+                        <option value="jubileum">Jubileum</option>
+                        <option value="huwelijk">Huwelijk</option>
+                        <option value="communie">Communie</option>
+                        <option value="doopsel">Doopsel</option>
+                        <option value="babyshower">Baby shower</option>
+                        <option value="anders">Anders</option>
+                      </select>
+                    </div>
                   </div>
-                  <img id="preview-image" class="preview-image hidden" alt="Upload preview" />
-                </div>
-              </div>
 
-              <!-- Optional Fields Row -->
-              <div class="space-y-2">
-                <!-- Buttons Row -->
-                <div class="grid grid-cols-2 gap-4">
+                  <!-- Date -->
+                  <div>
+                    <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Gewenste datum ophaling</label>
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                        <i class="fa-solid fa-calendar"></i>
+                      </div>
+                      <input type="date" id="date-input" required class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
+                    </div>
+                  </div>
+
+                  <!-- Persons (feesttaart only) -->
+                  <div id="feesttaart-persons" class="feesttaart-only">
+                    <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal personen</label>
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                        <i class="fa-solid fa-users"></i>
+                      </div>
+                      <select id="persons-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                        <option value="">Selecteer aantal</option>
+                        <option value="8-14">8-14 personen (1 laag)</option>
+                        <option value="15-25">15-25 personen (2 lagen)</option>
+                        <option value="25-40">25-40 personen (3 lagen)</option>
+                        <option value="40+">40+ personen (meerlagen)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Flavor -->
+                  <div>
+                    <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak voorkeur (vulling)</label>
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                        <i class="fa-solid fa-wine-glass"></i>
+                      </div>
+                      <select id="flavor-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                        <option value="">Geen voorkeur (ik adviseer)</option>
+                        <option value="aardbei">Aardbei</option>
+                        <option value="framboos">Framboos</option>
+                        <option value="banaan">Banaan</option>
+                        <option value="bosvruchten">Bosvruchten</option>
+                        <option value="chocolade">Chocolade</option>
+                        <option value="anders">Anders (specificeer hieronder)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Image Upload -->
+                  <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
+                      <i class="fa-solid fa-image"></i>
+                    </div>
+                    <div id="image-upload-area" class="image-upload-area flex-1">
+                      <input type="file" id="image-input" accept="image/*" class="hidden" />
+                      <div id="upload-placeholder" class="upload-placeholder">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--color-text-muted)] mb-1"></i>
+                        <p class="text-xs text-[var(--color-text-muted)]">Voeg een voorbeeld toe</p>
+                      </div>
+                      <img id="preview-image" class="preview-image hidden" alt="Upload preview" />
+                    </div>
+                  </div>
+
                   <!-- Allergies -->
-                  <button type="button" class="optional-toggle flex items-center justify-between gap-2 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-colors" onclick="toggleOptional('allergies-content', this)">
-                    <span class="flex items-center gap-2">
-                      <div class="w-8 h-8 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A]">
-                        <i class="fa-solid fa-exclamation-circle text-sm"></i>
-                      </div>
-                      <span class="text-sm">Allergieën</span>
-                    </span>
-                    <svg class="w-4 h-4 transition-transform flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
-                    </svg>
-                  </button>
+                  <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
+                      <i class="fa-solid fa-exclamation-circle"></i>
+                    </div>
+                    <textarea id="allergies-input" rows="2" placeholder="Allergieën (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
+                  </div>
 
-                  <!-- Message -->
-                  <button type="button" class="optional-toggle flex items-center justify-between gap-2 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-colors" onclick="toggleOptional('message-content', this)">
-                    <span class="flex items-center gap-2">
-                      <div class="w-8 h-8 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A]">
-                        <i class="fa-solid fa-comment text-sm"></i>
-                      </div>
-                      <span class="text-sm">Opmerkingen</span>
-                    </span>
-                    <svg class="w-4 h-4 transition-transform flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
-                    </svg>
-                  </button>
-                </div>
-
-                <!-- Expanded Content (full width) -->
-                <div id="allergies-content" class="optional-content hidden">
-                  <textarea
-                    id="allergies"
-                    name="allergies"
-                    rows="2"
-                    class="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all resize-none"
-                    placeholder="Bijv. lactose-intolerantie, glutenallergie..."
-                  ></textarea>
-                </div>
-
-                <div id="message-content" class="optional-content hidden">
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows="3"
-                    class="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all resize-none"
-                    placeholder="Vertel ons meer over uw wensen..."
-                  ></textarea>
+                  <!-- Opmerkingen -->
+                  <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
+                      <i class="fa-solid fa-comment"></i>
+                    </div>
+                    <textarea id="message-input" rows="2" placeholder="Opmerkingen (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
+                  </div>
                 </div>
               </div>
+
+              <!-- Add Item Button -->
+              <button type="button" id="add-item-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 hidden">
+                <i class="fa-solid fa-plus"></i>
+                Voeg nog een item toe
+              </button>
 
               <!-- Submit -->
-              <div class="pt-4">
-                <button
-                  type="submit"
-                  class="btn btn-primary w-full justify-center text-lg py-4"
-                >
-                  Verstuur bestelling
-                </button>
-                <p class="text-center text-sm text-[var(--color-text-muted)] mt-4">
-                  U ontvangt een bevestigingsmail na verzending. We nemen spoedig contact op.
-                </p>
-              </div>
+              <button type="submit" class="btn btn-primary w-full justify-center text-lg py-4">
+                Verstuur bestelling
+              </button>
+              <p class="text-center text-sm text-[var(--color-text-muted)]">
+                U ontvangt een bevestigingsmail na verzending. We nemen spoedig contact op.
+              </p>
             </form>
 
-            <!-- Success Message (hidden by default) -->
+            <!-- Success Message -->
             <div id="success-message" class="hidden text-center py-12">
               <div class="w-16 h-16 mx-auto mb-6 rounded-full bg-[var(--color-accent)]/20 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -310,15 +233,15 @@ import Footer from '../components/Footer.astro';
 
     <!-- Alternative Contact -->
     <section id="bestellen-alt-contact" class="section bg-[var(--color-surface)]">
-      <div id="bestellen-alt-contact-content" class="container">
-        <div id="bestellen-alt-contact-inner" class="max-w-2xl mx-auto text-center">
-          <h2 id="bestellen-alt-contact-title" class="font-heading text-2xl font-semibold text-[var(--color-text)] mb-4">
+      <div class="container">
+        <div class="max-w-2xl mx-auto text-center">
+          <h2 class="font-heading text-2xl font-semibold text-[var(--color-text)] mb-4">
             Liever telefonisch bestellen?
           </h2>
-          <p id="bestellen-alt-contact-text" class="text-[var(--color-text-muted)] mb-6">
+          <p class="text-[var(--color-text-muted)] mb-6">
             Bel gerust naar Nathalie voor een vrijblijvend gesprek over uw wensen.
           </p>
-          <a id="bestellen-phone-link" href="tel:+32486953210" class="inline-flex items-center gap-2 text-xl font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors">
+          <a href="tel:+32486953210" class="inline-flex items-center gap-2 text-xl font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
             </svg>
@@ -330,254 +253,264 @@ import Footer from '../components/Footer.astro';
   </main>
 
   <Footer />
-</Layout>
 
-<script>
-  const form = document.getElementById('order-form') as HTMLFormElement;
-  const successMessage = document.getElementById('success-message');
-  const productCards = document.querySelectorAll('.product-card');
-  const productTypeInput = document.getElementById('product-type') as HTMLInputElement;
-  const feesttaartFields = document.getElementById('feesttaart-fields');
-  const feesttaartPersons = document.getElementById('feesttaart-persons');
-  const feesttaartFlavor = document.getElementById('feesttaart-flavor');
-  const imageInput = document.getElementById('image') as HTMLInputElement;
-  const uploadArea = document.getElementById('image-upload-area');
-  const uploadPlaceholder = document.getElementById('upload-placeholder');
-  const previewImage = document.getElementById('preview-image') as HTMLImageElement;
+  <script>
+    // State
+    const addedItems = [];
+    let currentProduct = 'feesttaart';
 
-  // Image upload handling
-  if (uploadArea && imageInput) {
-    uploadArea.addEventListener('click', () => imageInput.click());
-    uploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadArea.classList.add('dragover');
+    // Elements
+    const productSelection = document.getElementById('product-selection');
+    const itemDetails = document.getElementById('item-details');
+    const addItemBtn = document.getElementById('add-item-btn');
+    const itemsSummary = document.getElementById('items-summary');
+    const productCards = productSelection.querySelectorAll('.product-card');
+    const feesttaartFields = document.querySelectorAll('.feesttaart-only');
+
+    // Product icons mapping
+    const productIcons = {
+      'feesttaart': '<i class="fa-solid fa-cake-candles"></i>',
+      'koekjes': '<i class="fa-solid fa-cookie-bite"></i>',
+      'mini-gebak': '<i class="fa-solid fa-cookie"></i>'
+    };
+
+    const productNames = {
+      'feesttaart': 'Feesttaart',
+      'koekjes': 'Koekjes',
+      'mini-gebak': 'Mini-gebak'
+    };
+
+    // Product card selection
+    productCards.forEach(card => {
+      card.addEventListener('click', () => {
+        productCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        currentProduct = card.getAttribute('data-product');
+        updateFeesttaartFields();
+        // Show add item button when product is selected
+        addItemBtn.classList.remove('hidden');
+      });
     });
-    uploadArea.addEventListener('dragleave', () => {
-      uploadArea.classList.remove('dragover');
-    });
-    uploadArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadArea.classList.remove('dragover');
-      const files = e.dataTransfer?.files;
-      if (files?.length) {
-        imageInput.files = files;
-        handleImagePreview(files[0]);
+
+    // Update feesttaart fields visibility
+    function updateFeesttaartFields() {
+      feesttaartFields.forEach(field => {
+        field.style.display = currentProduct === 'feesttaart' ? '' : 'none';
+      });
+    }
+
+    // Initialize feesttaart fields
+    updateFeesttaartFields();
+
+    // Set min date
+    const dateInput = document.getElementById('date-input');
+    if (dateInput) {
+      dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
+    }
+
+    // Add item button
+    addItemBtn.addEventListener('click', () => {
+      // Collect current item data
+      const itemData = {
+        product: currentProduct,
+        event: document.getElementById('event-select').value,
+        date: document.getElementById('date-input').value,
+        persons: document.getElementById('persons-select').value,
+        flavor: document.getElementById('flavor-select').value,
+        allergies: document.getElementById('allergies-input').value,
+        message: document.getElementById('message-input').value
+      };
+
+      if (!itemData.date) {
+        alert('Vul alstublieft een datum in');
+        return;
       }
+
+      // Add to list
+      addedItems.push(itemData);
+
+      // Show summary
+      itemsSummary.classList.remove('hidden');
+      const summaryContainer = itemsSummary.querySelector('.flex');
+      const badge = document.createElement('span');
+      badge.className = 'inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FDEEF0] text-[#E8788A] text-sm';
+      badge.innerHTML = `${productIcons[itemData.product]} 1x ${productNames[itemData.product]}`;
+      summaryContainer.appendChild(badge);
+
+      // Reset form but keep product cards visible
+      resetWorkSpace();
+    });
+
+    // Reset work space (reset product cards so user can pick new product)
+    function resetWorkSpace() {
+      // Reset product cards to default (feesttaart selected)
+      productCards.forEach(c => c.classList.remove('selected'));
+      productSelection.querySelector('[data-product="feesttaart"]').classList.add('selected');
+      currentProduct = 'feesttaart';
+      updateFeesttaartFields();
+
+      // Clear all inputs
+      document.getElementById('event-select').selectedIndex = 0;
+      document.getElementById('date-input').value = '';
+      document.getElementById('persons-select').selectedIndex = 0;
+      document.getElementById('flavor-select').selectedIndex = 0;
+      document.getElementById('allergies-input').value = '';
+      document.getElementById('message-input').value = '';
+
+      // Reset image
+      document.getElementById('preview-image').classList.add('hidden');
+      document.getElementById('upload-placeholder').classList.remove('hidden');
+
+      // Hide add button
+      addItemBtn.classList.add('hidden');
+    }
+
+    // Image upload
+    const imageUploadArea = document.getElementById('image-upload-area');
+    const imageInput = document.getElementById('image-input');
+    const previewImage = document.getElementById('preview-image');
+    const uploadPlaceholder = document.getElementById('upload-placeholder');
+
+    imageUploadArea.addEventListener('click', () => imageInput.click());
+    imageUploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      imageUploadArea.classList.add('dragover');
+    });
+    imageUploadArea.addEventListener('dragleave', () => imageUploadArea.classList.remove('dragover'));
+    imageUploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      imageUploadArea.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) handleImage(e.dataTransfer.files[0]);
     });
     imageInput.addEventListener('change', () => {
-      if (imageInput.files?.length) {
-        handleImagePreview(imageInput.files[0]);
-      }
+      if (imageInput.files[0]) handleImage(imageInput.files[0]);
     });
-  }
 
-  function handleImagePreview(file: File) {
-    if (file && file.type.startsWith('image/')) {
+    function handleImage(file) {
+      if (!file.type.startsWith('image/')) return;
       const reader = new FileReader();
       reader.onload = (e) => {
-        if (previewImage) {
-          previewImage.src = e.target?.result as string;
-          previewImage.classList.remove('hidden');
-        }
-        if (uploadPlaceholder) {
-          uploadPlaceholder.classList.add('hidden');
-        }
+        previewImage.src = e.target.result;
+        previewImage.classList.remove('hidden');
+        uploadPlaceholder.classList.add('hidden');
       };
       reader.readAsDataURL(file);
     }
-  }
 
-  // Product card selection
-  productCards.forEach(card => {
-    card.addEventListener('click', () => {
-      productCards.forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      const product = (card as HTMLElement).dataset.product;
-      if (productTypeInput) {
-        productTypeInput.value = product || 'feesttaart';
-      }
-      const isFeesttaart = product === 'feesttaart';
-      if (feesttaartFields) feesttaartFields.style.display = isFeesttaart ? 'block' : 'none';
-      if (feesttaartPersons) feesttaartPersons.style.display = isFeesttaart ? 'block' : 'none';
-      if (feesttaartFlavor) feesttaartFlavor.style.display = isFeesttaart ? 'block' : 'none';
-    });
-  });
+    // Form submission
+    const form = document.getElementById('order-form');
+    const successMessage = document.getElementById('success-message');
 
-  if (form) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      form.classList.add('hidden');
-      if (successMessage) {
-        successMessage.classList.remove('hidden');
+      
+      // If there's a current item not yet added, add it first
+      if (!itemDetails.classList.contains('hidden') && !addItemBtn.classList.contains('hidden')) {
+        addItemBtn.click();
       }
+
       const formData = new FormData(form);
-      console.log('Bestelling verzonden:', Object.fromEntries(formData));
+      formData.append('items', JSON.stringify(addedItems));
+      
+      console.log('Order:', Object.fromEntries(formData));
+      form.classList.add('hidden');
+      successMessage.classList.remove('hidden');
     });
-  }
+  </script>
 
-  const dateInput = document.getElementById('date') as HTMLInputElement;
-  if (dateInput) {
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.setAttribute('min', today);
-  }
-
-  // Toggle optional fields (mutually exclusive)
-  (window as any).toggleOptional = function(id: string, btn: HTMLButtonElement) {
-    const content = document.getElementById(id);
-    const isHidden = content?.classList.contains('hidden');
-    
-    // Close all optional contents
-    document.querySelectorAll('.optional-content').forEach(el => el.classList.add('hidden'));
-    document.querySelectorAll('.optional-toggle').forEach(el => {
-      el.classList.remove('active');
-      const svg = el.querySelector('svg');
-      if (svg) svg.style.transform = '';
-    });
-    
-    // If it was hidden, open only this one
-    if (isHidden && content) {
-      content.classList.remove('hidden');
-      btn.classList.add('active');
-      const svg = btn.querySelector('svg');
-      if (svg) svg.style.transform = 'rotate(180deg)';
+  <style>
+    .product-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1.5rem 1rem;
+      background: white;
+      border: 2px solid #F0E0E2;
+      border-radius: 1rem;
+      cursor: pointer;
+      transition: all 300ms ease;
     }
-  };
-</script>
 
-<style>
-  .product-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1.5rem 1rem;
-    background: white;
-    border: 2px solid #F0E0E2;
-    border-radius: 1rem;
-    cursor: pointer;
-    transition: all 300ms ease;
-  }
+    .product-card:hover {
+      border-color: #E8788A;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(232, 120, 138, 0.2);
+    }
 
-  .product-card:hover {
-    border-color: #E8788A;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(232, 120, 138, 0.2);
-  }
+    .product-card.selected {
+      border-color: #E8788A;
+      background: #FDEEF0;
+    }
 
-  .product-card.selected {
-    background: linear-gradient(135deg, #E8788A 0%, #F2A0AA 100%);
-    border-color: #E8788A;
-    color: white;
-  }
+    .product-icon {
+      font-size: 2rem;
+      color: #E8788A;
+    }
 
-  .product-icon {
-    width: 3rem;
-    height: 3rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+    .product-name {
+      font-size: 0.875rem;
+      text-align: center;
+    }
 
-  .product-icon i {
-    font-size: 2.5rem;
-    line-height: 1;
-  }
+    .contact-section > div {
+      margin-bottom: 0.75rem;
+    }
 
-  .product-icon svg {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
+    .contact-section > div:last-child {
+      margin-bottom: 0;
+    }
 
-  .product-name {
-    font-weight: 600;
-    font-size: 0.875rem;
-    text-align: center;
-  }
+    #item-details > div {
+      margin-bottom: 0.75rem;
+    }
 
-  .label-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    margin-right: 0.5rem;
-    vertical-align: middle;
-    flex-shrink: 0;
-  }
+    #item-details > div:last-child {
+      margin-bottom: 0;
+    }
 
-  .image-upload-area {
-    position: relative;
-    border: 2px dashed #E0E0E0;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 200ms ease;
-    background: var(--color-surface);
-  }
+    .image-upload-area {
+      position: relative;
+      border: 2px dashed #E0E0E0;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 200ms ease;
+      background: var(--color-surface);
+    }
 
-  .image-upload-area:hover,
-  .image-upload-area.dragover {
-    border-color: #E8788A;
-    background: #FDEEF0;
-  }
+    .image-upload-area:hover,
+    .image-upload-area.dragover {
+      border-color: #E8788A;
+      background: #FDEEF0;
+    }
 
-  .upload-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem 1rem;
-    color: #888;
-  }
+    .upload-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 1rem;
+      color: #888;
+    }
 
-  .upload-placeholder p {
-    margin: 0;
-    font-size: 0.875rem;
-  }
+    .preview-image {
+      width: auto;
+      max-height: 8rem;
+      max-width: 100%;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
 
-  .preview-image {
-    width: auto;
-    max-height: 8rem;
-    max-width: 100%;
-    object-fit: contain;
-    display: block;
-    margin: 0 auto;
-  }
+    .btn-secondary {
+      background: white;
+      color: var(--color-primary);
+      border: 2px solid var(--color-primary);
+    }
 
-  .image-upload-area input[type="file"] {
-    display: none;
-  }
-
-  .optional-field {
-    border: 2px solid #F0E0E2;
-    border-radius: 1rem;
-    overflow: hidden;
-    transition: all 300ms ease;
-  }
-
-  .optional-toggle {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.25rem;
-    background: white;
-    color: #666;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 200ms ease;
-  }
-
-  .optional-toggle:hover {
-    background: #FDEEF0;
-    color: #E8788A;
-  }
-
-  .optional-toggle.active {
-    background: #FDEEF0;
-    color: #E8788A;
-    border-bottom: 1px solid #F0E0E2;
-  }
-
-  .optional-content {
-    padding: 1rem 1.25rem;
-    background: white;
-  }
-</style>
+    .btn-secondary:hover {
+      background: var(--color-secondary);
+    }
+  </style>
+</Layout>
