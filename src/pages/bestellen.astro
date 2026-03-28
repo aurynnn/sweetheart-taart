@@ -63,7 +63,7 @@ import Footer from '../components/Footer.astro';
                 </button>
               </div>
 
-              <!-- Order Info Section (filled once - hidden after first item added) -->
+              <!-- Order Info Section (filled once) -->
               <div id="order-info-section">
                 <!-- Name -->
                 <div class="flex items-center gap-3">
@@ -95,16 +95,8 @@ import Footer from '../components/Footer.astro';
                 </div>
               </div>
 
-              <!-- Added Items Summary (clickable to edit) -->
-              <div id="items-summary" class="hidden">
-                <p class="text-sm text-[var(--color-text-muted)] mb-2">Toegevoegde items:</p>
-                <div class="flex flex-wrap gap-2">
-                  <!-- Filled items will appear here -->
-                </div>
-              </div>
-
-              <!-- Item Details Section (per item - hidden until product selected) -->
-              <div id="item-details-section" class="hidden">
+              <!-- Item Details Section (per item) -->
+              <div id="item-details-section">
                 <!-- Event Type (feesttaart only) -->
                 <div id="feesttaart-fields" class="feesttaart-only">
                   <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type gelegenheid</label>
@@ -194,14 +186,21 @@ import Footer from '../components/Footer.astro';
               </div>
 
               <!-- Add Item Button -->
-              <button type="button" id="add-item-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 opacity-50 cursor-not-allowed" disabled>
+              <button type="button" id="add-item-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 hidden">
                 <i class="fa-solid fa-plus"></i>
                 Voeg nog een item toe
               </button>
 
+              <!-- Added Items Summary (at bottom) -->
+              <div id="items-summary" class="hidden">
+                <div class="flex flex-wrap gap-2">
+                  <!-- Filled items will appear here -->
+                </div>
+              </div>
+
               <!-- Submit -->
-              <button type="submit" class="btn btn-primary w-full justify-center text-lg py-4">
-                Verstuur bestelling
+              <button type="button" id="review-btn" class="btn btn-primary w-full justify-center text-lg py-4">
+                Bestelling controleren
               </button>
               <p class="text-center text-sm text-[var(--color-text-muted)]">
                 U ontvangt een bevestigingsmail na verzending. We nemen spoedig contact op.
@@ -221,6 +220,36 @@ import Footer from '../components/Footer.astro';
               <p class="text-[var(--color-text-muted)]">
                 We hebben uw aanvraag ontvangen en nemen snel contact met u op.
               </p>
+            </div>
+
+            <!-- Order Review Section -->
+            <div id="order-review" class="hidden">
+              <h3 class="font-heading text-2xl font-semibold text-[var(--color-text)] mb-6 text-center">
+                Uw bestelling
+              </h3>
+              
+              <div class="bg-[var(--color-surface)] rounded-xl p-6 mb-6">
+                <h4 class="font-semibold text-[var(--color-text)] mb-3 flex items-center gap-2">
+                  <i class="fa-solid fa-user text-[#E8788A]"></i> Contactgegevens
+                </h4>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                  <div><span class="text-[var(--color-text-muted)]">Naam:</span> <span id="review-name" class="text-[var(--color-text)]"></span></div>
+                  <div><span class="text-[var(--color-text-muted)]">Email:</span> <span id="review-email" class="text-[var(--color-text)]"></span></div>
+                  <div><span class="text-[var(--color-text-muted)]">Telefoon:</span> <span id="review-phone" class="text-[var(--color-text)]"></span></div>
+                  <div><span class="text-[var(--color-text-muted)]">Datum:</span> <span id="review-date" class="text-[var(--color-text)]"></span></div>
+                </div>
+              </div>
+
+              <div id="review-items" class="space-y-4 mb-6"></div>
+
+              <div class="flex gap-3">
+                <button type="button" id="back-btn" class="btn btn-secondary flex-1 justify-center text-lg py-4">
+                  <i class="fa-solid fa-arrow-left mr-2"></i> Terug
+                </button>
+                <button type="submit" id="submit-btn-final" class="btn btn-primary flex-1 justify-center text-lg py-4">
+                  <i class="fa-solid fa-paper-plane mr-2"></i> Verstuur bestelling
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -254,7 +283,7 @@ import Footer from '../components/Footer.astro';
     // State
     const addedItems = [];
     let currentProduct = null;
-    let isFirstItem = true;
+    let editingIndex = null;
 
     // Elements
     const productSelection = document.getElementById('product-selection');
@@ -285,11 +314,9 @@ import Footer from '../components/Footer.astro';
         card.classList.add('selected');
         currentProduct = card.getAttribute('data-product');
         updateFeesttaartFields();
-        // Show item details section
+        // Show item details and add button when product is selected
         itemDetailsSection.classList.remove('hidden');
-        // Enable add button when product is selected
-        addItemBtn.disabled = false;
-        addItemBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        addItemBtn.classList.remove('hidden');
       });
     });
 
@@ -300,68 +327,20 @@ import Footer from '../components/Footer.astro';
       });
     }
 
+    // Initialize - no product selected, item details hidden
+    updateFeesttaartFields();
+    itemDetailsSection.classList.add('hidden');
+    addItemBtn.classList.add('hidden');
+
     // Set min date
     const dateInput = document.getElementById('date-input');
     if (dateInput) {
       dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
     }
 
-    // Load item into form for editing
-    function loadItemIntoForm(index) {
-      const item = addedItems[index];
-      if (!item) return;
-      
-      currentProduct = item.product;
-      
-      // Select product card
-      productCards.forEach(c => c.classList.remove('selected'));
-      productSelection.querySelector(`[data-product="${item.product}"]`).classList.add('selected');
-      updateFeesttaartFields();
-      
-      // Show item details section
-      itemDetailsSection.classList.remove('hidden');
-      
-      // Fill form
-      document.getElementById('event-select').value = item.event || '';
-      document.getElementById('persons-select').value = item.persons || '';
-      document.getElementById('flavor-select').value = item.flavor || '';
-      document.getElementById('allergies-input').value = item.allergies || '';
-      document.getElementById('message-input').value = item.message || '';
-      
-      // Remove from array
-      addedItems.splice(index, 1);
-      updateSummary();
-      
-      // Hide add button until product changes
-      addItemBtn.disabled = true;
-      addItemBtn.classList.add('opacity-50', 'cursor-not-allowed');
-    }
-
-    // Update summary display
-    function updateSummary() {
-      if (addedItems.length === 0) {
-        itemsSummary.classList.add('hidden');
-        return;
-      }
-      
-      itemsSummary.classList.remove('hidden');
-      const summaryContainer = itemsSummary.querySelector('.flex');
-      summaryContainer.innerHTML = addedItems.map((item, idx) => 
-        `<button type="button" class="summary-item inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FDEEF0] text-[#E8788A] text-sm hover:bg-[#F5D5D8] transition-colors" data-index="${idx}">${productIcons[item.product]} 1x ${productNames[item.product]} <i class="fa-solid fa-pen text-xs ml-1"></i></button>`
-      ).join('');
-      
-      // Add click handlers to summary items
-      summaryContainer.querySelectorAll('.summary-item').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const idx = parseInt(btn.getAttribute('data-index'));
-          loadItemIntoForm(idx);
-        });
-      });
-    }
-
     // Add item button
     addItemBtn.addEventListener('click', () => {
-      // Collect current item data
+      // Collect current item data (not date - it's in order-info)
       const itemData = {
         product: currentProduct,
         event: document.getElementById('event-select').value,
@@ -373,21 +352,33 @@ import Footer from '../components/Footer.astro';
 
       // Add to list
       addedItems.push(itemData);
-      updateSummary();
 
-      // Hide order info for subsequent items
-      orderInfoSection.classList.add('hidden');
-      isFirstItem = false;
+      // After first item, hide order info section
+      if (addedItems.length === 1) {
+        orderInfoSection.style.display = 'none';
+      }
 
-      // Reset product cards to no selection
+      // Show summary
+      itemsSummary.classList.remove('hidden');
+      const summaryContainer = itemsSummary.querySelector('.flex');
+      const badge = document.createElement('span');
+      badge.className = 'inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FDEEF0] text-[#E8788A] text-sm';
+      badge.innerHTML = `${productIcons[itemData.product]} 1x ${productNames[itemData.product]}`;
+      summaryContainer.appendChild(badge);
+
+      // Reset item details section only, keep order info and product cards
+      resetItemDetails();
+    });
+
+    // Reset item details section (not order info or product cards)
+    function resetItemDetails() {
+      // Clear product selection
       productCards.forEach(c => c.classList.remove('selected'));
       currentProduct = null;
       updateFeesttaartFields();
-
-      // Hide item details section
       itemDetailsSection.classList.add('hidden');
 
-      // Clear item details inputs
+      // Clear item details inputs only
       document.getElementById('event-select').selectedIndex = 0;
       document.getElementById('persons-select').selectedIndex = 0;
       document.getElementById('flavor-select').selectedIndex = 0;
@@ -398,10 +389,9 @@ import Footer from '../components/Footer.astro';
       document.getElementById('preview-image').classList.add('hidden');
       document.getElementById('upload-placeholder').classList.remove('hidden');
 
-      // Disable add button until new product is selected
-      addItemBtn.disabled = true;
-      addItemBtn.classList.add('opacity-50', 'cursor-not-allowed');
-    });
+      // Hide add button
+      addItemBtn.classList.add('hidden');
+    }
 
     // Image upload
     const imageUploadArea = document.getElementById('image-upload-area');
@@ -438,20 +428,64 @@ import Footer from '../components/Footer.astro';
     // Form submission
     const form = document.getElementById('order-form');
     const successMessage = document.getElementById('success-message');
+    const reviewSection = document.getElementById('order-review');
+    const reviewBtn = document.getElementById('review-btn');
+    const backBtn = document.getElementById('back-btn');
+    const submitBtnFinal = document.getElementById('submit-btn-final');
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      
-      // If there's a current item not yet added, add it first
-      if (!addItemBtn.classList.contains('hidden')) {
+    reviewBtn.addEventListener('click', function() {
+      if (editingIndex !== null) {
         addItemBtn.click();
       }
-
-      const formData = new FormData(form);
-      formData.append('items', JSON.stringify(addedItems));
-      
-      console.log('Order:', Object.fromEntries(formData));
+      var name = document.querySelector('[name="name"]').value;
+      var email = document.querySelector('[name="email"]').value;
+      var phone = document.querySelector('[name="phone"]').value;
+      var date = document.getElementById('date-input').value;
+      if (!name || !email || !phone) {
+        alert('Vul alstublieft alle contactgegevens in');
+        return;
+      }
+      if (!date) {
+        alert('Vul alstublieft een datum in');
+        return;
+      }
+      if (addedItems.length === 0) {
+        alert('Voeg alstublieft minimaal één item toe');
+        return;
+      }
+      document.getElementById('review-name').textContent = name;
+      document.getElementById('review-email').textContent = email;
+      document.getElementById('review-phone').textContent = phone;
+      document.getElementById('review-date').textContent = date;
+      var reviewItems = document.getElementById('review-items');
+      var html = '';
+      for (var i = 0; i < addedItems.length; i++) {
+        var item = addedItems[i];
+        html = html + '<div class="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] mb-4">';
+        html = html + '<div class="flex items-center gap-2 mb-2"><span class="text-xl">' + productIcons[item.product] + '</span><span class="font-semibold text-[var(--color-text)]">' + productNames[item.product] + '</span></div>';
+        html = html + '<div class="text-sm text-[var(--color-text-muted)]">';
+        if (item.event) { html = html + '<div><span class="font-medium">Gelegenheid:</span> ' + item.event + '</div>'; }
+        if (item.persons) { html = html + '<div><span class="font-medium">Personen:</span> ' + item.persons + '</div>'; }
+        if (item.flavor) { html = html + '<div><span class="font-medium">Smaak:</span> ' + item.flavor + '</div>'; }
+        if (item.allergies) { html = html + '<div><span class="font-medium">Allergieën:</span> ' + item.allergies + '</div>'; }
+        if (item.message) { html = html + '<div><span class="font-medium">Opmerkingen:</span> ' + item.message + '</div>'; }
+        html = html + '</div></div>';
+      }
+      reviewItems.innerHTML = html;
       form.classList.add('hidden');
+      reviewSection.classList.remove('hidden');
+    });
+
+    backBtn.addEventListener('click', function() {
+      reviewSection.classList.add('hidden');
+      form.classList.remove('hidden');
+    });
+
+    submitBtnFinal.addEventListener('click', function() {
+      var formData = new FormData(form);
+      formData.append('items', JSON.stringify(addedItems));
+      console.log('Order:', Object.fromEntries(formData));
+      reviewSection.classList.add('hidden');
       successMessage.classList.remove('hidden');
     });
   </script>
