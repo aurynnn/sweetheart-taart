@@ -185,18 +185,19 @@ import Footer from '../components/Footer.astro';
                 </div>
               </div>
 
+              <!-- Added Items Summary -->
+              <div id="items-summary" class="hidden mb-4 p-4 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)]">
+                <h4 class="text-sm font-medium text-[var(--color-text-muted)] mb-3">Uw items:</h4>
+                <div id="items-summary-list" class="space-y-2">
+                  <!-- Filled items will appear here -->
+                </div>
+              </div>
+
               <!-- Add Item Button -->
               <button type="button" id="add-item-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 hidden">
                 <i class="fa-solid fa-plus"></i>
                 Voeg nog een item toe
               </button>
-
-              <!-- Added Items Summary (at bottom) -->
-              <div id="items-summary" class="hidden">
-                <div class="flex flex-wrap gap-2">
-                  <!-- Filled items will appear here -->
-                </div>
-              </div>
 
               <!-- Submit -->
               <button type="button" id="review-btn" class="btn btn-primary w-full justify-center text-lg py-4">
@@ -307,16 +308,35 @@ import Footer from '../components/Footer.astro';
       'mini-gebak': 'Mini-gebak'
     };
 
-    // Product card selection
+    // Product card selection - toggles item in/out of summary
     productCards.forEach(card => {
       card.addEventListener('click', () => {
-        productCards.forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        currentProduct = card.getAttribute('data-product');
-        updateFeesttaartFields();
-        // Show item details and add button when product is selected
-        itemDetailsSection.classList.remove('hidden');
-        addItemBtn.classList.remove('hidden');
+        var product = card.getAttribute('data-product');
+        var existingIndex = addedItems.findIndex(function(item) { return item.product === product && !item._saved; });
+        
+        if (existingIndex !== -1) {
+          // Remove item if not yet saved (temporary)
+          addedItems.splice(existingIndex, 1);
+          card.classList.remove('selected');
+          currentProduct = null;
+          itemDetailsSection.classList.add('hidden');
+          addItemBtn.classList.add('hidden');
+        } else {
+          // Add new item with temp flag
+          var newItem = { product: product, _saved: false };
+          addedItems.push(newItem);
+          card.classList.add('selected');
+          currentProduct = product;
+          updateFeesttaartFields();
+          itemDetailsSection.classList.remove('hidden');
+          addItemBtn.classList.remove('hidden');
+        }
+        
+        renderItemsSummary();
+        
+        if (addedItems.some(function(item) { return item._saved; })) {
+          orderInfoSection.style.display = 'none';
+        }
       });
     });
 
@@ -338,37 +358,98 @@ import Footer from '../components/Footer.astro';
       dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
     }
 
-    // Add item button
+    // Add item button - save details to the selected product
     addItemBtn.addEventListener('click', () => {
-      // Collect current item data (not date - it's in order-info)
-      const itemData = {
+      if (!currentProduct) return;
+      
+      // Find unsaved item for current product
+      var unsavedIdx = addedItems.findIndex(function(item) { return item.product === currentProduct && !item._saved; });
+      
+      // Collect current item data
+      var itemData = {
         product: currentProduct,
         event: document.getElementById('event-select').value,
         persons: document.getElementById('persons-select').value,
         flavor: document.getElementById('flavor-select').value,
         allergies: document.getElementById('allergies-input').value,
-        message: document.getElementById('message-input').value
+        message: document.getElementById('message-input').value,
+        _saved: true
       };
 
-      // Add to list
-      addedItems.push(itemData);
-
-      // After first item, hide order info section
-      if (addedItems.length === 1) {
+      if (unsavedIdx !== -1) {
+        // Replace unsaved item with saved version
+        addedItems[unsavedIdx] = itemData;
+      } else if (editingIndex !== null) {
+        // Update existing saved item
+        addedItems[editingIndex] = itemData;
+        editingIndex = null;
+      } else {
+        // Add new saved item
+        addedItems.push(itemData);
+      }
+      
+      renderItemsSummary();
+      resetItemDetails();
+      
+      // Hide order info after first saved item
+      if (addedItems.some(function(item) { return item._saved; })) {
         orderInfoSection.style.display = 'none';
       }
-
-      // Show summary
-      itemsSummary.classList.remove('hidden');
-      const summaryContainer = itemsSummary.querySelector('.flex');
-      const badge = document.createElement('span');
-      badge.className = 'inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FDEEF0] text-[#E8788A] text-sm';
-      badge.innerHTML = `${productIcons[itemData.product]} 1x ${productNames[itemData.product]}`;
-      summaryContainer.appendChild(badge);
-
-      // Reset item details section only, keep order info and product cards
-      resetItemDetails();
     });
+
+    // Render all items in summary
+    function renderItemsSummary() {
+      const summaryList = document.getElementById('items-summary-list');
+      if (addedItems.length > 0) {
+        itemsSummary.classList.remove('hidden');
+      } else {
+        itemsSummary.classList.add('hidden');
+      }
+      summaryList.innerHTML = '';
+      for (var i = 0; i < addedItems.length; i++) {
+        var item = addedItems[i];
+        var div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 bg-white rounded-lg border border-[var(--color-border)]';
+        div.innerHTML = '<div class="flex items-center gap-3 flex-1"><span class="text-xl">' + productIcons[item.product] + '</span><div><div class="font-medium text-[var(--color-text)]">' + productNames[item.product] + '</div><div class="text-xs text-[var(--color-text-muted)]">' + (item.event || item.flavor || '') + '</div></div></div><div class="flex gap-2"><button type="button" class="edit-item-btn p-2 text-[#E8788A] hover:bg-[#FDEEF0] rounded-lg transition" data-index="' + i + '"><i class="fa-solid fa-pen"></i></button><button type="button" class="delete-item-btn p-2 text-red-400 hover:bg-red-50 rounded-lg transition" data-index="' + i + '"><i class="fa-solid fa-trash-can"></i></button></div>';
+        summaryList.appendChild(div);
+      }
+      // Add event listeners
+      summaryList.querySelectorAll('.edit-item-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          loadItemIntoForm(parseInt(this.getAttribute('data-index')));
+        });
+      });
+      summaryList.querySelectorAll('.delete-item-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var idx = parseInt(this.getAttribute('data-index'));
+          addedItems.splice(idx, 1);
+          renderItemsSummary();
+          if (addedItems.length === 0) {
+            itemsSummary.classList.add('hidden');
+            orderInfoSection.style.display = '';
+          }
+        });
+      });
+    }
+
+    // Load item into form for editing
+    function loadItemIntoForm(index) {
+      var item = addedItems[index];
+      if (!item) return;
+      editingIndex = index;
+      currentProduct = item.product;
+      productCards.forEach(function(c) { c.classList.remove('selected'); });
+      productSelection.querySelector('[data-product="' + item.product + '"]').classList.add('selected');
+      updateFeesttaartFields();
+      itemDetailsSection.classList.remove('hidden');
+      addItemBtn.innerHTML = '<i class="fa-solid fa-check"></i> Bewerking Opslaan';
+      addItemBtn.classList.remove('hidden');
+      document.getElementById('event-select').value = item.event || '';
+      document.getElementById('persons-select').value = item.persons || '';
+      document.getElementById('flavor-select').value = item.flavor || '';
+      document.getElementById('allergies-input').value = item.allergies || '';
+      document.getElementById('message-input').value = item.message || '';
+    }
 
     // Reset item details section (not order info or product cards)
     function resetItemDetails() {
@@ -389,8 +470,10 @@ import Footer from '../components/Footer.astro';
       document.getElementById('preview-image').classList.add('hidden');
       document.getElementById('upload-placeholder').classList.remove('hidden');
 
-      // Hide add button
+      // Reset button and editing state
+      addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
       addItemBtn.classList.add('hidden');
+      editingIndex = null;
     }
 
     // Image upload
