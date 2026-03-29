@@ -232,38 +232,24 @@ import Footer from '../components/Footer.astro';
               <div class="bg-[var(--color-surface)] rounded-xl p-6 mb-6">
                 <h4 class="font-semibold text-[var(--color-text)] mb-3 flex items-center gap-2">
                   <i class="fa-solid fa-user text-[#E8788A]"></i> Contactgegevens
-                  <button type="button" id="edit-contact-btn" class="ml-auto text-sm text-[#E8788A] hover:text-[#d4697a] flex items-center gap-1">
-                    <i class="fa-solid fa-pen"></i> Bewerken
-                  </button>
                 </h4>
-                <div id="review-contact-display" class="grid grid-cols-2 gap-4 text-sm">
-                  <div><span class="text-[var(--color-text-muted)]">Naam:</span> <span id="review-name" class="text-[var(--color-text)]"></span></div>
-                  <div><span class="text-[var(--color-text-muted)]">Email:</span> <span id="review-email" class="text-[var(--color-text)]"></span></div>
-                  <div><span class="text-[var(--color-text-muted)]">Telefoon:</span> <span id="review-phone" class="text-[var(--color-text)]"></span></div>
-                  <div><span class="text-[var(--color-text-muted)]">Datum:</span> <span id="review-date" class="text-[var(--color-text)]"></span></div>
-                </div>
-                <div id="review-contact-edit" class="hidden space-y-3">
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label class="text-xs text-[var(--color-text-muted)]">Naam</label>
-                      <input type="text" id="review-edit-name" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] text-sm" />
-                    </div>
-                    <div>
-                      <label class="text-xs text-[var(--color-text-muted)]">Email</label>
-                      <input type="email" id="review-edit-email" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] text-sm" />
-                    </div>
-                    <div>
-                      <label class="text-xs text-[var(--color-text-muted)]">Telefoon</label>
-                      <input type="tel" id="review-edit-phone" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] text-sm" />
-                    </div>
-                    <div>
-                      <label class="text-xs text-[var(--color-text-muted)]">Datum</label>
-                      <input type="date" id="review-edit-date" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] text-sm" />
-                    </div>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <label class="text-xs text-[var(--color-text-muted)]">Naam</label>
+                    <input type="text" id="review-name-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
                   </div>
-                  <button type="button" id="save-contact-btn" class="text-sm text-[#E8788A] hover:text-[#d4697a] flex items-center gap-1">
-                    <i class="fa-solid fa-check"></i> Opslaan
-                  </button>
+                  <div>
+                    <label class="text-xs text-[var(--color-text-muted)]">Email</label>
+                    <input type="email" id="review-email-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-[var(--color-text-muted)]">Telefoon</label>
+                    <input type="tel" id="review-phone-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-[var(--color-text-muted)]">Datum</label>
+                    <input type="date" id="review-date-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+                  </div>
                 </div>
               </div>
 
@@ -572,18 +558,10 @@ import Footer from '../components/Footer.astro';
         alert('Voeg alstublieft minimaal één item toe');
         return;
       }
-      document.getElementById('review-name').textContent = name;
-      document.getElementById('review-email').textContent = email;
-      document.getElementById('review-phone').textContent = phone;
-      document.getElementById('review-date').textContent = date;
-      // Also update the edit fields
-      document.getElementById('review-edit-name').value = name;
-      document.getElementById('review-edit-email').value = email;
-      document.getElementById('review-edit-phone').value = phone;
-      document.getElementById('review-edit-date').value = date;
-      // Reset to display mode
-      document.getElementById('review-contact-display').classList.remove('hidden');
-      document.getElementById('review-contact-edit').classList.add('hidden');
+      document.getElementById('review-name-input').value = name;
+      document.getElementById('review-email-input').value = email;
+      document.getElementById('review-phone-input').value = phone;
+      document.getElementById('review-date-input').value = date;
       var reviewItems = document.getElementById('review-items');
       var html = '';
       for (var i = 0; i < addedItems.length; i++) {
@@ -604,53 +582,22 @@ import Footer from '../components/Footer.astro';
     });
 
     backBtn.addEventListener('click', function() {
+      // Sync review inputs back to form fields before going back
+      document.querySelector('[name="name"]').value = document.getElementById('review-name-input').value;
+      document.querySelector('[name="email"]').value = document.getElementById('review-email-input').value;
+      document.querySelector('[name="phone"]').value = document.getElementById('review-phone-input').value;
+      document.getElementById('date-input').value = document.getElementById('review-date-input').value;
       reviewSection.classList.add('hidden');
       form.classList.remove('hidden');
     });
 
-    // Edit contact button in review section
-    const editContactBtn = document.getElementById('edit-contact-btn');
-    const saveContactBtn = document.getElementById('save-contact-btn');
-
-    editContactBtn.addEventListener('click', function() {
-      document.getElementById('review-contact-display').classList.add('hidden');
-      document.getElementById('review-contact-edit').classList.remove('hidden');
-      // Populate edit fields with current values
-      document.getElementById('review-edit-name').value = document.querySelector('[name="name"]').value;
-      document.getElementById('review-edit-email').value = document.querySelector('[name="email"]').value;
-      document.getElementById('review-edit-phone').value = document.querySelector('[name="phone"]').value;
-      document.getElementById('review-edit-date').value = document.getElementById('date-input').value;
-    });
-
-    saveContactBtn.addEventListener('click', function() {
-      var newName = document.getElementById('review-edit-name').value.trim();
-      var newEmail = document.getElementById('review-edit-email').value.trim();
-      var newPhone = document.getElementById('review-edit-phone').value.trim();
-      var newDate = document.getElementById('review-edit-date').value;
-
-      if (!newName || !newEmail || !newPhone || !newDate) {
-        alert('Vul alstublieft alle velden in');
-        return;
-      }
-
-      // Update form fields
-      document.querySelector('[name="name"]').value = newName;
-      document.querySelector('[name="email"]').value = newEmail;
-      document.querySelector('[name="phone"]').value = newPhone;
-      document.getElementById('date-input').value = newDate;
-
-      // Update display
-      document.getElementById('review-name').textContent = newName;
-      document.getElementById('review-email').textContent = newEmail;
-      document.getElementById('review-phone').textContent = newPhone;
-      document.getElementById('review-date').textContent = newDate;
-
-      // Switch back to display mode
-      document.getElementById('review-contact-display').classList.remove('hidden');
-      document.getElementById('review-contact-edit').classList.add('hidden');
-    });
-
     submitBtnFinal.addEventListener('click', function() {
+      // Sync review inputs to form fields before submission
+      document.querySelector('[name="name"]').value = document.getElementById('review-name-input').value;
+      document.querySelector('[name="email"]').value = document.getElementById('review-email-input').value;
+      document.querySelector('[name="phone"]').value = document.getElementById('review-phone-input').value;
+      document.getElementById('date-input').value = document.getElementById('review-date-input').value;
+
       var formData = new FormData(form);
       formData.append('items', JSON.stringify(addedItems));
       console.log('Order:', Object.fromEntries(formData));
