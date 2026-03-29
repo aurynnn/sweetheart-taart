@@ -321,36 +321,78 @@ import Footer from '../components/Footer.astro';
       'mini-gebak': 'Mini-gebak'
     };
 
-    // Product card selection - switches product in summary
+    // Product card selection - toggle product on/off
     productCards.forEach(card => {
       card.addEventListener('click', () => {
         var product = card.getAttribute('data-product');
+        var wasSelected = card.classList.contains('selected');
         
+        // Remove selection from all cards
         productCards.forEach(function(c) { c.classList.remove('selected'); });
+        
+        if (wasSelected) {
+          // Clicking same product again - deselect it
+          currentProduct = null;
+          itemDetailsSection.classList.add('hidden');
+          addItemBtn.classList.add('hidden');
+          editingIndex = null;
+          // Also remove from summary if exists
+          var existingIdx = addedItems.findIndex(i => i.product === product);
+          if (existingIdx !== -1) {
+            addedItems.splice(existingIdx, 1);
+            renderItemsSummary();
+            if (addedItems.length === 0) {
+              itemsSummary.classList.add('hidden');
+              orderInfoSection.style.display = '';
+              orderInfoFilled = false;
+            }
+          }
+          return;
+        }
+        
+        // Select this product
         card.classList.add('selected');
         currentProduct = product;
         updateFeesttaartFields();
         itemDetailsSection.classList.remove('hidden');
-        addItemBtn.classList.remove('hidden');
         editingIndex = null;
         
-        // If items exist, switch the first one to this product (not edit, just switch)
-        if (addedItems.length > 0) {
-          addedItems[0] = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
-          renderItemsSummary();
+        // Check if this product already exists in summary - can't add same twice
+        var alreadyInSummary = addedItems.some(i => i.product === product);
+        if (alreadyInSummary) {
+          addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Dit product is al gekozen';
+          addItemBtn.classList.remove('hidden');
         } else {
-          // First ever selection - add to summary but keep order-info visible
-          // (order-info will only be hidden after it's filled AND first item is added)
-          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
-          addedItems.push(itemData);
-          // Keep orderInfoSection visible for first product - will hide after order-info is filled
-          renderItemsSummary();
+          // If we have items and order-info not filled yet, just show add button
+          // If order-info is filled, add directly to summary
+          if (addedItems.length > 0 && orderInfoFilled) {
+            addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg toe als nieuw item';
+          } else {
+            addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg toe';
+          }
+          addItemBtn.classList.remove('hidden');
         }
         
-        // Always show "Voeg nog een item toe" when switching products
-        addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
+        // Update add button text based on state
+        updateAddButtonText();
       });
     });
+    
+    function updateAddButtonText() {
+      if (addedItems.length === 0 && !currentProduct) {
+        addItemBtn.innerHTML = 'Kies eerst iets lekkers';
+        addItemBtn.classList.add('hidden');
+      } else if (currentProduct && !addedItems.some(i => i.product === currentProduct)) {
+        addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg toe';
+        addItemBtn.classList.remove('hidden');
+      } else if (currentProduct && addedItems.some(i => i.product === currentProduct)) {
+        addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Dit product is al gekozen';
+        addItemBtn.classList.remove('hidden');
+      } else if (!currentProduct && addedItems.length > 0) {
+        addItemBtn.innerHTML = 'Selecteer een product';
+        addItemBtn.classList.remove('hidden');
+      }
+    }
 
     // Update feesttaart fields visibility
     function updateFeesttaartFields() {
@@ -373,6 +415,17 @@ import Footer from '../components/Footer.astro';
     // Add item button - adds current product as new item to summary
     addItemBtn.addEventListener('click', () => {
       if (!currentProduct) return;
+      
+      // Can't add same product twice - need to choose different product
+      if (addedItems.some(i => i.product === currentProduct)) {
+        // Product already in summary - just deselect and reset
+        productCards.forEach(c => c.classList.remove('selected'));
+        currentProduct = null;
+        itemDetailsSection.classList.add('hidden');
+        addItemBtn.classList.add('hidden');
+        editingIndex = null;
+        return;
+      }
       
       // Check if order-info is filled before allowing first item
       if (!orderInfoFilled) {
@@ -409,8 +462,14 @@ import Footer from '../components/Footer.astro';
         addedItems.push(itemData);
       }
       
+      // After adding, deselect product and reset
+      productCards.forEach(c => c.classList.remove('selected'));
+      currentProduct = null;
+      itemDetailsSection.classList.add('hidden');
+      
       renderItemsSummary();
       resetItemDetails();
+      updateAddButtonText();
     });
 
     // Render all items in summary
@@ -449,7 +508,7 @@ import Footer from '../components/Footer.astro';
           currentProduct = null;
           editingIndex = null;
           itemDetailsSection.classList.add('hidden');
-          addItemBtn.classList.add('hidden');
+          updateAddButtonText();
         });
       });
     }
@@ -555,7 +614,7 @@ import Footer from '../components/Footer.astro';
         return;
       }
       if (addedItems.length === 0) {
-        alert('Voeg alstublieft minimaal één item toe');
+        alert('Kies eerst iets lekkers');
         return;
       }
       document.getElementById('review-name-input').value = name;
