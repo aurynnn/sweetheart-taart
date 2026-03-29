@@ -285,6 +285,7 @@ import Footer from '../components/Footer.astro';
     const addedItems = [];
     let currentProduct = null;
     let editingIndex = null;
+    let orderInfoFilled = false; // Track if order-info has been filled with valid data
 
     // Elements
     const productSelection = document.getElementById('product-selection');
@@ -326,10 +327,11 @@ import Footer from '../components/Footer.astro';
           addedItems[0] = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
           renderItemsSummary();
         } else {
-          // First ever selection - add to summary
+          // First ever selection - add to summary but keep order-info visible
+          // (order-info will only be hidden after it's filled AND first item is added)
           var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
-          orderInfoSection.style.display = 'none';
+          // Keep orderInfoSection visible for first product - will hide after order-info is filled
           renderItemsSummary();
         }
         
@@ -360,6 +362,23 @@ import Footer from '../components/Footer.astro';
     addItemBtn.addEventListener('click', () => {
       if (!currentProduct) return;
       
+      // Check if order-info is filled before allowing first item
+      if (!orderInfoFilled) {
+        var name = document.querySelector('[name="name"]').value.trim();
+        var email = document.querySelector('[name="email"]').value.trim();
+        var phone = document.querySelector('[name="phone"]').value.trim();
+        var date = document.getElementById('date-input').value;
+        
+        if (!name || !email || !phone || !date) {
+          alert('Vul alstublieft alle contactgegevens (naam, email, telefoon en datum) in voordat u een item toevoegt.');
+          return;
+        }
+        
+        // Mark order-info as filled - from now on it stays hidden for new items
+        orderInfoFilled = true;
+        orderInfoSection.style.display = 'none';
+      }
+      
       var itemData = {
         product: currentProduct,
         event: document.getElementById('event-select').value,
@@ -374,9 +393,8 @@ import Footer from '../components/Footer.astro';
         addedItems[editingIndex] = itemData;
         editingIndex = null;
       } else {
-        // Always add as new item
+        // Add as new item
         addedItems.push(itemData);
-        orderInfoSection.style.display = 'none';
       }
       
       renderItemsSummary();
@@ -413,6 +431,7 @@ import Footer from '../components/Footer.astro';
           if (addedItems.length === 0) {
             itemsSummary.classList.add('hidden');
             orderInfoSection.style.display = '';
+            orderInfoFilled = false; // Reset so order-info shows for new first item
           }
           productCards.forEach(function(c) { c.classList.remove('selected'); });
           currentProduct = null;
