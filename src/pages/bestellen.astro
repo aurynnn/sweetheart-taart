@@ -308,35 +308,33 @@ import Footer from '../components/Footer.astro';
       'mini-gebak': 'Mini-gebak'
     };
 
-    // Product card selection - toggles item in/out of summary
+    // Product card selection - switches product in summary
     productCards.forEach(card => {
       card.addEventListener('click', () => {
         var product = card.getAttribute('data-product');
-        var existingIndex = addedItems.findIndex(function(item) { return item.product === product && !item._saved; });
         
-        if (existingIndex !== -1) {
-          // Remove item if not yet saved (temporary)
-          addedItems.splice(existingIndex, 1);
-          card.classList.remove('selected');
-          currentProduct = null;
-          itemDetailsSection.classList.add('hidden');
-          addItemBtn.classList.add('hidden');
+        productCards.forEach(function(c) { c.classList.remove('selected'); });
+        card.classList.add('selected');
+        currentProduct = product;
+        updateFeesttaartFields();
+        itemDetailsSection.classList.remove('hidden');
+        addItemBtn.classList.remove('hidden');
+        editingIndex = null;
+        
+        // If items exist, switch the first one to this product (not edit, just switch)
+        if (addedItems.length > 0) {
+          addedItems[0] = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+          renderItemsSummary();
         } else {
-          // Add new item with temp flag
-          var newItem = { product: product, _saved: false };
-          addedItems.push(newItem);
-          card.classList.add('selected');
-          currentProduct = product;
-          updateFeesttaartFields();
-          itemDetailsSection.classList.remove('hidden');
-          addItemBtn.classList.remove('hidden');
-        }
-        
-        renderItemsSummary();
-        
-        if (addedItems.some(function(item) { return item._saved; })) {
+          // First ever selection - add to summary
+          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+          addedItems.push(itemData);
           orderInfoSection.style.display = 'none';
+          renderItemsSummary();
         }
+        
+        // Always show "Voeg nog een item toe" when switching products
+        addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
       });
     });
 
@@ -358,43 +356,31 @@ import Footer from '../components/Footer.astro';
       dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
     }
 
-    // Add item button - save details to the selected product
+    // Add item button - adds current product as new item to summary
     addItemBtn.addEventListener('click', () => {
       if (!currentProduct) return;
       
-      // Find unsaved item for current product
-      var unsavedIdx = addedItems.findIndex(function(item) { return item.product === currentProduct && !item._saved; });
-      
-      // Collect current item data
       var itemData = {
         product: currentProduct,
         event: document.getElementById('event-select').value,
         persons: document.getElementById('persons-select').value,
         flavor: document.getElementById('flavor-select').value,
         allergies: document.getElementById('allergies-input').value,
-        message: document.getElementById('message-input').value,
-        _saved: true
+        message: document.getElementById('message-input').value
       };
-
-      if (unsavedIdx !== -1) {
-        // Replace unsaved item with saved version
-        addedItems[unsavedIdx] = itemData;
-      } else if (editingIndex !== null) {
-        // Update existing saved item
+      
+      if (editingIndex !== null) {
+        // Update existing item (when editing via summary)
         addedItems[editingIndex] = itemData;
         editingIndex = null;
       } else {
-        // Add new saved item
+        // Always add as new item
         addedItems.push(itemData);
+        orderInfoSection.style.display = 'none';
       }
       
       renderItemsSummary();
       resetItemDetails();
-      
-      // Hide order info after first saved item
-      if (addedItems.some(function(item) { return item._saved; })) {
-        orderInfoSection.style.display = 'none';
-      }
     });
 
     // Render all items in summary
@@ -428,6 +414,11 @@ import Footer from '../components/Footer.astro';
             itemsSummary.classList.add('hidden');
             orderInfoSection.style.display = '';
           }
+          productCards.forEach(function(c) { c.classList.remove('selected'); });
+          currentProduct = null;
+          editingIndex = null;
+          itemDetailsSection.classList.add('hidden');
+          addItemBtn.classList.add('hidden');
         });
       });
     }
