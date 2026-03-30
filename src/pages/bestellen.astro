@@ -346,19 +346,22 @@ import Footer from '../components/Footer.astro';
           renderItemsSummary();
           readyToAddNewItem = false;
           orderInfoSection.style.display = 'none';
+          // Show button for adding more items
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
         } else {
-          // Add/update first item in summary immediately so user sees it
+          // Add item to summary immediately - product click = item added
           if (addedItems.length === 0) {
             var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
             addedItems.push(itemData);
+            renderItemsSummary();
+            orderInfoSection.style.display = '';
+            // After first item, show "add more" button
+            addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
+            addItemBtn.classList.remove('hidden');
           } else {
-            addedItems[0].product = product;
+            // Switching product on first item - not allowed once first is added
+            return;
           }
-          renderItemsSummary();
-          orderInfoSection.style.display = '';
-          addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg toe';
-          addItemBtn.classList.remove('hidden');
         }
       });
     });
@@ -381,9 +384,9 @@ import Footer from '../components/Footer.astro';
       dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
     }
 
-    // Add item button - confirms item details (item already in summary from product click)
+    // Add item button - only for adding extra items (first item added on product click)
     addItemBtn.addEventListener('click', () => {
-      // If editing an existing item, save the edits
+      // If editing an existing item, save the edits first
       if (editingIndex !== null) {
         addedItems[editingIndex] = {
           product: currentProduct,
@@ -394,22 +397,14 @@ import Footer from '../components/Footer.astro';
           message: document.getElementById('message-input').value
         };
         editingIndex = null;
+        renderItemsSummary();
         productCards.forEach(c => c.classList.remove('selected'));
         currentProduct = null;
         itemDetailsSection.classList.add('hidden');
-        renderItemsSummary();
         resetItemDetails();
-        addItemBtn.innerHTML = 'Kies eerst iets lekkers';
-        addItemBtn.classList.add('hidden');
-        return;
       }
       
-      // Must have a product selected
-      if (!currentProduct) {
-        return;
-      }
-      
-      // Check if order-info is filled before allowing first item
+      // Check if order-info is filled before allowing more items
       if (!orderInfoFilled) {
         var name = document.querySelector('[name="name"]').value.trim();
         var email = document.querySelector('[name="email"]').value.trim();
@@ -420,23 +415,9 @@ import Footer from '../components/Footer.astro';
           alert('Vul alstublieft alle contactgegevens (naam, email, telefoon en datum) in voordat u een item toevoegt.');
           return;
         }
-        
-        // Mark order-info as filled
         orderInfoFilled = true;
         orderInfoSection.style.display = 'none';
       }
-      
-      // Update the latest item with current details (it's already in summary from product click)
-      var updateIdx = addedItems.length - 1;
-      addedItems[updateIdx] = {
-        product: currentProduct,
-        event: document.getElementById('event-select').value,
-        persons: document.getElementById('persons-select').value,
-        flavor: document.getElementById('flavor-select').value,
-        allergies: document.getElementById('allergies-input').value,
-        message: document.getElementById('message-input').value
-      };
-      renderItemsSummary();
       
       // Enter "ready to add new item" mode
       readyToAddNewItem = true;
@@ -600,6 +581,9 @@ import Footer from '../components/Footer.astro';
         alert('Kies eerst iets lekkers');
         return;
       }
+      // Mark order-info as filled
+      orderInfoFilled = true;
+      orderInfoSection.style.display = 'none';
       document.getElementById('review-name-input').value = name;
       document.getElementById('review-email-input').value = email;
       document.getElementById('review-phone-input').value = phone;
