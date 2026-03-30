@@ -322,10 +322,15 @@ import Footer from '../components/Footer.astro';
       'mini-gebak': 'Mini-gebak'
     };
 
-    // Product card selection - just selects product, doesn't add to summary yet
+    // Product card selection - just selects product, shows details, doesn't add to summary yet
     productCards.forEach(card => {
       card.addEventListener('click', () => {
         var product = card.getAttribute('data-product');
+        
+        // Can't select same product that's already in summary (unless adding new item)
+        if (!readyToAddNewItem && addedItems.some(i => i.product === product)) {
+          return;
+        }
         
         productCards.forEach(function(c) { c.classList.remove('selected'); });
         card.classList.add('selected');
@@ -334,28 +339,20 @@ import Footer from '../components/Footer.astro';
         itemDetailsSection.classList.remove('hidden');
         editingIndex = null;
         
-        // If ready to add new item (after clicking "Voeg nog een item toe"), add as new
+        // If ready to add new item (after clicking "Voeg nog een item toe"), add as new item
         if (readyToAddNewItem) {
           var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
           renderItemsSummary();
           readyToAddNewItem = false;
-          // Hide order-info after first item
           orderInfoSection.style.display = 'none';
-        } else if (addedItems.length === 0) {
-          // If no items yet, create first item in summary immediately
-          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
-          addedItems.push(itemData);
-          renderItemsSummary();
-          orderInfoSection.style.display = ''; // keep visible for first item
+          addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
         } else {
-          // Update the first item's product to this selection
-          addedItems[0].product = product;
-          renderItemsSummary();
+          // No items yet - just show product selection, don't add to summary yet
+          // The "Voeg nog een item toe" button will add it
+          addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg toe';
+          addItemBtn.classList.remove('hidden');
         }
-        
-        addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
-        addItemBtn.classList.remove('hidden');
       });
     });
 
@@ -377,7 +374,7 @@ import Footer from '../components/Footer.astro';
       dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
     }
 
-    // Add item button - handles both editing existing item and preparing for new item
+    // Add item button - adds current product to summary
     addItemBtn.addEventListener('click', () => {
       // If editing an existing item, save the edits
       if (editingIndex !== null) {
@@ -400,7 +397,12 @@ import Footer from '../components/Footer.astro';
         return;
       }
       
-      // Check if order-info is filled before allowing more items
+      // Must have a product selected
+      if (!currentProduct) {
+        return;
+      }
+      
+      // Check if order-info is filled before allowing first item
       if (!orderInfoFilled) {
         var name = document.querySelector('[name="name"]').value.trim();
         var email = document.querySelector('[name="email"]').value.trim();
@@ -412,23 +414,22 @@ import Footer from '../components/Footer.astro';
           return;
         }
         
-        // Mark order-info as filled - from now on it stays hidden
+        // Mark order-info as filled
         orderInfoFilled = true;
         orderInfoSection.style.display = 'none';
       }
       
-      // Update the first item with current details
-      if (addedItems.length > 0) {
-        addedItems[0] = {
-          product: addedItems[0].product,
-          event: document.getElementById('event-select').value,
-          persons: document.getElementById('persons-select').value,
-          flavor: document.getElementById('flavor-select').value,
-          allergies: document.getElementById('allergies-input').value,
-          message: document.getElementById('message-input').value
-        };
-        renderItemsSummary();
-      }
+      // Add current product to summary with current details
+      var itemData = {
+        product: currentProduct,
+        event: document.getElementById('event-select').value,
+        persons: document.getElementById('persons-select').value,
+        flavor: document.getElementById('flavor-select').value,
+        allergies: document.getElementById('allergies-input').value,
+        message: document.getElementById('message-input').value
+      };
+      addedItems.push(itemData);
+      renderItemsSummary();
       
       // Enter "ready to add new item" mode
       readyToAddNewItem = true;
@@ -471,6 +472,7 @@ import Footer from '../components/Footer.astro';
             itemsSummary.classList.add('hidden');
             orderInfoSection.style.display = '';
             orderInfoFilled = false;
+            readyToAddNewItem = false;
           }
           productCards.forEach(function(c) { c.classList.remove('selected'); });
           currentProduct = null;
