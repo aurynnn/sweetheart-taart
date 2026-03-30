@@ -344,7 +344,7 @@ import Footer from '../components/Footer.astro';
           var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
           renderItemsSummary();
-          readyToAddNewItem = false;
+          // Keep readyToAddNewItem true so user can keep adding more items
           orderInfoSection.style.display = 'none';
           // Show button for adding more items
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
