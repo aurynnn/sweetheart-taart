@@ -405,16 +405,17 @@ import Footer from '../components/Footer.astro';
       }
       
       // Check if order-info is filled before allowing more items
+      var name = document.querySelector('[name="name"]').value.trim();
+      var email = document.querySelector('[name="email"]').value.trim();
+      var phone = document.querySelector('[name="phone"]').value.trim();
+      var date = document.getElementById('date-input').value;
+      
+      if (!name || !email || !phone || !date) {
+        alert('Vul alstublieft alle contactgegevens (naam, email, telefoon en datum) in voordat u een item toevoegt.');
+        return;
+      }
+      
       if (!orderInfoFilled) {
-        var name = document.querySelector('[name="name"]').value.trim();
-        var email = document.querySelector('[name="email"]').value.trim();
-        var phone = document.querySelector('[name="phone"]').value.trim();
-        var date = document.getElementById('date-input').value;
-        
-        if (!name || !email || !phone || !date) {
-          alert('Vul alstublieft alle contactgegevens (naam, email, telefoon en datum) in voordat u een item toevoegt.');
-          return;
-        }
         orderInfoFilled = true;
         orderInfoSection.style.display = 'none';
       }
