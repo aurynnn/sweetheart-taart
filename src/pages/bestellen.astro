@@ -322,12 +322,12 @@ import Footer from '../components/Footer.astro';
       'mini-gebak': 'Mini-gebak'
     };
 
-    // Product card selection - just selects product, shows details, doesn't add to summary yet
+    // Product card selection - selects product and adds it to summary immediately
     productCards.forEach(card => {
       card.addEventListener('click', () => {
         var product = card.getAttribute('data-product');
         
-        // Can't select same product that's already in summary (unless adding new item)
+        // Can't add same product twice (unless we're updating an existing selection)
         if (!readyToAddNewItem && addedItems.some(i => i.product === product)) {
           return;
         }
@@ -339,7 +339,7 @@ import Footer from '../components/Footer.astro';
         itemDetailsSection.classList.remove('hidden');
         editingIndex = null;
         
-        // If ready to add new item (after clicking "Voeg nog een item toe"), add as new item
+        // If ready to add new item (after clicking "Voeg nog een item toe"), add as new item to summary
         if (readyToAddNewItem) {
           var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
@@ -348,8 +348,15 @@ import Footer from '../components/Footer.astro';
           orderInfoSection.style.display = 'none';
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
         } else {
-          // No items yet - just show product selection, don't add to summary yet
-          // The "Voeg nog een item toe" button will add it
+          // Add/update first item in summary immediately so user sees it
+          if (addedItems.length === 0) {
+            var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+            addedItems.push(itemData);
+          } else {
+            addedItems[0].product = product;
+          }
+          renderItemsSummary();
+          orderInfoSection.style.display = '';
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg toe';
           addItemBtn.classList.remove('hidden');
         }
@@ -374,7 +381,7 @@ import Footer from '../components/Footer.astro';
       dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
     }
 
-    // Add item button - adds current product to summary
+    // Add item button - confirms item details (item already in summary from product click)
     addItemBtn.addEventListener('click', () => {
       // If editing an existing item, save the edits
       if (editingIndex !== null) {
@@ -419,8 +426,9 @@ import Footer from '../components/Footer.astro';
         orderInfoSection.style.display = 'none';
       }
       
-      // Add current product to summary with current details
-      var itemData = {
+      // Update the latest item with current details (it's already in summary from product click)
+      var updateIdx = addedItems.length - 1;
+      addedItems[updateIdx] = {
         product: currentProduct,
         event: document.getElementById('event-select').value,
         persons: document.getElementById('persons-select').value,
@@ -428,7 +436,6 @@ import Footer from '../components/Footer.astro';
         allergies: document.getElementById('allergies-input').value,
         message: document.getElementById('message-input').value
       };
-      addedItems.push(itemData);
       renderItemsSummary();
       
       // Enter "ready to add new item" mode
