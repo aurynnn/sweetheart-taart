@@ -327,8 +327,8 @@ import Footer from '../components/Footer.astro';
       card.addEventListener('click', () => {
         var product = card.getAttribute('data-product');
         
-        // Can't add same product twice (unless we're updating an existing selection)
-        if (!readyToAddNewItem && addedItems.some(i => i.product === product)) {
+        // Can't add same product twice in "add new item" mode
+        if (readyToAddNewItem && addedItems.some(i => i.product === product)) {
           return;
         }
         
@@ -349,19 +349,19 @@ import Footer from '../components/Footer.astro';
           // Show button for adding more items
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
         } else {
-          // Add item to summary immediately - product click = item added
+          // Instantly switch/update the first item with this product
           if (addedItems.length === 0) {
             var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
             addedItems.push(itemData);
-            renderItemsSummary();
             orderInfoSection.style.display = '';
             // After first item, show "add more" button
             addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
             addItemBtn.classList.remove('hidden');
           } else {
-            // Switching product on first item - not allowed once first is added
-            return;
+            // Update first item's product instantly
+            addedItems[0].product = product;
           }
+          renderItemsSummary();
         }
       });
     });
