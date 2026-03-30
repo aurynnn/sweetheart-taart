@@ -346,8 +346,9 @@ import Footer from '../components/Footer.astro';
           renderItemsSummary();
           // Keep readyToAddNewItem true so user can keep adding more items
           orderInfoSection.style.display = 'none';
-          // Show button for adding more items
+          // Keep button visible for adding more items
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
+          addItemBtn.classList.remove('hidden');
         } else {
           // Instantly switch/update the first item with this product
           if (addedItems.length === 0) {
