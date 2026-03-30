@@ -332,6 +332,15 @@ import Footer from '../components/Footer.astro';
           return;
         }
         
+        // If adding new item mode, add on product click. Otherwise only first item adds on click.
+        if (!readyToAddNewItem && addedItems.length > 0) {
+          // Not in add mode and we already have items - just show details but don't add
+          updateFeesttaartFields();
+          itemDetailsSection.classList.remove('hidden');
+          editingIndex = null;
+          return;
+        }
+        
         productCards.forEach(function(c) { c.classList.remove('selected'); });
         card.classList.add('selected');
         currentProduct = product;
@@ -344,9 +353,10 @@ import Footer from '../components/Footer.astro';
           var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
           renderItemsSummary();
-          // Keep readyToAddNewItem true so user can keep adding more items
+          // Reset - must click button again for next item
+          readyToAddNewItem = false;
           orderInfoSection.style.display = 'none';
-          // Keep button visible for adding more items
+          // Keep button visible for next item
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
           addItemBtn.classList.remove('hidden');
         } else {
