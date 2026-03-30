@@ -405,15 +405,37 @@ import Footer from '../components/Footer.astro';
       }
       
       // Check if order-info is filled before allowing more items
-      var name = document.querySelector('[name="name"]').value.trim();
-      var email = document.querySelector('[name="email"]').value.trim();
-      var phone = document.querySelector('[name="phone"]').value.trim();
-      var date = document.getElementById('date-input').value;
+      var nameInput = document.querySelector('[name="name"]');
+      var emailInput = document.querySelector('[name="email"]');
+      var phoneInput = document.querySelector('[name="phone"]');
+      var dateInput = document.getElementById('date-input');
       
-      if (!name || !email || !phone || !date) {
-        alert('Vul alstublieft alle contactgegevens (naam, email, telefoon en datum) in voordat u een item toevoegt.');
+      var name = nameInput.value.trim();
+      var email = emailInput.value.trim();
+      var phone = phoneInput.value.trim();
+      var date = dateInput.value;
+      
+      var emptyFields = [];
+      if (!name) emptyFields.push(nameInput);
+      if (!email) emptyFields.push(emailInput);
+      if (!phone) emptyFields.push(phoneInput);
+      if (!date) emptyFields.push(dateInput);
+      
+      if (emptyFields.length > 0) {
+        // Remove any existing error styling
+        document.querySelectorAll('.order-info-error').forEach(el => el.classList.remove('order-info-error'));
+        // Show order-info section if hidden
+        orderInfoSection.style.display = '';
+        orderInfoFilled = false;
+        // Scroll to and highlight first empty field
+        emptyFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        emptyFields[0].classList.add('order-info-error');
+        emptyFields[0].focus();
         return;
       }
+      
+      // Remove error styling
+      document.querySelectorAll('.order-info-error').forEach(el => el.classList.remove('order-info-error'));
       
       if (!orderInfoFilled) {
         orderInfoFilled = true;
@@ -726,6 +748,11 @@ import Footer from '../components/Footer.astro';
 
     .btn-secondary:hover {
       background: var(--color-secondary);
+    }
+
+    .order-info-error {
+      border-color: #e53e3e !important;
+      box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.2);
     }
   </style>
 </Layout>
