@@ -298,6 +298,7 @@ import Footer from '../components/Footer.astro';
     let currentProduct = null;
     let editingIndex = null;
     let orderInfoFilled = false; // Track if order-info has been filled with valid data
+    let readyToAddNewItem = false; // Track if we're in "add new item" mode
 
     // Elements
     const productSelection = document.getElementById('product-selection');
@@ -321,15 +322,10 @@ import Footer from '../components/Footer.astro';
       'mini-gebak': 'Mini-gebak'
     };
 
-    // Product card selection - adds product to summary immediately
+    // Product card selection - just selects product, doesn't add to summary yet
     productCards.forEach(card => {
       card.addEventListener('click', () => {
         var product = card.getAttribute('data-product');
-        
-        // Can't add same product twice
-        if (addedItems.some(i => i.product === product)) {
-          return;
-        }
         
         productCards.forEach(function(c) { c.classList.remove('selected'); });
         card.classList.add('selected');
@@ -338,16 +334,24 @@ import Footer from '../components/Footer.astro';
         itemDetailsSection.classList.remove('hidden');
         editingIndex = null;
         
-        // Add to summary immediately (first item added on product select)
-        var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
-        addedItems.push(itemData);
-        renderItemsSummary();
-        
-        // Keep order-info visible if first item, otherwise it stays hidden
-        if (addedItems.length === 1) {
-          // First item - keep order-info visible until they add it
-        } else {
+        // If ready to add new item (after clicking "Voeg nog een item toe"), add as new
+        if (readyToAddNewItem) {
+          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+          addedItems.push(itemData);
+          renderItemsSummary();
+          readyToAddNewItem = false;
+          // Hide order-info after first item
           orderInfoSection.style.display = 'none';
+        } else if (addedItems.length === 0) {
+          // If no items yet, create first item in summary immediately
+          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+          addedItems.push(itemData);
+          renderItemsSummary();
+          orderInfoSection.style.display = ''; // keep visible for first item
+        } else {
+          // Update the first item's product to this selection
+          addedItems[0].product = product;
+          renderItemsSummary();
         }
         
         addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
@@ -413,7 +417,7 @@ import Footer from '../components/Footer.astro';
         orderInfoSection.style.display = 'none';
       }
       
-      // Update the first item with current details if exists
+      // Update the first item with current details
       if (addedItems.length > 0) {
         addedItems[0] = {
           product: addedItems[0].product,
@@ -426,12 +430,12 @@ import Footer from '../components/Footer.astro';
         renderItemsSummary();
       }
       
-      // Just reset form for new product selection - adding happens on product click
+      // Enter "ready to add new item" mode
+      readyToAddNewItem = true;
       productCards.forEach(c => c.classList.remove('selected'));
       currentProduct = null;
       itemDetailsSection.classList.add('hidden');
       addItemBtn.innerHTML = 'Selecteer een product';
-      addItemBtn.classList.remove('hidden');
       
       resetItemDetails();
     });
