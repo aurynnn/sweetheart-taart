@@ -350,12 +350,17 @@ import Footer from '../components/Footer.astro';
           return;
         }
         
-        // Not in add mode - only first item adds on click
+        // Not in add mode - can switch product on existing item
         if (addedItems.length > 0) {
-          // Just show details but don't add
+          // Update the first item's product to this selection
+          addedItems[0].product = product;
+          productCards.forEach(function(c) { c.classList.remove('selected'); });
+          card.classList.add('selected');
+          currentProduct = product;
           updateFeesttaartFields();
           itemDetailsSection.classList.remove('hidden');
           editingIndex = null;
+          renderItemsSummary();
           return;
         }
         
