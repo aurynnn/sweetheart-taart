@@ -332,7 +332,7 @@ import Footer from '../components/Footer.astro';
           return;
         }
         
-        // If in "ready to add" mode, clicking a product just updates the pending item
+        // If in "ready to add" mode, clicking a product adds it as a new item
         if (readyToAddNewItem) {
           productCards.forEach(function(c) { c.classList.remove('selected'); });
           card.classList.add('selected');
@@ -340,13 +340,14 @@ import Footer from '../components/Footer.astro';
           updateFeesttaartFields();
           itemDetailsSection.classList.remove('hidden');
           editingIndex = null;
-          // Update the last item (pending) with this product
-          if (addedItems.length > 0) {
-            addedItems[addedItems.length - 1].product = product;
-            renderItemsSummary();
-          }
-          // Change button to finalize
-          addItemBtn.innerHTML = '<i class="fa-solid fa-check"></i> Voeg toe';
+          // Add as new item to summary
+          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+          addedItems.push(itemData);
+          renderItemsSummary();
+          // Reset for next round - must click button again
+          readyToAddNewItem = false;
+          orderInfoSection.style.display = 'none';
+          addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
           return;
         }
         
@@ -461,10 +462,10 @@ import Footer from '../components/Footer.astro';
         orderInfoSection.style.display = 'none';
       }
       
-      // If button says "Voeg toe" (pending item exists), just finalize and reset for next
+      // If button says "Voeg toe" (already added), just reset for next round
       if (addItemBtn.innerHTML.includes('Voeg toe') && !addItemBtn.innerHTML.includes('nog een')) {
-        // Item already in summary - just reset for next round
-        readyToAddNewItem = false; // Reset to false so next product click adds normally
+        // Item already added - just reset for next round
+        readyToAddNewItem = false;
         productCards.forEach(c => c.classList.remove('selected'));
         currentProduct = null;
         itemDetailsSection.classList.add('hidden');
