@@ -348,6 +348,7 @@ import Footer from '../components/Footer.astro';
           readyToAddNewItem = false;
           orderInfoSection.style.display = 'none';
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
+          addItemBtn.classList.remove('hidden');
           return;
         }
         
