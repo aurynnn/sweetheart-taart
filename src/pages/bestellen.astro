@@ -367,11 +367,41 @@ import Footer from '../components/Footer.astro';
         updateFeesttaartFields();
         itemDetailsSection.classList.remove('hidden');
         editingIndex = null;
-        // First item - add to summary immediately
+        
+        // First item - validate order-info before adding
         if (addedItems.length === 0) {
+          var nameInput = document.querySelector('[name="name"]');
+          var emailInput = document.querySelector('[name="email"]');
+          var phoneInput = document.querySelector('[name="phone"]');
+          var dateInput = document.getElementById('date-input');
+          
+          var name = nameInput.value.trim();
+          var email = emailInput.value.trim();
+          var phone = phoneInput.value.trim();
+          var date = dateInput.value;
+          
+          var emptyFields = [];
+          if (!name) emptyFields.push(nameInput);
+          if (!email) emptyFields.push(emailInput);
+          if (!phone) emptyFields.push(phoneInput);
+          if (!date) emptyFields.push(dateInput);
+          
+          if (emptyFields.length > 0) {
+            document.querySelectorAll('.order-info-error').forEach(el => el.classList.remove('order-info-error'));
+            orderInfoSection.style.display = '';
+            orderInfoFilled = false;
+            emptyFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            emptyFields[0].classList.add('order-info-error');
+            emptyFields[0].focus();
+            return;
+          }
+          
+          document.querySelectorAll('.order-info-error').forEach(el => el.classList.remove('order-info-error'));
+          orderInfoFilled = true;
+          orderInfoSection.style.display = 'none';
+          
           var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
-          orderInfoSection.style.display = '';
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
           addItemBtn.classList.remove('hidden');
         } else {
