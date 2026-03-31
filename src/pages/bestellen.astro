@@ -327,11 +327,6 @@ import Footer from '../components/Footer.astro';
       card.addEventListener('click', () => {
         var product = card.getAttribute('data-product');
         
-        // Can't add same product twice in "add new item" mode
-        if (readyToAddNewItem && addedItems.some(i => i.product === product)) {
-          return;
-        }
-        
         // If in "ready to add" mode, clicking a product adds it as a new item
         if (readyToAddNewItem) {
           productCards.forEach(function(c) { c.classList.remove('selected'); });
