@@ -364,20 +364,18 @@ import Footer from '../components/Footer.astro';
         updateFeesttaartFields();
         itemDetailsSection.classList.remove('hidden');
         editingIndex = null;
-          // Instantly switch/update the first item with this product
-          if (addedItems.length === 0) {
-            var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
-            addedItems.push(itemData);
-            orderInfoSection.style.display = '';
-            // After first item, show "add more" button
-            addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
-            addItemBtn.classList.remove('hidden');
-          } else {
-            // Update first item's product instantly
-            addedItems[0].product = product;
-          }
-          renderItemsSummary();
+        // First item - add to summary immediately
+        if (addedItems.length === 0) {
+          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+          addedItems.push(itemData);
+          orderInfoSection.style.display = '';
+          addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
+          addItemBtn.classList.remove('hidden');
+        } else {
+          // Update first item's product instantly
+          addedItems[0].product = product;
         }
+        renderItemsSummary();
       });
     });
 
