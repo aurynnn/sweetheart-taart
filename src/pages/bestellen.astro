@@ -332,9 +332,26 @@ import Footer from '../components/Footer.astro';
           return;
         }
         
-        // If adding new item mode, add on product click. Otherwise only first item adds on click.
-        if (!readyToAddNewItem && addedItems.length > 0) {
-          // Not in add mode and we already have items - just show details but don't add
+        // If adding new item mode, clicking a product creates a placeholder
+        if (readyToAddNewItem) {
+          productCards.forEach(function(c) { c.classList.remove('selected'); });
+          card.classList.add('selected');
+          currentProduct = product;
+          updateFeesttaartFields();
+          itemDetailsSection.classList.remove('hidden');
+          editingIndex = null;
+          // Create placeholder item in summary (not yet finalized)
+          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+          addedItems.push(itemData);
+          renderItemsSummary();
+          // Button now says "Voeg toe" to finalize
+          addItemBtn.innerHTML = '<i class="fa-solid fa-check"></i> Voeg toe';
+          return;
+        }
+        
+        // Not in add mode - only first item adds on click
+        if (addedItems.length > 0) {
+          // Just show details but don't add
           updateFeesttaartFields();
           itemDetailsSection.classList.remove('hidden');
           editingIndex = null;
@@ -347,19 +364,6 @@ import Footer from '../components/Footer.astro';
         updateFeesttaartFields();
         itemDetailsSection.classList.remove('hidden');
         editingIndex = null;
-        
-        // If ready to add new item (after clicking "Voeg nog een item toe"), add as new item to summary
-        if (readyToAddNewItem) {
-          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
-          addedItems.push(itemData);
-          renderItemsSummary();
-          // Reset - must click button again for next item
-          readyToAddNewItem = false;
-          orderInfoSection.style.display = 'none';
-          // Keep button visible for next item
-          addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
-          addItemBtn.classList.remove('hidden');
-        } else {
           // Instantly switch/update the first item with this product
           if (addedItems.length === 0) {
             var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
@@ -451,6 +455,18 @@ import Footer from '../components/Footer.astro';
       if (!orderInfoFilled) {
         orderInfoFilled = true;
         orderInfoSection.style.display = 'none';
+      }
+      
+      // If button says "Voeg toe" (pending item exists), just finalize and reset for next
+      if (addItemBtn.innerHTML.includes('Voeg toe') && !addItemBtn.innerHTML.includes('nog een')) {
+        // Item already added in summary - just reset for next round
+        readyToAddNewItem = true;
+        productCards.forEach(c => c.classList.remove('selected'));
+        currentProduct = null;
+        itemDetailsSection.classList.add('hidden');
+        addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
+        resetItemDetails();
+        return;
       }
       
       // Enter "ready to add new item" mode
