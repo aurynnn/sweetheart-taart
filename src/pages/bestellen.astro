@@ -332,7 +332,7 @@ import Footer from '../components/Footer.astro';
           return;
         }
         
-        // If adding new item mode, clicking a product creates a placeholder
+        // If in "ready to add" mode, clicking a product just updates the pending item
         if (readyToAddNewItem) {
           productCards.forEach(function(c) { c.classList.remove('selected'); });
           card.classList.add('selected');
@@ -340,11 +340,12 @@ import Footer from '../components/Footer.astro';
           updateFeesttaartFields();
           itemDetailsSection.classList.remove('hidden');
           editingIndex = null;
-          // Create placeholder item in summary (not yet finalized)
-          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
-          addedItems.push(itemData);
-          renderItemsSummary();
-          // Button now says "Voeg toe" to finalize
+          // Update the last item (pending) with this product
+          if (addedItems.length > 0) {
+            addedItems[addedItems.length - 1].product = product;
+            renderItemsSummary();
+          }
+          // Change button to finalize
           addItemBtn.innerHTML = '<i class="fa-solid fa-check"></i> Voeg toe';
           return;
         }
@@ -457,8 +458,8 @@ import Footer from '../components/Footer.astro';
       
       // If button says "Voeg toe" (pending item exists), just finalize and reset for next
       if (addItemBtn.innerHTML.includes('Voeg toe') && !addItemBtn.innerHTML.includes('nog een')) {
-        // Item already added in summary - just reset for next round
-        readyToAddNewItem = true;
+        // Item already in summary - just reset for next round
+        readyToAddNewItem = false; // Reset to false so next product click adds normally
         productCards.forEach(c => c.classList.remove('selected'));
         currentProduct = null;
         itemDetailsSection.classList.add('hidden');
