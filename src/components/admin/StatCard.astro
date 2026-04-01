@@ -1,0 +1,125 @@
+---
+interface Props {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon?: string;
+  trend?: {
+    value: number;
+    positive: boolean;
+  };
+  color?: 'pink' | 'blue' | 'green' | 'orange';
+}
+
+const { 
+  title, 
+  value, 
+  subtitle, 
+  icon,
+  trend,
+  color = 'pink'
+} = Astro.props;
+
+const colorClasses = {
+  pink: 'bg-pink-50 text-pink-600',
+  blue: 'bg-blue-50 text-blue-600',
+  green: 'bg-green-50 text-green-600',
+  orange: 'bg-orange-50 text-orange-600'
+};
+---
+
+<div class="stat-card">
+  <div class="stat-header">
+    {icon && (
+      <div class={`stat-icon ${colorClasses[color]}`}>
+        <Fragment set:html={icon} />
+      </div>
+    )}
+    <span class="stat-title">{title}</span>
+  </div>
+  
+  <div class="stat-value">{value}</div>
+  
+  {(subtitle || trend) && (
+    <div class="stat-footer">
+      {subtitle && <span class="stat-subtitle">{subtitle}</span>}
+      {trend && (
+        <span class={`stat-trend ${trend.positive ? 'positive' : 'negative'}`}>
+          {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
+        </span>
+      )}
+    </div>
+  )}
+</div>
+
+<style>
+.stat-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.stat-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon :global(svg) {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.stat-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stat-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stat-subtitle {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.stat-trend {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.stat-trend.positive {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.stat-trend.negative {
+  background: #fee2e2;
+  color: #dc2626;
+}
+</style>

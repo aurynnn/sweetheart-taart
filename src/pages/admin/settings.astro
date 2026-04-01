@@ -1,0 +1,420 @@
+---
+import AdminLayout from '../../layouts/admin/AdminLayout.astro';
+
+// Check if Google Calendar is connected (mock for now)
+const calendarConnected = false;
+---
+
+<AdminLayout title="Instellingen">
+  <div class="settings-section">
+    <h2>Google Agenda Verbinding</h2>
+    <p class="section-description">
+      Verbind je Google Agenda om beschikbaarheid automatisch te synchroniseren. 
+      Dit stelt klanten in staat om alleen tijdsloten te boeken wanneer je beschikbaar bent.
+    </p>
+    
+    <div class="connection-card">
+      <div class="connection-status">
+        {calendarConnected ? (
+          <>
+            <div class="status-indicator connected"></div>
+            <div class="status-text">
+              <strong>Verbonden</strong>
+              <span>Laatst gesynchroniseerd: 2 minuten geleden</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div class="status-indicator disconnected"></div>
+            <div class="status-text">
+              <strong>Niet verbonden</strong>
+              <span>Verbind om beschikbaarheid te synchroniseren</span>
+            </div>
+          </>
+        )}
+      </div>
+      
+      <div class="connection-actions">
+        {calendarConnected ? (
+          <>
+            <a href="/admin/api/calendar/sync" class="btn btn-secondary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              Synchroniseer Nu
+            </a>
+            <button class="btn btn-danger" onclick="disconnectCalendar()">
+              Ontkoppelen
+            </button>
+          </>
+        ) : (
+          <a href="/admin/api/calendar/connect" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <polyline points="10 17 15 12 10 7"></polyline>
+              <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            Verbind met Google
+          </a>
+        )}
+      </div>
+    </div>
+  </div>
+  
+  <div class="settings-section">
+    <h2>Notificatie Instellingen</h2>
+    <p class="section-description">
+      Configureer hoe je notificaties ontvangt voor nieuwe bestellingen.
+    </p>
+    
+    <div class="settings-card">
+      <div class="setting-row">
+        <div class="setting-info">
+          <strong>E-mail notificaties</strong>
+          <span>Ontvang een e-mail bij elke nieuwe bestelling</span>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+      
+      <div class="setting-row">
+        <div class="setting-info">
+          <strong>SMS notificaties</strong>
+          <span>Ontvang een SMS bij spoedbestellingen</span>
+        </div>
+        <label class="toggle">
+          <input type="checkbox">
+          <span class="slider"></span>
+        </label>
+      </div>
+      
+      <div class="setting-row">
+        <div class="setting-info">
+          <strong>Dagelijkse samenvatting</strong>
+          <span>Ontvang elke ochtend een overzicht van de dag</span>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+  
+  <div class="settings-section">
+    <h2>Werkuren</h2>
+    <p class="section-description">
+      Stel je standaard werkuren in. Deze worden gebruikt voor beschikbaarheidsberekening.
+    </p>
+    
+    <div class="settings-card">
+      <div class="hours-grid">
+        <div class="day-row">
+          <span class="day-label">Maandag</span>
+          <input type="time" value="09:00" class="time-input">
+          <span class="time-separator">tot</span>
+          <input type="time" value="18:00" class="time-input">
+        </div>
+        <div class="day-row">
+          <span class="day-label">Dinsdag</span>
+          <input type="time" value="09:00" class="time-input">
+          <span class="time-separator">tot</span>
+          <input type="time" value="18:00" class="time-input">
+        </div>
+        <div class="day-row">
+          <span class="day-label">Woensdag</span>
+          <input type="time" value="09:00" class="time-input">
+          <span class="time-separator">tot</span>
+          <input type="time" value="18:00" class="time-input">
+        </div>
+        <div class="day-row">
+          <span class="day-label">Donderdag</span>
+          <input type="time" value="09:00" class="time-input">
+          <span class="time-separator">tot</span>
+          <input type="time" value="18:00" class="time-input">
+        </div>
+        <div class="day-row">
+          <span class="day-label">Vrijdag</span>
+          <input type="time" value="09:00" class="time-input">
+          <span class="time-separator">tot</span>
+          <input type="time" value="18:00" class="time-input">
+        </div>
+        <div class="day-row disabled">
+          <span class="day-label">Zaterdag</span>
+          <span class="closed-text">Gesloten</span>
+        </div>
+        <div class="day-row disabled">
+          <span class="day-label">Zondag</span>
+          <span class="closed-text">Gesloten</span>
+        </div>
+      </div>
+      
+      <div class="card-actions">
+        <button class="btn btn-primary">Opslaan</button>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  function disconnectCalendar() {
+    if (confirm('Weet je zeker dat je de Google Agenda wilt ontkoppelen?')) {
+      fetch('/admin/api/calendar/disconnect', { method: 'POST' })
+        .then(() => window.location.reload());
+    }
+  }
+</script>
+
+<style>
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.settings-section h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.5rem 0;
+}
+
+.section-description {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 1.5rem 0;
+}
+
+.connection-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.status-indicator.connected {
+  background: #22c55e;
+  box-shadow: 0 0 0 4px #dcfce7;
+}
+
+.status-indicator.disconnected {
+  background: #94a3b8;
+  box-shadow: 0 0 0 4px #f1f5f9;
+}
+
+.status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.status-text strong {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.status-text span {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.connection-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.settings-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.setting-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.setting-row:first-child {
+  padding-top: 0;
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.setting-info strong {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.setting-info span {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.3s;
+  border-radius: 28px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+input:checked + .slider {
+  background-color: #e11d48;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* Hours Grid */
+.hours-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.day-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.day-row.disabled {
+  opacity: 0.5;
+}
+
+.day-label {
+  width: 100px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.time-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  width: 100px;
+}
+
+.time-separator {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.closed-text {
+  color: #64748b;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.card-actions {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background: #e11d48;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #be123c;
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.btn-danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-danger:hover {
+  background: #fecaca;
+}
+</style>

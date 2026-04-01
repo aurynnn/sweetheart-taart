@@ -1,0 +1,305 @@
+---
+import AdminLayout from '../../layouts/admin/AdminLayout.astro';
+import StatCard from '../../components/admin/StatCard.astro';
+
+// Mock data - in production, fetch from your API
+const stats = {
+  totalOrders: 127,
+  pendingOrders: 8,
+  monthlyRevenue: '€2,847',
+  avgOrderValue: '€22.40'
+};
+
+const recentOrders = [
+  {
+    id: 'ORD-001',
+    customer: 'Sophie Janssens',
+    product: 'Feesttaart - Verjaardag',
+    date: '2026-03-31',
+    total: '€45.00',
+    status: 'pending'
+  },
+  {
+    id: 'ORD-002',
+    customer: 'Emma Peeters',
+    product: 'Mini-gebak (12 stuks)',
+    date: '2026-03-30',
+    total: '€18.00',
+    status: 'completed'
+  },
+  {
+    id: 'ORD-003',
+    customer: 'Lisa Mertens',
+    product: 'Koekjes - Chocolade',
+    date: '2026-03-30',
+    total: '€12.00',
+    status: 'completed'
+  },
+  {
+    id: 'ORD-004',
+    customer: 'Marie Jacobs',
+    product: 'Feesttaart - Huwelijk',
+    date: '2026-03-29',
+    total: '€85.00',
+    status: 'pending'
+  },
+  {
+    id: 'ORD-005',
+    customer: 'Anne de Smedt',
+    product: 'Mini-gebak (6 stuks)',
+    date: '2026-03-29',
+    total: '€9.00',
+    status: 'completed'
+  }
+];
+
+const statusBadge = (status: string) => {
+  const styles = {
+    pending: 'background: #fef3c7; color: #92400e;',
+    completed: 'background: #dcfce7; color: #166534;',
+    cancelled: 'background: #fee2e2; color: #991b1b;'
+  };
+  return `<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; ${styles[status as keyof typeof styles] || styles.pending}">${status === 'pending' ? 'In afwachting' : status === 'completed' ? 'Voltooid' : 'Geannuleerd'}</span>`;
+};
+---
+
+<AdminLayout title="Dashboard">
+  <div class="stats-grid">
+    <StatCard 
+      title="Totale Bestellingen"
+      value={stats.totalOrders}
+      subtitle="Alle tijd"
+      icon={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>`}
+      color="pink"
+      trend={{ value: 12, positive: true }}
+    />
+    
+    <StatCard 
+      title="Openstaand"
+      value={stats.pendingOrders}
+      subtitle="Wachten op bevestiging"
+      icon={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`}
+      color="orange"
+    />
+    
+    <StatCard 
+      title="Maandelijkse Omzet"
+      value={stats.monthlyRevenue}
+      subtitle="Maart 2026"
+      icon={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`}
+      color="green"
+      trend={{ value: 8, positive: true }}
+    />
+    
+    <StatCard 
+      title="Gem. Bestelwaarde"
+      value={stats.avgOrderValue}
+      subtitle="Per order"
+      icon={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>`}
+      color="blue"
+      trend={{ value: 3, positive: true }}
+    />
+  </div>
+  
+  <div class="recent-orders">
+    <div class="section-header">
+      <h2>Recente Bestellingen</h2>
+      <a href="/admin/orders" class="view-all">Bekijk alles →</a>
+    </div>
+    
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Klant</th>
+          <th>Product</th>
+          <th>Datum</th>
+          <th>Totaal</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {recentOrders.map(order => (
+          <tr>
+            <td class="order-id">{order.id}</td>
+            <td>{order.customer}</td>
+            <td>{order.product}</td>
+            <td>{order.date}</td>
+            <td class="order-total">{order.total}</td>
+            <td><Fragment set:html={statusBadge(order.status)} /></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="quick-actions">
+    <h2>Snelle Acties</h2>
+    <div class="actions-grid">
+      <a href="/admin/orders/new" class="action-card">
+        <div class="action-icon pink">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        </div>
+        <span>Nieuwe Bestelling</span>
+      </a>
+      
+      <a href="/admin/calendar" class="action-card">
+        <div class="action-icon blue">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </div>
+        <span>Beschikbaarheid</span>
+      </a>
+      
+      <a href="/admin/settings" class="action-card">
+        <div class="action-icon green">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </div>
+        <span>Instellingen</span>
+      </a>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.recent-orders {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.view-all {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e11d48;
+  text-decoration: none;
+}
+
+.view-all:hover {
+  text-decoration: underline;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orders-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.orders-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  font-size: 0.875rem;
+}
+
+.orders-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.orders-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.order-id {
+  font-family: monospace;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.order-total {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.quick-actions h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 1rem 0;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.action-card:hover {
+  border-color: #e11d48;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.1);
+  transform: translateY(-2px);
+}
+
+.action-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icon.pink {
+  background: #fce7f3;
+  color: #db2777;
+}
+
+.action-icon.blue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.action-icon.green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.action-card span {
+  font-weight: 500;
+  color: #1e293b;
+}
+</style>
