@@ -10,8 +10,20 @@ const error = url.searchParams.get('error');
 // Settings - in production, load from database
 const settings = {
   maxOrdersPerDay: 3,
-  googleConnected: connected || false
+  googleConnected: connected || false,
+  recurringUnavailableDays: [0], // Sunday = 0
+  availableDays: [1, 2, 3, 4, 5, 6] // Mon-Sat
 };
+
+const dayNames = [
+  { num: 0, name: 'Zondag', short: 'Zo' },
+  { num: 1, name: 'Maandag', short: 'Ma' },
+  { num: 2, name: 'Dinsdag', short: 'Di' },
+  { num: 3, name: 'Woensdag', short: 'Wo' },
+  { num: 4, name: 'Donderdag', short: 'Do' },
+  { num: 5, name: 'Vrijdag', short: 'Vr' },
+  { num: 6, name: 'Zaterdag', short: 'Za' },
+];
 
 // Mock orders for this week (in production, fetch from database)
 const weeklyOrders = [
@@ -133,6 +145,32 @@ const weeklyOrders = [
     </div>
   </div>
 
+  <!-- Weekly Schedule -->
+  <div class="settings-card">
+    <h2>Wekelijks schema</h2>
+    <p class="card-description">
+      Selecteer de dagen waarop je open bent voor bestellingen. Niet-geselecteerde dagen zijn automatisch gesloten (elke week).
+    </p>
+    
+    <div class="week-schedule">
+      {dayNames.map((day) => {
+        const isAvailable = settings.availableDays.includes(day.num);
+        return (
+          <label class={`day-toggle ${isAvailable ? 'available' : 'closed'}`}>
+            <input 
+              type="checkbox" 
+              checked={isAvailable}
+              data-day={day.num}
+              onchange="toggleDayOfWeek(this)"
+            />
+            <span class="day-toggle-slider"></span>
+            <span class="day-name">{day.name}</span>
+          </label>
+        );
+      })}
+    </div>
+  </div>
+
   <!-- Availability Calendar -->
   <div class="availability-section">
     <h2>Beschikbaarheid deze week</h2>
@@ -230,8 +268,60 @@ const weeklyOrders = [
 
   function saveSettings() {
     const maxOrders = (document.getElementById('maxOrders') as HTMLInputElement).value;
-    console.log('Saving settings:', { maxOrdersPerDay: maxOrders });
-    alert('Instellingen opgeslagen!');
+    
+    // Collect available days (checkbox not checked = unavailable day)
+    const availableDays: number[] = [];
+    const allDays = [0, 1, 2, 3, 4, 5, 6]; // Sun-Sat
+    allDays.forEach(dayNum => {
+      const checkbox = document.querySelector(`input[data-day="${dayNum}"]`) as HTMLInputElement;
+      if (checkbox && checkbox.checked) {
+        availableDays.push(dayNum);
+      }
+    });
+    
+    // Recurring unavailable = days NOT in availableDays
+    const recurringUnavailableDays = allDays.filter(d => !availableDays.includes(d));
+    
+    const settingsData = {
+      maxOrdersPerDay: parseInt(maxOrders),
+      availableDays,
+      recurringUnavailableDays,
+      blockedDates: [] // TODO: Add blocked dates from the list
+    };
+    
+    console.log('Saving settings:', settingsData);
+    
+    // Send to API
+    fetch('/api/availability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settingsData)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert('Instellingen opgeslagen!');
+      } else {
+        alert('Er ging iets mis: ' + data.error);
+      }
+    })
+    .catch(err => {
+      console.error('Error saving settings:', err);
+      alert('Er ging iets mis bij het opslaan.');
+    });
+  }
+
+  function toggleDayOfWeek(checkbox: HTMLInputElement) {
+    const dayNum = (checkbox as any).dataset.day;
+    const dayRow = checkbox.closest('.day-toggle');
+    
+    if (checkbox.checked) {
+      dayRow?.classList.remove('closed');
+      dayRow?.classList.add('available');
+    } else {
+      dayRow?.classList.remove('available');
+      dayRow?.classList.add('closed');
+    }
   }
 
   function toggleDayAvailability(date: string) {
@@ -635,5 +725,79 @@ const weeklyOrders = [
 
 .btn-secondary:hover {
   background: #e2e8f0;
+}
+
+/* Week Schedule */
+.week-schedule {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.day-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.day-toggle.available {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.day-toggle.closed {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.day-toggle input {
+  display: none;
+}
+
+.day-toggle-slider {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: #cbd5e1;
+  border-radius: 11px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.day-toggle-slider:before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.day-toggle input:checked + .day-toggle-slider {
+  background: #22c55e;
+}
+
+.day-toggle input:checked + .day-toggle-slider:before {
+  transform: translateX(18px);
+}
+
+.day-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.day-toggle.closed .day-name {
+  color: #dc2626;
+  text-decoration: line-through;
 }
 </style>

@@ -16,6 +16,8 @@ interface Settings {
   maxOrdersPerDay: number;
   googleConnected: boolean;
   blockedDates: Array<{ date: string; reason: string }>;
+  recurringUnavailableDays: number[]; // 0 = Sunday, 1 = Monday, etc.
+  availableDays: number[]; // Which days of week are available (default all except Sunday)
 }
 
 function ensureDataDir() {
@@ -40,11 +42,13 @@ function getOrders(): Order[] {
 function getSettings(): Settings {
   ensureDataDir();
   if (!existsSync(SETTINGS_FILE)) {
-    // Default settings
+    // Default settings - open Mon-Sat, closed Sunday
     return {
       maxOrdersPerDay: 3,
       googleConnected: false,
-      blockedDates: []
+      blockedDates: [],
+      recurringUnavailableDays: [0], // Sunday = 0
+      availableDays: [1, 2, 3, 4, 5, 6] // Mon-Sat
     };
   }
   try {
@@ -54,7 +58,9 @@ function getSettings(): Settings {
     return {
       maxOrdersPerDay: 3,
       googleConnected: false,
-      blockedDates: []
+      blockedDates: [],
+      recurringUnavailableDays: [0],
+      availableDays: [1, 2, 3, 4, 5, 6]
     };
   }
 }
@@ -81,6 +87,7 @@ export const GET: APIRoute = async ({ url }) => {
     orders: number;
     maxOrders: number;
     remaining: number;
+    reason?: string;
   }> = [];
   
   if (startDate && endDate) {
@@ -90,16 +97,39 @@ export const GET: APIRoute = async ({ url }) => {
     
     while (current <= end) {
       const dateStr = current.toISOString().split('T')[0];
+      const dayOfWeek = current.getDay();
       const ordersCount = ordersByDate[dateStr] || 0;
       const isBlocked = settings.blockedDates.some(b => b.date === dateStr);
       const isPast = current < new Date(new Date().toDateString());
+      const isRecurringUnavailable = settings.recurringUnavailableDays.includes(dayOfWeek);
+      const isAvailableDay = settings.availableDays.includes(dayOfWeek);
+      
+      let reason: string | undefined;
+      let isAvailable = true;
+      
+      if (isPast) {
+        isAvailable = false;
+        reason = 'Datum is voorbij';
+      } else if (isBlocked) {
+        isAvailable = false;
+        const blockedEntry = settings.blockedDates.find(b => b.date === dateStr);
+        reason = blockedEntry?.reason || 'Geblokkeerd';
+      } else if (isRecurringUnavailable || !isAvailableDay) {
+        isAvailable = false;
+        const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
+        reason = `Elke ${dayNames[dayOfWeek]} gesloten`;
+      } else if (ordersCount >= settings.maxOrdersPerDay) {
+        isAvailable = false;
+        reason = 'Volledig bezet';
+      }
       
       availability.push({
         date: dateStr,
-        available: !isBlocked && !isPast && ordersCount < settings.maxOrdersPerDay,
+        available: isAvailable,
         orders: ordersCount,
         maxOrders: settings.maxOrdersPerDay,
-        remaining: Math.max(0, settings.maxOrdersPerDay - ordersCount)
+        remaining: Math.max(0, settings.maxOrdersPerDay - ordersCount),
+        reason
       });
       
       current.setDate(current.getDate() + 1);
