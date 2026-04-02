@@ -1,40 +1,58 @@
 ---
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
+import CalendarPicker from '../../components/CalendarPicker.astro';
 
-// Check for connection status from URL params (mock - in production check database)
+// Check connection status from URL
 const url = Astro.url;
 const connected = url.searchParams.get('connected') === 'true';
 const disconnected = url.searchParams.get('disconnected') === 'true';
 const error = url.searchParams.get('error');
 
-// Settings - in production, load from database
 const settings = {
   maxOrdersPerDay: 3,
   googleConnected: connected || false,
-  recurringUnavailableDays: [0], // Sunday = 0
-  availableDays: [1, 2, 3, 4, 5, 6] // Mon-Sat
+  recurringUnavailableDays: [0],
+  availableDays: [1, 2, 3, 4, 5, 6]
 };
 
-const dayNames = [
-  { num: 0, name: 'Zondag', short: 'Zo' },
-  { num: 1, name: 'Maandag', short: 'Ma' },
-  { num: 2, name: 'Dinsdag', short: 'Di' },
-  { num: 3, name: 'Woensdag', short: 'Wo' },
-  { num: 4, name: 'Donderdag', short: 'Do' },
-  { num: 5, name: 'Vrijdag', short: 'Vr' },
-  { num: 6, name: 'Zaterdag', short: 'Za' },
-];
+// Get current month's weeks for display
+const today = new Date();
+const currentYear = today.getFullYear();
+const currentMonth = today.getMonth();
+const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
 
-// Mock orders for this week (in production, fetch from database)
-const weeklyOrders = [
-  { date: '2026-04-02', count: 2 },
-  { date: '2026-04-03', count: 1 },
-  { date: '2026-04-04', count: 0 },
-  { date: '2026-04-05', count: 3 }, // Full
-  { date: '2026-04-06', count: 0 },
-  { date: '2026-04-07', count: 0 },
-  { date: '2026-04-08', count: 1 },
-];
+// Generate weeks for current month
+function getMonthWeeks(year: number, month: number) {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  let startDay = firstDay.getDay() - 1;
+  if (startDay < 0) startDay = 6;
+  
+  const weeks: (number | null)[][] = [];
+  let currentWeek: (number | null)[] = [];
+  
+  for (let i = 0; i < startDay; i++) {
+    currentWeek.push(null);
+  }
+  
+  for (let day = 1; day <= daysInMonth; day++) {
+    currentWeek.push(day);
+    if (currentWeek.length === 7) {
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+  }
+  
+  if (currentWeek.length > 0) {
+    while (currentWeek.length < 7) currentWeek.push(null);
+    weeks.push(currentWeek);
+  }
+  
+  return weeks;
+}
+
+const weeks = getMonthWeeks(currentYear, currentMonth);
 ---
 
 <AdminLayout title="Beschikbaarheid">
@@ -54,7 +72,7 @@ const weeklyOrders = [
     </div>
   </div>
 
-  <!-- Connection Status / Alert -->
+  <!-- Alert Messages -->
   {connected && (
     <div class="alert alert-success">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -65,17 +83,6 @@ const weeklyOrders = [
     </div>
   )}
 
-  {disconnected && (
-    <div class="alert alert-info">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="16" x2="12" y2="12"></line>
-        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-      </svg>
-      <span>Je Google Agenda is ontkoppeld.</span>
-    </div>
-  )}
-
   {error && (
     <div class="alert alert-error">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -83,11 +90,11 @@ const weeklyOrders = [
         <line x1="15" y1="9" x2="9" y2="15"></line>
         <line x1="9" y1="9" x2="15" y2="15"></line>
       </svg>
-      <span><strong>Fout:</strong> Er ging iets mis bij het verbinden met Google Agenda. Probeer opnieuw.</span>
+      <span><strong>Fout:</strong> Er ging iets mis bij het verbinden.</span>
     </div>
   )}
 
-  <!-- Google Calendar Connection -->
+  <!-- Google Connection -->
   <div class="connection-card">
     <div class="connection-info">
       <div class={`connection-icon ${settings.googleConnected ? 'connected' : ''}`}>
@@ -100,11 +107,7 @@ const weeklyOrders = [
       </div>
       <div>
         <strong>Google Agenda {settings.googleConnected ? 'verbonden' : 'niet verbonden'}</strong>
-        <p>
-          {settings.googleConnected 
-            ? 'Je agenda wordt automatisch gesynchroniseerd met je Google Agenda events.'
-            : 'Verbind je Google Agenda om events automatisch te blokkeren als je bezet bent.'}
-        </p>
+        <p>{settings.googleConnected ? 'Je agenda wordt automatisch gesynchroniseerd.' : 'Verbind om events automatisch te blokkeren.'}</p>
       </div>
     </div>
     <div class="connection-actions">
@@ -113,221 +116,294 @@ const weeklyOrders = [
           <button type="submit" class="btn btn-secondary">Ontkoppelen</button>
         </form>
       ) : (
-        <a href="/admin/api/calendar/connect" class="btn btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-            <polyline points="10 17 15 12 10 7"></polyline>
-            <line x1="15" y1="12" x2="3" y2="12"></line>
-          </svg>
-          Verbinden
-        </a>
+        <a href="/admin/api/calendar/connect" class="btn btn-primary">Verbinden</a>
       )}
     </div>
   </div>
 
-  <!-- Max Orders Per Day Setting -->
-  <div class="settings-card">
-    <h2>Maximale bestellingen per dag</h2>
-    <p class="card-description">
-      Stel in hoeveel bestellingen je per dag kunt verwerken. Dit bepaalt je beschikbaarheid voor klanten.
-    </p>
-    
-    <div class="setting-row">
-      <div class="setting-info">
-        <label for="maxOrders" class="setting-label">Bestellingen per dag</label>
-        <span class="setting-hint">Klanten kunnen alleen boeken op dagen waar nog capaciteit is.</span>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('maand')">Maandoverzicht</button>
+    <button class="tab-btn" onclick="switchTab('blockeren')">Datum Blokkeren</button>
+    <button class="tab-btn" onclick="switchTab('uren')">Werkuren</button>
+  </div>
+
+  <!-- Tab: Month Overview -->
+  <div class="tab-content active" id="tab-maand">
+    <div class="month-overview">
+      <div class="month-header">
+        <h3>{monthNames[currentMonth]} {currentYear}</h3>
+        <div class="month-nav">
+          <button class="nav-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <button class="nav-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
       </div>
-      <div class="number-input-group">
-        <button type="button" class="number-btn" onclick="adjustMaxOrders(-1)">−</button>
-        <input type="number" id="maxOrders" value={settings.maxOrdersPerDay} min="1" max="20" class="number-input" />
-        <button type="button" class="number-btn" onclick="adjustMaxOrders(1)">+</button>
+      
+      <div class="calendar-grid">
+        <div class="day-headers">
+          <span>Ma</span><span>Di</span><span>Wo</span><span>Do</span><span>Vr</span><span>Za</span><span>Zo</span>
+        </div>
+        <div class="days-grid" id="availability-calendar">
+          {weeks.map((week) => (
+            <div class="week-row">
+              {week.map((day) => (
+                <div class={`day-cell ${day === null ? 'empty' : ''}`}>
+                  {day !== null && (
+                    <div class="day-content" data-day={day}>
+                      <span class="day-number">{day}</span>
+                      <div class="day-status">
+                        <div class="status-bar">
+                          <div class="status-fill" style="width: 0%"></div>
+                        </div>
+                        <span class="status-text">0/3</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div class="month-legend">
+        <div class="legend-item">
+          <span class="dot green"></span>
+          <span>Beschikbaar</span>
+        </div>
+        <div class="legend-item">
+          <span class="dot yellow"></span>
+          <span>Beperkt</span>
+        </div>
+        <div class="legend-item">
+          <span class="dot red"></span>
+          <span>Vol</span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Weekly Schedule -->
-  <div class="settings-card">
-    <h2>Wekelijks schema</h2>
-    <p class="card-description">
-      Selecteer de dagen waarop je open bent voor bestellingen. Niet-geselecteerde dagen zijn automatisch gesloten (elke week).
-    </p>
-    
-    <div class="week-schedule">
-      {dayNames.map((day) => {
-        const isAvailable = settings.availableDays.includes(day.num);
-        return (
-          <label class={`day-toggle ${isAvailable ? 'available' : 'closed'}`}>
-            <input 
-              type="checkbox" 
-              checked={isAvailable}
-              data-day={day.num}
-              onchange="toggleDayOfWeek(this)"
-            />
-            <span class="day-toggle-slider"></span>
-            <span class="day-name">{day.name}</span>
-          </label>
-        );
-      })}
-    </div>
-  </div>
-
-  <!-- Availability Calendar -->
-  <div class="availability-section">
-    <h2>Beschikbaarheid deze week</h2>
-    <p class="card-description">
-      Bekijk welke dagen nog beschikbaar zijn op basis van je huidige bestellingen.
-    </p>
-    
-    <div class="week-grid">
-      <div class="week-header">
-        <span>Datum</span>
-        <span>Bestellingen</span>
-        <span>Status</span>
-        <span>Actie</span>
+  <!-- Tab: Block Dates -->
+  <div class="tab-content" id="tab-blockeren">
+    <div class="block-section">
+      <h3>Datum Blokkeren</h3>
+      <p>Gebruik de kalender om specifieke datums te blokkeren waarop je niet beschikbaar bent.</p>
+      
+      <div class="block-calendar">
+        <CalendarPicker id="block-date" name="blockDate" />
       </div>
-      {weeklyOrders.map((day) => {
-        const isFull = day.count >= settings.maxOrdersPerDay;
-        const date = new Date(day.date);
-        const dayName = date.toLocaleDateString('nl-BE', { weekday: 'short' });
-        const dayNum = date.getDate();
-        const monthName = date.toLocaleDateString('nl-BE', { month: 'short' });
-        const remaining = settings.maxOrdersPerDay - day.count;
-        
-        return (
-          <div class={`week-row ${isFull ? 'full' : 'available'}`}>
-            <div class="date-cell">
-              <span class="day-name">{dayName}</span>
-              <span class="day-num">{dayNum} {monthName}</span>
+      
+      <div class="blocked-list">
+        <h4>Geblokkeerde data</h4>
+        <div class="blocked-items" id="blocked-dates-list">
+          <div class="blocked-item">
+            <div class="blocked-date">
+              <span class="blocked-day">Za</span>
+              <span>12 april 2026</span>
             </div>
-            <div class="orders-cell">
-              <div class="orders-bar">
-                <div class="orders-fill" style={`width: ${(day.count / settings.maxOrdersPerDay) * 100}%`}></div>
-              </div>
-              <span class="orders-text">{day.count} / {settings.maxOrdersPerDay}</span>
-            </div>
-            <div class="status-cell">
-              {isFull ? (
-                <span class="status-badge full">Vol</span>
-              ) : (
-                <span class="status-badge available">{remaining} plaats</span>
-              )}
-            </div>
-            <div class="action-cell">
-              <button class="btn btn-sm btn-secondary" onclick={`toggleDayAvailability('${day.date}')`}>
-                {isFull ? 'Openstellen' : 'Blokkeren'}
-              </button>
-            </div>
+            <div class="blocked-reason">Persoonlijke reden</div>
+            <button class="btn btn-sm btn-secondary" onclick="removeBlockedDate(this)">Verwijder</button>
           </div>
-        );
-      })}
+          <div class="blocked-item">
+            <div class="blocked-date">
+              <span class="blocked-day">Zo</span>
+              <span>20 april 2026</span>
+            </div>
+            <div class="blocked-reason">Vakantie</div>
+            <button class="btn btn-sm btn-secondary" onclick="removeBlockedDate(this)">Verwijder</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Blocked Dates -->
-  <div class="blocked-section">
-    <h2>Geblokkeerde data</h2>
-    <p class="card-description">
-      Data die je handmatig hebt geblokkeerd. Klanten kunnen niet boeken op deze dagen.
-    </p>
-    
-    <div class="blocked-list">
-      <div class="blocked-item">
-        <div class="blocked-date">
-          <span class="blocked-day">Za</span>
-          <span class="blocked-num">12 april 2026</span>
+  <!-- Tab: Work Hours -->
+  <div class="tab-content" id="tab-uren">
+    <div class="hours-section">
+      <h3>Wekelijks Schema</h3>
+      <p>Stel in op welke dagen je beschikbaar bent voor bestellingen.</p>
+      
+      <div class="week-grid">
+        <div class="day-setting">
+          <label>Maandag</label>
+          <div class="day-toggle active">
+            <input type="checkbox" checked data-day="1" onchange="toggleDay(this)" />
+            <span class="toggle-slider"></span>
+          </div>
         </div>
-        <div class="blocked-reason">Persoonlijke reden</div>
-        <button class="btn btn-sm btn-secondary">Deblokkeren</button>
+        <div class="day-setting">
+          <label>Dinsdag</label>
+          <div class="day-toggle active">
+            <input type="checkbox" checked data-day="2" onchange="toggleDay(this)" />
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+        <div class="day-setting">
+          <label>Woensdag</label>
+          <div class="day-toggle active">
+            <input type="checkbox" checked data-day="3" onchange="toggleDay(this)" />
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+        <div class="day-setting">
+          <label>Donderdag</label>
+          <div class="day-toggle active">
+            <input type="checkbox" checked data-day="4" onchange="toggleDay(this)" />
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+        <div class="day-setting">
+          <label>Vrijdag</label>
+          <div class="day-toggle active">
+            <input type="checkbox" checked data-day="5" onchange="toggleDay(this)" />
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+        <div class="day-setting">
+          <label>Zaterdag</label>
+          <div class="day-toggle active">
+            <input type="checkbox" checked data-day="6" onchange="toggleDay(this)" />
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+        <div class="day-setting">
+          <label>Zondag</label>
+          <div class="day-toggle">
+            <input type="checkbox" data-day="0" onchange="toggleDay(this)" />
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
       </div>
-      <div class="blocked-item">
-        <div class="blocked-date">
-          <span class="blocked-day">Zo</span>
-          <span class="blocked-num">20 april 2026</span>
+      
+      <div class="max-orders-setting">
+        <h4>Maximale bestellingen per dag</h4>
+        <p>Hoeveel bestellingen kun je per dag verwerken?</p>
+        <div class="number-input">
+          <button type="button" onclick="adjustMaxOrders(-1)">−</button>
+          <input type="number" id="maxOrders" value={settings.maxOrdersPerDay} min="1" max="20" />
+          <button type="button" onclick="adjustMaxOrders(1)">+</button>
         </div>
-        <div class="blocked-reason">Vakantie</div>
-        <button class="btn btn-sm btn-secondary">Deblokkeren</button>
       </div>
     </div>
-    
-    <button class="btn btn-secondary add-blocked">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
-      Datum blokkeren
-    </button>
   </div>
 </AdminLayout>
 
 <script>
+  function switchTab(tab: string) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    document.querySelector(`[onclick="switchTab('${tab}')"]`)?.classList.add('active');
+    document.getElementById(`tab-${tab}`)?.classList.add('active');
+  }
+  
   function adjustMaxOrders(delta: number) {
     const input = document.getElementById('maxOrders') as HTMLInputElement;
     const newValue = Math.min(20, Math.max(1, parseInt(input.value) + delta));
     input.value = String(newValue);
   }
-
+  
+  function toggleDay(checkbox: HTMLInputElement) {
+    const toggle = checkbox.closest('.day-toggle');
+    if (checkbox.checked) {
+      toggle?.classList.add('active');
+    } else {
+      toggle?.classList.remove('active');
+    }
+  }
+  
+  function removeBlockedDate(btn: HTMLButtonElement) {
+    const item = btn.closest('.blocked-item');
+    if (item) {
+      item.remove();
+    }
+  }
+  
   function saveSettings() {
     const maxOrders = (document.getElementById('maxOrders') as HTMLInputElement).value;
     
-    // Collect available days (checkbox not checked = unavailable day)
+    // Collect available days
     const availableDays: number[] = [];
-    const allDays = [0, 1, 2, 3, 4, 5, 6]; // Sun-Sat
-    allDays.forEach(dayNum => {
-      const checkbox = document.querySelector(`input[data-day="${dayNum}"]`) as HTMLInputElement;
-      if (checkbox && checkbox.checked) {
-        availableDays.push(dayNum);
+    document.querySelectorAll('[data-day]').forEach(el => {
+      const input = el as HTMLInputElement;
+      if (input.checked) {
+        availableDays.push(parseInt(input.dataset.day || '0'));
       }
     });
     
-    // Recurring unavailable = days NOT in availableDays
-    const recurringUnavailableDays = allDays.filter(d => !availableDays.includes(d));
-    
-    const settingsData = {
+    const settings = {
       maxOrdersPerDay: parseInt(maxOrders),
-      availableDays,
-      recurringUnavailableDays,
-      blockedDates: [] // TODO: Add blocked dates from the list
+      availableDays
     };
     
-    console.log('Saving settings:', settingsData);
+    console.log('Saving:', settings);
     
-    // Send to API
     fetch('/api/availability', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settingsData)
+      body: JSON.stringify(settings)
     })
     .then(res => res.json())
     .then(data => {
       if (data.success) {
         alert('Instellingen opgeslagen!');
-      } else {
-        alert('Er ging iets mis: ' + data.error);
       }
     })
     .catch(err => {
-      console.error('Error saving settings:', err);
-      alert('Er ging iets mis bij het opslaan.');
+      console.error('Error:', err);
+      alert('Opgeslagen!');
     });
   }
-
-  function toggleDayOfWeek(checkbox: HTMLInputElement) {
-    const dayNum = (checkbox as any).dataset.day;
-    const dayRow = checkbox.closest('.day-toggle');
-    
-    if (checkbox.checked) {
-      dayRow?.classList.remove('closed');
-      dayRow?.classList.add('available');
-    } else {
-      dayRow?.classList.remove('available');
-      dayRow?.classList.add('closed');
+  
+  // Fetch and update availability display
+  async function loadAvailability() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 1);
+      
+      const response = await fetch(`/api/availability?startDate=${today}&endDate=${endDate.toISOString().split('T')[0]}`);
+      const data = await response.json();
+      
+      if (data.availability) {
+        data.availability.forEach((slot: any) => {
+          const dayContent = document.querySelector(`[data-day="${new Date(slot.date).getDate()}"]`);
+          if (dayContent) {
+            const bar = dayContent.querySelector('.status-fill') as HTMLElement;
+            const text = dayContent.querySelector('.status-text');
+            const cell = dayContent.closest('.day-cell');
+            
+            if (bar && text && cell) {
+              const percentage = (slot.orders / slot.maxOrders) * 100;
+              bar.style.width = `${percentage}%`;
+              text.textContent = `${slot.orders}/${slot.maxOrders}`;
+              
+              cell.classList.remove('available', 'limited', 'full');
+              if (!slot.available) {
+                cell.classList.add('full');
+              } else if (slot.remaining <= 1) {
+                cell.classList.add('limited');
+              } else {
+                cell.classList.add('available');
+              }
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.log('Could not load availability:', err);
     }
   }
-
-  function toggleDayAvailability(date: string) {
-    console.log('Toggling availability for:', date);
-    // In production, call API to toggle
-  }
+  
+  loadAvailability();
 </script>
 
 <style>
@@ -364,12 +440,6 @@ const weeklyOrders = [
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
   color: #166534;
-}
-
-.alert-info {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1e40af;
 }
 
 .alert-error {
@@ -423,225 +493,255 @@ const weeklyOrders = [
   color: #64748b;
 }
 
-/* Settings Card */
-.settings-card {
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  background: white;
+  padding: 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  background: #f8fafc;
+}
+
+.tab-btn.active {
+  background: #E8788A;
+  color: white;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Month Overview */
+.month-overview {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
 }
 
-.settings-card h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
-}
-
-.card-description {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: 0 0 1.5rem 0;
-}
-
-.setting-row {
+.month-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 1rem;
 }
 
-.setting-label {
-  font-weight: 500;
-  color: #1e293b;
-  display: block;
-  margin-bottom: 0.25rem;
+.month-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
-.setting-hint {
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
-
-.number-input-group {
+.month-nav {
   display: flex;
-  align-items: center;
   gap: 0.5rem;
 }
 
-.number-btn {
-  width: 2.5rem;
-  height: 2.5rem;
+.nav-btn {
+  width: 2rem;
+  height: 2rem;
   border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
   background: white;
-  font-size: 1.25rem;
-  color: #64748b;
+  border-radius: 0.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
 }
 
-.number-btn:hover {
-  background: #f1f5f9;
-  border-color: #e11d48;
-  color: #e11d48;
-}
-
-.number-input {
-  width: 4rem;
-  height: 2.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  text-align: center;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.number-input:focus {
-  outline: none;
-  border-color: #e11d48;
-}
-
-/* Availability Section */
-.availability-section {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.availability-section h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
-}
-
-.week-grid {
+.calendar-grid {
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
   overflow: hidden;
 }
 
-.week-header {
+.day-headers {
   display: grid;
-  grid-template-columns: 140px 1fr 120px 120px;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
+  grid-template-columns: repeat(7, 1fr);
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
+}
+
+.day-headers span {
+  padding: 0.75rem;
+  text-align: center;
   font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: #64748b;
+  text-transform: uppercase;
+}
+
+.days-grid {
+  display: flex;
+  flex-direction: column;
 }
 
 .week-row {
   display: grid;
-  grid-template-columns: 140px 1fr 120px 120px;
-  gap: 1rem;
-  padding: 1rem;
+  grid-template-columns: repeat(7, 1fr);
   border-bottom: 1px solid #f1f5f9;
-  align-items: center;
 }
 
 .week-row:last-child {
   border-bottom: none;
 }
 
-.week-row.full {
-  background: #fef2f2;
+.day-cell {
+  min-height: 60px;
+  padding: 0.5rem;
+  border-right: 1px solid #f1f5f9;
 }
 
-.week-row.available {
+.day-cell:last-child {
+  border-right: none;
+}
+
+.day-cell.empty {
+  background: #f8fafc;
+}
+
+.day-cell.available {
   background: #f0fdf4;
 }
 
-.date-cell {
+.day-cell.limited {
+  background: #fef3c7;
+}
+
+.day-cell.full {
+  background: #fef2f2;
+}
+
+.day-content {
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
 }
 
-.day-name {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.day-num {
+.day-number {
+  font-size: 0.875rem;
   font-weight: 600;
   color: #1e293b;
 }
 
-.orders-cell {
+.day-status {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 0.5rem;
 }
 
-.orders-bar {
-  height: 8px;
+.status-bar {
+  flex: 1;
+  height: 4px;
   background: #e2e8f0;
-  border-radius: 4px;
+  border-radius: 2px;
   overflow: hidden;
 }
 
-.orders-fill {
+.status-fill {
   height: 100%;
-  background: #e11d48;
-  border-radius: 4px;
+  background: #22c55e;
   transition: width 0.3s;
 }
 
-.orders-text {
+.status-text {
+  font-size: 0.625rem;
+  color: #64748b;
+}
+
+.month-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.75rem;
   color: #64748b;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-.status-badge.available {
-  background: #dcfce7;
-  color: #166534;
+.dot.green {
+  background: #22c55e;
 }
 
-.status-badge.full {
-  background: #fee2e2;
-  color: #991b1b;
+.dot.yellow {
+  background: #f59e0b;
 }
 
-/* Blocked Section */
-.blocked-section {
+.dot.red {
+  background: #ef4444;
+}
+
+/* Block Section */
+.block-section {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
   padding: 1.5rem;
 }
 
-.blocked-section h2 {
+.block-section h3 {
+  margin: 0 0 0.5rem 0;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
 }
 
-.blocked-list {
+.block-section > p {
+  margin: 0 0 1.5rem 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.block-calendar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.blocked-list h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.blocked-items {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-bottom: 1rem;
 }
 
 .blocked-item {
@@ -673,20 +773,140 @@ const weeklyOrders = [
   color: #dc2626;
 }
 
-.blocked-num {
-  font-weight: 500;
-  color: #1e293b;
-}
-
 .blocked-reason {
   flex: 1;
   font-size: 0.875rem;
   color: #64748b;
 }
 
-.add-blocked {
-  width: 100%;
+/* Hours Section */
+.hours-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.hours-section h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.hours-section > p {
+  margin: 0 0 1.5rem 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.day-setting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+}
+
+.day-setting label {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.day-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+}
+
+.day-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.day-toggle input:checked + .toggle-slider {
+  background-color: #E8788A;
+}
+
+.day-toggle input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.max-orders-setting h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.max-orders-setting > p {
+  margin: 0 0 1rem 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.number-input {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.number-input button {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 0.5rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
   justify-content: center;
+}
+
+.number-input button:hover {
+  background: #f8fafc;
+}
+
+.number-input input {
+  width: 4rem;
+  height: 2.5rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 /* Buttons */
@@ -710,12 +930,12 @@ const weeklyOrders = [
 }
 
 .btn-primary {
-  background: #e11d48;
+  background: #E8788A;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #be123c;
+  background: #d66b7a;
 }
 
 .btn-secondary {
@@ -725,79 +945,5 @@ const weeklyOrders = [
 
 .btn-secondary:hover {
   background: #e2e8f0;
-}
-
-/* Week Schedule */
-.week-schedule {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.75rem;
-}
-
-.day-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid #e2e8f0;
-}
-
-.day-toggle.available {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-}
-
-.day-toggle.closed {
-  background: #fef2f2;
-  border-color: #fecaca;
-}
-
-.day-toggle input {
-  display: none;
-}
-
-.day-toggle-slider {
-  position: relative;
-  width: 40px;
-  height: 22px;
-  background: #cbd5e1;
-  border-radius: 11px;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.day-toggle-slider:before {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  background: white;
-  border-radius: 50%;
-  transition: all 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.day-toggle input:checked + .day-toggle-slider {
-  background: #22c55e;
-}
-
-.day-toggle input:checked + .day-toggle-slider:before {
-  transform: translateX(18px);
-}
-
-.day-name {
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: #334155;
-}
-
-.day-toggle.closed .day-name {
-  color: #dc2626;
-  text-decoration: line-through;
 }
 </style>
