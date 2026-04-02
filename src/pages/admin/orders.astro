@@ -293,7 +293,7 @@ const stats = {
   });
   
   // View order
-  (window as any).viewOrder = function(orderId: string) {
+  window['viewOrder'] = function(orderId: string) {
     const order = orders.find((o: any) => o.id === orderId);
     if (!order) return;
     
@@ -341,25 +341,25 @@ const stats = {
       ${itemsList}
     `;
     
-    (window as any).currentOrderId = orderId;
+    window['currentOrderId'] = orderId;
     document.getElementById('orderModal')?.classList.add('active');
   };
   
-  (window as any).closeOrderModal = function() {
+  window['closeOrderModal'] = function() {
     document.getElementById('orderModal')?.classList.remove('active');
   };
   
-  (window as any).approveOrder = function(orderId: string) {
+  window['approveOrder'] = function(orderId: string) {
     updateOrderRow(orderId, 'approved');
   };
   
-  (window as any).cancelOrder = function(orderId: string) {
+  window['cancelOrder'] = function(orderId: string) {
     if (confirm('Weet je zeker dat je deze bestelling wilt annuleren?')) {
       updateOrderRow(orderId, 'cancelled');
     }
   };
   
-  (window as any).completeOrder = function(orderId: string) {
+  window['completeOrder'] = function(orderId: string) {
     updateOrderRow(orderId, 'completed');
   };
   
@@ -412,16 +412,16 @@ const stats = {
     if (statValues[3]) statValues[3].textContent = String(cancelled);
   }
   
-  (window as any).updateOrderStatus = function() {
+  window['updateOrderStatus'] = function() {
     const select = document.getElementById('orderStatusAction') as HTMLSelectElement;
     const newStatus = select.value;
-    if (!newStatus || !(window as any).currentOrderId) return;
+    if (!newStatus || !window['currentOrderId']) return;
     
     // In production, this would call your API
-    console.log('Updating order', (window as any).currentOrderId, 'to', newStatus);
+    console.log('Updating order', window['currentOrderId'], 'to', newStatus);
     
     // Update UI
-    const row = document.querySelector(`tr[data-order-id="${(window as any).currentOrderId}"]`) as HTMLElement;
+    const row = document.querySelector(`tr[data-order-id="${window['currentOrderId']}"]`) as HTMLElement;
     if (row) {
       row.dataset.status = newStatus;
       const statusCell = row.querySelector('td:nth-child(6)');
