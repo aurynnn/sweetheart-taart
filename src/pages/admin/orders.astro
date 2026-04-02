@@ -269,8 +269,88 @@ const stats = {
   </div>
 </AdminLayout>
 
-<script define:vars={{ ordersData: orders }}>
-  const orders = ordersData;
+<script>
+  // Orders data - in production this would be fetched from API
+  const orders = [
+  {
+    id: 'ORD-001',
+    customer: 'Sophie Janssens',
+    email: 'sophie@email.be',
+    phone: '+32 xxx xx xx xx',
+    product: 'Feesttaart - Verjaardag',
+    items: [
+      { product: 'Feesttaart', event: 'Verjaardag', persons: '12', flavor: 'Aardbei', date: '2026-04-05' }
+    ],
+    date: '2026-03-31',
+    total: '€45.00',
+    status: 'pending'
+  },
+  {
+    id: 'ORD-002',
+    customer: 'Emma Peeters',
+    email: 'emma@email.be',
+    phone: '+32 xxx xx xx xx',
+    product: 'Mini-gebak (12 stuks)',
+    items: [
+      { product: 'Mini-gebak', flavor: 'Chocolade', quantity: '12', date: '2026-04-03' }
+    ],
+    date: '2026-03-30',
+    total: '€18.00',
+    status: 'completed'
+  },
+  {
+    id: 'ORD-003',
+    customer: 'Lisa Mertens',
+    email: 'lisa@email.be',
+    phone: '+32 xxx xx xx xx',
+    product: 'Koekjes - Chocolade',
+    items: [
+      { product: 'Koekjes', flavor: 'Chocolade', quantity: '24', date: '2026-04-02' }
+    ],
+    date: '2026-03-30',
+    total: '€12.00',
+    status: 'completed'
+  },
+  {
+    id: 'ORD-004',
+    customer: 'Marie Jacobs',
+    email: 'marie@email.be',
+    phone: '+32 xxx xx xx xx',
+    product: 'Feesttaart - Huwelijk',
+    items: [
+      { product: 'Feesttaart', event: 'Huwelijk', persons: '40', flavor: 'Vanie', date: '2026-04-10' }
+    ],
+    date: '2026-03-29',
+    total: '€85.00',
+    status: 'pending'
+  },
+  {
+    id: 'ORD-005',
+    customer: 'Anne de Smedt',
+    email: 'anne@email.be',
+    phone: '+32 xxx xx xx xx',
+    product: 'Mini-gebak (6 stuks)',
+    items: [
+      { product: 'Mini-gebak', flavor: 'Vanille', quantity: '6', date: '2026-04-01' }
+    ],
+    date: '2026-03-29',
+    total: '€9.00',
+    status: 'completed'
+  },
+  {
+    id: 'ORD-006',
+    customer: 'Thomas Claus',
+    email: 'thomas@email.be',
+    phone: '+32 xxx xx xx xx',
+    product: 'Koekjes - Mixed',
+    items: [
+      { product: 'Koekjes', flavor: 'Aardbei & Framboos', quantity: '36', date: '2026-04-04' }
+    ],
+    date: '2026-03-28',
+    total: '€18.00',
+    status: 'cancelled'
+  }
+];
   
   // Search functionality
   document.getElementById('searchInput')?.addEventListener('input', (e) => {
