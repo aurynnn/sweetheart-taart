@@ -92,6 +92,7 @@ import Footer from '../components/Footer.astro';
                     <i class="fa-solid fa-calendar"></i>
                   </div>
                   <input type="date" id="date-input" name="date" required class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
+                  <span id="date-availability-message" class="date-availability-message" style="display: none;"></span>
                 </div>
               </div>
 
@@ -404,6 +405,57 @@ import Footer from '../components/Footer.astro';
     if (dateInput) {
       dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
     }
+    
+    // Fetch availability and show remaining slots
+    let availability = {};
+    async function fetchAvailability() {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 60);
+        const endDate = futureDate.toISOString().split('T')[0];
+        
+        const response = await fetch(`/api/availability?startDate=${today}&endDate=${endDate}`);
+        const data = await response.json();
+        availability = {};
+        
+        if (data.availability) {
+          data.availability.forEach(slot => {
+            availability[slot.date] = slot;
+          });
+          
+          // Show availability message on date input
+          if (dateInput) {
+            dateInput.addEventListener('change', function() {
+              const selectedDate = this.value;
+              const slot = availability[selectedDate];
+              const messageEl = document.getElementById('date-availability-message');
+              
+              if (slot) {
+                if (!slot.available) {
+                  this.classList.add('date-unavailable');
+                  if (messageEl) {
+                    messageEl.textContent = 'Deze datum is volledig bezet. Kies een andere datum.';
+                    messageEl.className = 'date-availability-message error';
+                    messageEl.style.display = 'block';
+                  }
+                } else {
+                  this.classList.remove('date-unavailable');
+                  if (messageEl) {
+                    messageEl.textContent = `${slot.remaining} plaats${slot.remaining !== 1 ? 'en' : ''} resterend op deze datum`;
+                    messageEl.className = 'date-availability-message available';
+                    messageEl.style.display = 'block';
+                  }
+                }
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.log('Could not fetch availability:', err);
+      }
+    }
+    fetchAvailability();
 
     // Add item button - only for adding extra items (first item added on product click)
     addItemBtn.addEventListener('click', () => {
@@ -673,16 +725,64 @@ import Footer from '../components/Footer.astro';
       form.classList.remove('hidden');
     });
 
-    submitBtnFinal.addEventListener('click', function() {
+    submitBtnFinal.addEventListener('click', async function() {
       // Sync review inputs to form fields before submission
       document.querySelector('[name="name"]').value = document.getElementById('review-name-input').value;
       document.querySelector('[name="email"]').value = document.getElementById('review-email-input').value;
       document.querySelector('[name="phone"]').value = document.getElementById('review-phone-input').value;
       document.getElementById('date-input').value = document.getElementById('review-date-input').value;
 
-      var formData = new FormData(form);
-      formData.append('items', JSON.stringify(addedItems));
-      console.log('Order:', Object.fromEntries(formData));
+      var name = document.querySelector('[name="name"]').value;
+      var email = document.querySelector('[name="email"]').value;
+      var phone = document.querySelector('[name="phone"]').value;
+      var date = document.getElementById('date-input').value;
+
+      // Check availability before submitting
+      try {
+        const response = await fetch(`/api/availability?startDate=${date}&endDate=${date}`);
+        const data = await response.json();
+        const slot = data.availability?.[0];
+        
+        if (slot && !slot.available) {
+          alert('Helaas is deze datum volledig bezet. Kies een andere datum.');
+          return;
+        }
+      } catch (err) {
+        console.log('Could not verify availability:', err);
+      }
+
+      // Calculate total (mock calculation)
+      var total = addedItems.reduce(function(sum, item) {
+        if (item.product === 'feesttaart') return sum + 45;
+        if (item.product === 'koekjes') return sum + 12;
+        if (item.product === 'mini-gebak') return sum + 9;
+        return sum;
+      }, 0);
+
+      // Create order object
+      var orderData = {
+        date: date,
+        customer: { name: name, email: email, phone: phone },
+        items: addedItems,
+        total: '€' + total.toFixed(2)
+      };
+
+      // Save order to API
+      try {
+        const saveResponse = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData)
+        });
+        
+        if (!saveResponse.ok) {
+          alert('Er ging iets mis bij het opslaan van uw bestelling. Probeer opnieuw.');
+          return;
+        }
+      } catch (err) {
+        console.log('Could not save order:', err);
+      }
+
       reviewSection.classList.add('hidden');
       successMessage.classList.remove('hidden');
     });
@@ -786,6 +886,29 @@ import Footer from '../components/Footer.astro';
     .order-info-error {
       border-color: #e53e3e !important;
       box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.2);
+    }
+
+    .date-availability-message {
+      display: block;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+    }
+
+    .date-availability-message.available {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .date-availability-message.error {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .date-unavailable {
+      border-color: #ef4444 !important;
+      background: #fef2f2 !important;
     }
   </style>
 </Layout>
