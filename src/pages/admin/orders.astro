@@ -87,15 +87,32 @@ const orders = [
 const statusBadge = (status: string) => {
   const styles: Record<string, string> = {
     pending: 'background: #fef3c7; color: #92400e;',
+    approved: 'background: #dbeafe; color: #1e40af;',
     completed: 'background: #dcfce7; color: #166534;',
     cancelled: 'background: #fee2e2; color: #991b1b;'
   };
   const labels: Record<string, string> = {
     pending: 'In afwachting',
+    approved: 'Goedgekeurd',
     completed: 'Voltooid',
     cancelled: 'Geannuleerd'
   };
   return `<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; ${styles[status] || styles.pending}">${labels[status] || status}</span>`;
+};
+
+const actionButtons = (status: string, orderId: string) => {
+  if (status === 'pending') {
+    return `
+      <button class="btn btn-sm btn-approve" onclick="approveOrder('${orderId}')">Goedkeur</button>
+      <button class="btn btn-sm btn-cancel" onclick="cancelOrder('${orderId}')">Annuleer</button>
+    `;
+  }
+  if (status === 'approved') {
+    return `
+      <button class="btn btn-sm btn-primary" onclick="completeOrder('${orderId}')">Voltooid</button>
+    `;
+  }
+  return `<button class="btn btn-sm btn-secondary" onclick="viewOrder('${orderId}')">Bekijk</button>`;
 };
 
 const columns = [
@@ -120,6 +137,7 @@ const columns = [
 const stats = {
   total: orders.length,
   pending: orders.filter(o => o.status === 'pending').length,
+  approved: orders.filter(o => o.status === 'approved').length,
   completed: orders.filter(o => o.status === 'completed').length,
   cancelled: orders.filter(o => o.status === 'cancelled').length
 };
@@ -151,6 +169,10 @@ const stats = {
     <div class="stat-item pending">
       <span class="stat-value">{stats.pending}</span>
       <span class="stat-label">In afwachting</span>
+    </div>
+    <div class="stat-item approved">
+      <span class="stat-value">{stats.approved}</span>
+      <span class="stat-label">Goedgekeurd</span>
     </div>
     <div class="stat-item completed">
       <span class="stat-value">{stats.completed}</span>
@@ -213,8 +235,8 @@ const stats = {
             <td>{order.date}</td>
             <td class="order-total">{order.total}</td>
             <td><Fragment set:html={statusBadge(order.status)} /></td>
-            <td>
-              <button class="btn btn-sm btn-secondary" onclick={`viewOrder('${order.id}')`}>Bekijk</button>
+            <td class="actions-cell">
+              <Fragment set:html={actionButtons(order.status, order.id)} />
             </td>
           </tr>
         ))}
@@ -236,6 +258,7 @@ const stats = {
         <button class="btn btn-secondary" onclick="closeOrderModal()">Sluiten</button>
         <select class="action-select" id="orderStatusAction">
           <option value="">Status wijzigen...</option>
+          <option value="approved">Goedkeur</option>
           <option value="completed">Markeer als voltooid</option>
           <option value="cancelled">Markeer als geannuleerd</option>
           <option value="pending">Zet terug naar in afwachting</option>
@@ -326,6 +349,69 @@ const stats = {
     document.getElementById('orderModal')?.classList.remove('active');
   };
   
+  (window as any).approveOrder = function(orderId: string) {
+    updateOrderRow(orderId, 'approved');
+  };
+  
+  (window as any).cancelOrder = function(orderId: string) {
+    if (confirm('Weet je zeker dat je deze bestelling wilt annuleren?')) {
+      updateOrderRow(orderId, 'cancelled');
+    }
+  };
+  
+  (window as any).completeOrder = function(orderId: string) {
+    updateOrderRow(orderId, 'completed');
+  };
+  
+  function updateOrderRow(orderId: string, newStatus: string) {
+    const row = document.querySelector(`tr[data-order-id="${orderId}"]`) as HTMLElement;
+    if (!row) return;
+    
+    row.dataset.status = newStatus;
+    
+    // Update status badge
+    const statusCell = row.querySelector('td:nth-child(6)');
+    if (statusCell) {
+      const badges: Record<string, string> = {
+        pending: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #fef3c7; color: #92400e;">In afwachting</span>',
+        approved: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #dbeafe; color: #1e40af;">Goedgekeurd</span>',
+        completed: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #dcfce7; color: #166534;">Voltooid</span>',
+        cancelled: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #fee2e2; color: #991b1b;">Geannuleerd</span>'
+      };
+      statusCell.innerHTML = badges[newStatus] || badges.pending;
+    }
+    
+    // Update actions
+    const actionsCell = row.querySelector('.actions-cell');
+    if (actionsCell) {
+      actionsCell.innerHTML = actionButtons(newStatus, orderId);
+    }
+    
+    // Update stats
+    updateStats();
+    
+    console.log('Order', orderId, 'updated to', newStatus);
+  }
+  
+  function updateStats() {
+    const rows = document.querySelectorAll('#ordersTableBody tr');
+    let pending = 0, approved = 0, completed = 0, cancelled = 0;
+    rows.forEach(row => {
+      const status = (row as HTMLElement).dataset.status;
+      if (status === 'pending') pending++;
+      else if (status === 'approved') approved++;
+      else if (status === 'completed') completed++;
+      else if (status === 'cancelled') cancelled++;
+    });
+    
+    const total = pending + approved + completed + cancelled;
+    const statValues = document.querySelectorAll('.stat-value');
+    if (statValues[0]) statValues[0].textContent = String(total);
+    if (statValues[1]) statValues[1].textContent = String(pending);
+    if (statValues[2]) statValues[2].textContent = String(approved + completed);
+    if (statValues[3]) statValues[3].textContent = String(cancelled);
+  }
+  
   (window as any).updateOrderStatus = function() {
     const select = document.getElementById('orderStatusAction') as HTMLSelectElement;
     const newStatus = select.value;
@@ -391,6 +477,10 @@ const stats = {
 
 .stat-item.pending {
   border-left: 4px solid #f59e0b;
+}
+
+.stat-item.approved {
+  border-left: 4px solid #3b82f6;
 }
 
 .stat-item.completed {
@@ -680,5 +770,29 @@ const stats = {
 
 .btn-secondary:hover {
   background: #e2e8f0;
+}
+
+.btn-approve {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-approve:hover {
+  background: #16a34a;
+}
+
+.btn-cancel {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-cancel:hover {
+  background: #fecaca;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 </style>
