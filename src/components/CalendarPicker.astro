@@ -4,109 +4,85 @@ interface Props {
   name: string;
   minDate?: string;
   maxDate?: string;
-  availability?: Record<string, { available: boolean; remaining: number; reason?: string }>;
 }
 
-const { id, name, minDate, maxDate, availability = {} } = Astro.props;
+const { id, name, minDate } = Astro.props;
 
 const today = new Date().toISOString().split('T')[0];
 const min = minDate || today;
-
-// Generate next 60 days
-const days = [];
-for (let i = 0; i < 60; i++) {
-  const date = new Date();
-  date.setDate(date.getDate() + i);
-  days.push(date);
-}
-
-// Group by month
-const months: { name: string; year: number; days: typeof days }[] = [];
-let currentMonth = '';
-
-days.forEach(day => {
-  const monthName = day.toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' });
-  if (monthName !== currentMonth) {
-    currentMonth = monthName;
-    months.push({ name: monthName, year: day.getFullYear(), days: [] });
-  }
-  months[months.length - 1].days.push(day);
-});
-
-const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
 ---
 
-<div class="calendar-picker" id={`${id}-container`}>
+<div class="agenda-picker" id={`${id}-container`}>
   <input type="hidden" id={id} name={name} value="" />
   
-  <!-- Calendar Header -->
-  <div class="calendar-header">
-    <button type="button" class="calendar-nav-btn" id={`${id}-prev`} disabled>
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <!-- Month Navigation -->
+  <div class="agenda-nav">
+    <button type="button" class="nav-btn" id={`${id}-prev`}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="15 18 9 12 15 6"></polyline>
       </svg>
     </button>
-    
-    <div class="calendar-month-title" id={`${id}-month-title`}>Loading...</div>
-    
-    <button type="button" class="calendar-nav-btn" id={`${id}-next`}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <h3 class="month-title" id={`${id}-title`}></h3>
+    <button type="button" class="nav-btn" id={`${id}-next`}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="9 18 15 12 9 6"></polyline>
       </svg>
     </button>
   </div>
   
-  <!-- Calendar Grid Container -->
-  <div class="calendar-months" id={`${id}-months`}>
-    <!-- Months will be rendered here -->
-  </div>
-  
-  <!-- Selected Date Display -->
-  <div class="calendar-selected" id={`${id}-selected`}>
-    <span class="selected-label">Gekozen datum:</span>
-    <span class="selected-date" id={`${id}-display`}>Nog niet gekozen</span>
-    <span class="selected-slots" id={`${id}-slots`}></span>
+  <!-- Calendar Grid -->
+  <div class="agenda-grid" id={`${id}-grid`}>
+    <!-- Day headers -->
+    <div class="day-header">Ma</div>
+    <div class="day-header">Di</div>
+    <div class="day-header">Wo</div>
+    <div class="day-header">Do</div>
+    <div class="day-header">Vr</div>
+    <div class="day-header">Za</div>
+    <div class="day-header">Zo</div>
+    <!-- Date cells will be injected here -->
   </div>
   
   <!-- Legend -->
-  <div class="calendar-legend">
+  <div class="agenda-legend">
     <div class="legend-item">
-      <span class="legend-dot available"></span>
+      <span class="dot available"></span>
       <span>Beschikbaar</span>
     </div>
     <div class="legend-item">
-      <span class="legend-dot unavailable"></span>
+      <span class="dot unavailable"></span>
       <span>Niet beschikbaar</span>
     </div>
-    <div class="legend-item">
-      <span class="legend-dot selected"></span>
-      <span>Gekozen</span>
-    </div>
+  </div>
+  
+  <!-- Selected Info -->
+  <div class="selected-info" id={`${id}-selected`}>
+    <span class="no-date">Selecteer een beschikbare datum</span>
   </div>
 </div>
 
-<script define:vars={{ id, months: JSON.stringify(months), minDate: min }}>
-  const container = document.getElementById(`${id}-container`);
-  const monthsContainer = document.getElementById(`${id}-months`);
-  const monthTitle = document.getElementById(`${id}-month-title`);
+<script define:vars={{ id, minDate: min }}>
+  const grid = document.getElementById(`${id}-grid`);
+  const title = document.getElementById(`${id}-title`);
   const prevBtn = document.getElementById(`${id}-prev`);
   const nextBtn = document.getElementById(`${id}-next`);
   const hiddenInput = document.getElementById(id);
-  const selectedDisplay = document.getElementById(`${id}-display`);
-  const slotsDisplay = document.getElementById(`${id}-slots`);
+  const selectedInfo = document.getElementById(`${id}-selected`);
   
-  const monthsData = JSON.parse(months);
+  let currentDate = new Date();
   let availabilityData = {};
-  let currentMonthIndex = 0;
-  let selectedDate = null;
+  let selectedValue = null;
   
-  // Fetch availability from API
+  // Day names in Dutch
+  const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
+  const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+  
   async function fetchAvailability() {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 60);
-      const endDate = futureDate.toISOString().split('T')[0];
+      const future = new Date();
+      future.setDate(future.getDate() + 90);
+      const endDate = future.toISOString().split('T')[0];
       
       const response = await fetch(`/api/availability?startDate=${today}&endDate=${endDate}`);
       const data = await response.json();
@@ -117,381 +93,265 @@ const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
         });
       }
       
-      // Re-render with availability data
-      renderMonths();
+      renderCalendar();
     } catch (err) {
       console.log('Could not fetch availability:', err);
+      renderCalendar();
     }
   }
   
-  function renderMonths() {
-    if (!monthsContainer) return;
+  function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
     
-    monthsContainer.innerHTML = '';
+    // Update title
+    title.textContent = `${monthNames[month]} ${year}`;
     
-    // Render all months stacked
-    monthsData.forEach((month, monthIndex) => {
-      const monthEl = document.createElement('div');
-      monthEl.className = 'calendar-month';
-      if (monthIndex < currentMonthIndex) monthEl.classList.add('hidden-month');
-      if (monthIndex > currentMonthIndex + 1) monthEl.classList.add('hidden-month');
+    // Clear existing date cells (keep headers)
+    const headers = grid.querySelectorAll('.day-header');
+    grid.innerHTML = '';
+    headers.forEach(h => grid.appendChild(h));
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    
+    // Get day of week for first day (0 = Sunday, convert to Monday = 0)
+    let startDay = firstDay.getDay() - 1;
+    if (startDay < 0) startDay = 6;
+    
+    // Add empty cells before first day
+    for (let i = 0; i < startDay; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'date-cell empty';
+      grid.appendChild(empty);
+    }
+    
+    // Add day cells
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateObj = new Date(year, month, day);
+      const dateStr = dateObj.toISOString().split('T')[0];
+      const dayOfWeek = dateObj.getDay();
       
-      const monthHeader = document.createElement('div');
-      monthHeader.className = 'month-header';
-      monthHeader.textContent = month.name.charAt(0).toUpperCase() + month.name.slice(1);
-      monthEl.appendChild(monthHeader);
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'date-cell';
+      cell.textContent = day;
+      cell.dataset.date = dateStr;
       
-      // Day names header
-      const dayNamesRow = document.createElement('div');
-      dayNamesRow.className = 'day-names-row';
-      ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].forEach(name => {
-        const dayEl = document.createElement('span');
-        dayEl.className = 'day-name-cell';
-        dayEl.textContent = name;
-        dayNamesRow.appendChild(dayEl);
-      });
-      monthEl.appendChild(dayNamesRow);
+      const slot = availabilityData[dateStr];
+      const isPast = dateStr < todayStr;
+      const isSunday = dayOfWeek === 0;
+      const isSaturday = dayOfWeek === 6;
       
-      // Days grid
-      const daysGrid = document.createElement('div');
-      daysGrid.className = 'days-grid';
-      
-      // Get first day of month (0 = Sunday, convert to Monday = 0)
-      const firstDay = new Date(month.year, 0, 1).getDay();
-      // Convert Sunday=0 to Monday-based (Mo=0, Su=6)
-      let startOffset = firstDay - 1;
-      if (startOffset < 0) startOffset = 6;
-      
-      // Add empty cells for days before month starts
-      for (let i = 0; i < startOffset; i++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.className = 'day-cell empty';
-        daysGrid.appendChild(emptyCell);
-      }
-      
-      // Add day cells
-      month.days.forEach(date => {
-        const dateStr = date.toISOString().split('T')[0];
-        const dayOfWeek = date.getDay();
-        const isPast = dateStr < minDate;
-        const slot = availabilityData[dateStr];
-        const isAvailable = slot ? slot.available : !isPast;
-        const isSunday = dayOfWeek === 0;
-        const isSaturday = dayOfWeek === 6;
+      if (isPast) {
+        cell.classList.add('past');
+      } else if (slot && !slot.available) {
+        cell.classList.add('unavailable');
+        cell.title = slot.reason || 'Niet beschikbaar';
+      } else if (isSunday) {
+        cell.classList.add('unavailable');
+        cell.title = 'Gesloten op zondag';
+      } else if (isSaturday) {
+        cell.classList.add('saturday');
+        cell.addEventListener('click', () => selectDate(dateStr, cell));
+      } else {
+        cell.classList.add('available');
         
-        const dayCell = document.createElement('button');
-        dayCell.type = 'button';
-        dayCell.className = 'day-cell';
-        dayCell.dataset.date = dateStr;
-        dayCell.textContent = String(date.getDate());
-        
-        if (isPast) {
-          dayCell.classList.add('past');
-        } else if (!isAvailable) {
-          dayCell.classList.add('unavailable');
-          dayCell.title = slot?.reason || 'Niet beschikbaar';
-        } else if (slot && slot.remaining <= 1) {
-          dayCell.classList.add('limited');
-          dayCell.title = `Nog ${slot.remaining} plaats`;
-        } else {
-          dayCell.classList.add('available-day');
+        // Show remaining if limited
+        if (slot && slot.remaining <= 2) {
+          cell.classList.add('limited');
+          cell.title = `${slot.remaining} plaats over`;
         }
         
-        if (isSunday) dayCell.classList.add('sunday');
-        if (isSaturday) dayCell.classList.add('saturday');
-        
-        dayCell.addEventListener('click', () => selectDate(dateStr, dayCell));
-        
-        daysGrid.appendChild(dayCell);
-      });
+        cell.addEventListener('click', () => selectDate(dateStr, cell));
+      }
       
-      monthEl.appendChild(daysGrid);
-      monthsContainer.appendChild(monthEl);
-    });
+      grid.appendChild(cell);
+    }
     
-    updateMonthTitle();
-  }
-  
-  function updateMonthTitle() {
-    if (monthTitle && monthsData[currentMonthIndex]) {
-      monthTitle.textContent = monthsData[currentMonthIndex].name.charAt(0).toUpperCase() + monthsData[currentMonthIndex].name.slice(1);
-    }
-    if (prevBtn) {
-      prevBtn.disabled = currentMonthIndex === 0;
-    }
-    if (nextBtn && monthsData[currentMonthIndex + 1]) {
-      nextBtn.disabled = false;
-    }
+    // Disable prev if current month
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    prevBtn.disabled = (month === currentMonth && year === currentYear);
   }
   
   function selectDate(dateStr, cell) {
     // Remove previous selection
-    document.querySelectorAll('.day-cell.selected').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('.date-cell.selected').forEach(el => el.classList.remove('selected'));
     
-    // Select new date
+    // Select new
     cell.classList.add('selected');
-    selectedDate = dateStr;
+    selectedValue = dateStr;
+    hiddenInput.value = dateStr;
     
-    if (hiddenInput) hiddenInput.value = dateStr;
-    
-    // Update display
-    const date = new Date(dateStr + 'T00:00:00');
-    const formatted = date.toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long' });
-    if (selectedDisplay) selectedDisplay.textContent = formatted;
-    
-    // Show availability
     const slot = availabilityData[dateStr];
-    if (slotsDisplay) {
-      if (slot) {
-        if (slot.available) {
-          slotsDisplay.textContent = `${slot.remaining} plaats${slot.remaining !== 1 ? 'en' : ''} resterend`;
-          slotsDisplay.className = 'selected-slots available';
-        } else {
-          slotsDisplay.textContent = slot.reason || 'Niet beschikbaar';
-          slotsDisplay.className = 'selected-slots unavailable';
-        }
-      } else {
-        slotsDisplay.textContent = '';
-      }
-    }
+    const date = new Date(dateStr + 'T00:00:00');
+    const formatted = `${dayNames[date.getDay()]} ${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
     
-    // Trigger change event
-    hiddenInput?.dispatchEvent(new Event('change'));
+    selectedInfo.innerHTML = `
+      <span class="date-text">${formatted}</span>
+      <span class="slots-text ${slot?.available ? 'available' : 'unavailable'}">
+        ${slot?.available ? `${slot.remaining} plaats over` : (slot?.reason || 'Niet beschikbaar')}
+      </span>
+    `;
+    
+    hiddenInput.dispatchEvent(new Event('change'));
   }
   
-  prevBtn?.addEventListener('click', () => {
-    if (currentMonthIndex > 0) {
-      currentMonthIndex--;
-      updateMonthTitle();
-      // Show/hide months with animation
-      document.querySelectorAll('.calendar-month').forEach((el, idx) => {
-        if (idx < currentMonthIndex) el.classList.add('hidden-month');
-        else if (idx === currentMonthIndex) el.classList.remove('hidden-month');
-        else if (idx === currentMonthIndex + 1) el.classList.remove('hidden-month');
-        else el.classList.add('hidden-month');
-      });
-    }
+  prevBtn.addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
   });
   
-  nextBtn?.addEventListener('click', () => {
-    if (currentMonthIndex < monthsData.length - 1) {
-      currentMonthIndex++;
-      updateMonthTitle();
-      // Show/hide months with animation
-      document.querySelectorAll('.calendar-month').forEach((el, idx) => {
-        if (idx < currentMonthIndex) el.classList.add('hidden-month');
-        else if (idx === currentMonthIndex) el.classList.remove('hidden-month');
-        else if (idx === currentMonthIndex + 1) el.classList.remove('hidden-month');
-        else el.classList.add('hidden-month');
-      });
-    }
+  nextBtn.addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
   });
   
   // Initial render
-  renderMonths();
-  
-  // Fetch availability after initial render
+  renderCalendar();
   fetchAvailability();
 </script>
 
 <style>
-.calendar-picker {
+.agenda-picker {
   background: white;
   border-radius: 1rem;
-  padding: 1.5rem;
-  border: 2px solid #F0E0E2;
-  max-width: 400px;
+  padding: 1.25rem;
+  border: 1px solid #F0E0E2;
+  font-family: inherit;
 }
 
-.calendar-header {
+.agenda-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
 }
 
-.calendar-nav-btn {
-  width: 2.5rem;
-  height: 2.5rem;
+.nav-btn {
+  width: 2rem;
+  height: 2rem;
   border: none;
-  background: #fdf2f8;
-  border-radius: 0.75rem;
+  background: #FDEEF0;
+  border-radius: 0.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #e11d48;
+  color: #E8788A;
   transition: all 0.2s;
 }
 
-.calendar-nav-btn:hover:not(:disabled) {
+.nav-btn:hover:not(:disabled) {
   background: #fce7f3;
 }
 
-.calendar-nav-btn:disabled {
+.nav-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
-.calendar-month-title {
-  font-weight: 600;
+.month-title {
   font-size: 1rem;
-  color: #1e293b;
-  text-transform: capitalize;
-}
-
-.calendar-months {
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-.calendar-month {
-  margin-bottom: 1rem;
-  transition: opacity 0.3s;
-}
-
-.calendar-month.hidden-month {
-  display: none;
-}
-
-.month-header {
   font-weight: 600;
-  font-size: 0.875rem;
-  color: #64748b;
-  margin-bottom: 0.5rem;
-  text-transform: capitalize;
+  color: #1e293b;
+  margin: 0;
 }
 
-.day-names-row {
+.agenda-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 0.25rem;
+  gap: 0.375rem;
 }
 
-.day-name-cell {
+.day-header {
   text-align: center;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #94a3b8;
-  padding: 0.25rem;
+  padding: 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.days-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.25rem;
-}
-
-.day-cell {
+.date-cell {
   aspect-ratio: 1;
   border: none;
-  border-radius: 0.75rem;
   background: transparent;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: #334155;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.day-cell.empty {
+.date-cell.empty {
   cursor: default;
 }
 
-.day-cell.available-day {
-  background: #fdf2f8;
-  color: #e11d48;
+.date-cell.available {
+  background: #FDEEF0;
+  color: #E8788A;
 }
 
-.day-cell.available-day:hover {
+.date-cell.available:hover {
   background: #fce7f3;
   transform: scale(1.05);
 }
 
-.day-cell.past,
-.day-cell.unavailable {
-  background: #f1f5f9;
+.date-cell.past {
   color: #cbd5e1;
   cursor: not-allowed;
   text-decoration: line-through;
 }
 
-.day-cell.limited {
-  background: #fef3c7;
-  color: #92400e;
+.date-cell.unavailable {
+  background: #f1f5f9;
+  color: #cbd5e1;
+  cursor: not-allowed;
 }
 
-.day-cell.limited:hover {
+.date-cell.limited {
+  background: #fef3c7;
+  color: #92400e;
+  position: relative;
+}
+
+.date-cell.limited:hover {
   background: #fde68a;
 }
 
-.day-cell.sunday {
-  color: #94a3b8;
+.date-cell.saturday {
+  background: #fef9c3;
+  color: #a16207;
 }
 
-.day-cell.saturday {
-  color: #64748b;
+.date-cell.saturday:hover {
+  background: #fef08a;
 }
 
-.day-cell.selected {
-  background: #e11d48 !important;
+.date-cell.selected {
+  background: #E8788A !important;
   color: white !important;
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+  box-shadow: 0 4px 12px rgba(232, 120, 138, 0.4);
 }
 
-.day-cell.selected.sunday,
-.day-cell.selected.saturday {
-  color: white !important;
-}
-
-/* Selected Display */
-.calendar-selected {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #fdf2f8;
-  border-radius: 0.75rem;
+.agenda-legend {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.selected-label {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-.selected-date {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #1e293b;
-  text-transform: capitalize;
-}
-
-.selected-slots {
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.selected-slots.available {
-  color: #16a34a;
-}
-
-.selected-slots.unavailable {
-  color: #dc2626;
-}
-
-/* Legend */
-.calendar-legend {
-  display: flex;
-  gap: 1rem;
+  gap: 1.25rem;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #f1f5f9;
-  flex-wrap: wrap;
 }
 
 .legend-item {
@@ -502,23 +362,51 @@ const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
   color: #64748b;
 }
 
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 0.25rem;
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-.legend-dot.available {
-  background: #fdf2f8;
-  border: 2px solid #e11d48;
+.dot.available {
+  background: #E8788A;
 }
 
-.legend-dot.unavailable {
-  background: #f1f5f9;
-  border: 2px solid #cbd5e1;
+.dot.unavailable {
+  background: #cbd5e1;
 }
 
-.legend-dot.selected {
-  background: #e11d48;
+.selected-info {
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  background: #FDEEF0;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.selected-info .no-date {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.selected-info .date-text {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9375rem;
+}
+
+.selected-info .slots-text {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.selected-info .slots-text.available {
+  color: #16a34a;
+}
+
+.selected-info .slots-text.unavailable {
+  color: #dc2626;
 }
 </style>
