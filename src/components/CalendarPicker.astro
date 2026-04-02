@@ -1,0 +1,524 @@
+---
+interface Props {
+  id: string;
+  name: string;
+  minDate?: string;
+  maxDate?: string;
+  availability?: Record<string, { available: boolean; remaining: number; reason?: string }>;
+}
+
+const { id, name, minDate, maxDate, availability = {} } = Astro.props;
+
+const today = new Date().toISOString().split('T')[0];
+const min = minDate || today;
+
+// Generate next 60 days
+const days = [];
+for (let i = 0; i < 60; i++) {
+  const date = new Date();
+  date.setDate(date.getDate() + i);
+  days.push(date);
+}
+
+// Group by month
+const months: { name: string; year: number; days: typeof days }[] = [];
+let currentMonth = '';
+
+days.forEach(day => {
+  const monthName = day.toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' });
+  if (monthName !== currentMonth) {
+    currentMonth = monthName;
+    months.push({ name: monthName, year: day.getFullYear(), days: [] });
+  }
+  months[months.length - 1].days.push(day);
+});
+
+const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+---
+
+<div class="calendar-picker" id={`${id}-container`}>
+  <input type="hidden" id={id} name={name} value="" />
+  
+  <!-- Calendar Header -->
+  <div class="calendar-header">
+    <button type="button" class="calendar-nav-btn" id={`${id}-prev`} disabled>
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    
+    <div class="calendar-month-title" id={`${id}-month-title`}>Loading...</div>
+    
+    <button type="button" class="calendar-nav-btn" id={`${id}-next`}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+  </div>
+  
+  <!-- Calendar Grid Container -->
+  <div class="calendar-months" id={`${id}-months`}>
+    <!-- Months will be rendered here -->
+  </div>
+  
+  <!-- Selected Date Display -->
+  <div class="calendar-selected" id={`${id}-selected`}>
+    <span class="selected-label">Gekozen datum:</span>
+    <span class="selected-date" id={`${id}-display`}>Nog niet gekozen</span>
+    <span class="selected-slots" id={`${id}-slots`}></span>
+  </div>
+  
+  <!-- Legend -->
+  <div class="calendar-legend">
+    <div class="legend-item">
+      <span class="legend-dot available"></span>
+      <span>Beschikbaar</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot unavailable"></span>
+      <span>Niet beschikbaar</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot selected"></span>
+      <span>Gekozen</span>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ id, months: JSON.stringify(months), minDate: min }}>
+  const container = document.getElementById(`${id}-container`);
+  const monthsContainer = document.getElementById(`${id}-months`);
+  const monthTitle = document.getElementById(`${id}-month-title`);
+  const prevBtn = document.getElementById(`${id}-prev`);
+  const nextBtn = document.getElementById(`${id}-next`);
+  const hiddenInput = document.getElementById(id);
+  const selectedDisplay = document.getElementById(`${id}-display`);
+  const slotsDisplay = document.getElementById(`${id}-slots`);
+  
+  const monthsData = JSON.parse(months);
+  let availabilityData = {};
+  let currentMonthIndex = 0;
+  let selectedDate = null;
+  
+  // Fetch availability from API
+  async function fetchAvailability() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 60);
+      const endDate = futureDate.toISOString().split('T')[0];
+      
+      const response = await fetch(`/api/availability?startDate=${today}&endDate=${endDate}`);
+      const data = await response.json();
+      
+      if (data.availability) {
+        data.availability.forEach(slot => {
+          availabilityData[slot.date] = slot;
+        });
+      }
+      
+      // Re-render with availability data
+      renderMonths();
+    } catch (err) {
+      console.log('Could not fetch availability:', err);
+    }
+  }
+  
+  function renderMonths() {
+    if (!monthsContainer) return;
+    
+    monthsContainer.innerHTML = '';
+    
+    // Render all months stacked
+    monthsData.forEach((month, monthIndex) => {
+      const monthEl = document.createElement('div');
+      monthEl.className = 'calendar-month';
+      if (monthIndex < currentMonthIndex) monthEl.classList.add('hidden-month');
+      if (monthIndex > currentMonthIndex + 1) monthEl.classList.add('hidden-month');
+      
+      const monthHeader = document.createElement('div');
+      monthHeader.className = 'month-header';
+      monthHeader.textContent = month.name.charAt(0).toUpperCase() + month.name.slice(1);
+      monthEl.appendChild(monthHeader);
+      
+      // Day names header
+      const dayNamesRow = document.createElement('div');
+      dayNamesRow.className = 'day-names-row';
+      ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].forEach(name => {
+        const dayEl = document.createElement('span');
+        dayEl.className = 'day-name-cell';
+        dayEl.textContent = name;
+        dayNamesRow.appendChild(dayEl);
+      });
+      monthEl.appendChild(dayNamesRow);
+      
+      // Days grid
+      const daysGrid = document.createElement('div');
+      daysGrid.className = 'days-grid';
+      
+      // Get first day of month (0 = Sunday, convert to Monday = 0)
+      const firstDay = new Date(month.year, 0, 1).getDay();
+      // Convert Sunday=0 to Monday-based (Mo=0, Su=6)
+      let startOffset = firstDay - 1;
+      if (startOffset < 0) startOffset = 6;
+      
+      // Add empty cells for days before month starts
+      for (let i = 0; i < startOffset; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'day-cell empty';
+        daysGrid.appendChild(emptyCell);
+      }
+      
+      // Add day cells
+      month.days.forEach(date => {
+        const dateStr = date.toISOString().split('T')[0];
+        const dayOfWeek = date.getDay();
+        const isPast = dateStr < minDate;
+        const slot = availabilityData[dateStr];
+        const isAvailable = slot ? slot.available : !isPast;
+        const isSunday = dayOfWeek === 0;
+        const isSaturday = dayOfWeek === 6;
+        
+        const dayCell = document.createElement('button');
+        dayCell.type = 'button';
+        dayCell.className = 'day-cell';
+        dayCell.dataset.date = dateStr;
+        dayCell.textContent = String(date.getDate());
+        
+        if (isPast) {
+          dayCell.classList.add('past');
+        } else if (!isAvailable) {
+          dayCell.classList.add('unavailable');
+          dayCell.title = slot?.reason || 'Niet beschikbaar';
+        } else if (slot && slot.remaining <= 1) {
+          dayCell.classList.add('limited');
+          dayCell.title = `Nog ${slot.remaining} plaats`;
+        } else {
+          dayCell.classList.add('available-day');
+        }
+        
+        if (isSunday) dayCell.classList.add('sunday');
+        if (isSaturday) dayCell.classList.add('saturday');
+        
+        dayCell.addEventListener('click', () => selectDate(dateStr, dayCell));
+        
+        daysGrid.appendChild(dayCell);
+      });
+      
+      monthEl.appendChild(daysGrid);
+      monthsContainer.appendChild(monthEl);
+    });
+    
+    updateMonthTitle();
+  }
+  
+  function updateMonthTitle() {
+    if (monthTitle && monthsData[currentMonthIndex]) {
+      monthTitle.textContent = monthsData[currentMonthIndex].name.charAt(0).toUpperCase() + monthsData[currentMonthIndex].name.slice(1);
+    }
+    if (prevBtn) {
+      prevBtn.disabled = currentMonthIndex === 0;
+    }
+    if (nextBtn && monthsData[currentMonthIndex + 1]) {
+      nextBtn.disabled = false;
+    }
+  }
+  
+  function selectDate(dateStr, cell) {
+    // Remove previous selection
+    document.querySelectorAll('.day-cell.selected').forEach(el => el.classList.remove('selected'));
+    
+    // Select new date
+    cell.classList.add('selected');
+    selectedDate = dateStr;
+    
+    if (hiddenInput) hiddenInput.value = dateStr;
+    
+    // Update display
+    const date = new Date(dateStr + 'T00:00:00');
+    const formatted = date.toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long' });
+    if (selectedDisplay) selectedDisplay.textContent = formatted;
+    
+    // Show availability
+    const slot = availabilityData[dateStr];
+    if (slotsDisplay) {
+      if (slot) {
+        if (slot.available) {
+          slotsDisplay.textContent = `${slot.remaining} plaats${slot.remaining !== 1 ? 'en' : ''} resterend`;
+          slotsDisplay.className = 'selected-slots available';
+        } else {
+          slotsDisplay.textContent = slot.reason || 'Niet beschikbaar';
+          slotsDisplay.className = 'selected-slots unavailable';
+        }
+      } else {
+        slotsDisplay.textContent = '';
+      }
+    }
+    
+    // Trigger change event
+    hiddenInput?.dispatchEvent(new Event('change'));
+  }
+  
+  prevBtn?.addEventListener('click', () => {
+    if (currentMonthIndex > 0) {
+      currentMonthIndex--;
+      updateMonthTitle();
+      // Show/hide months with animation
+      document.querySelectorAll('.calendar-month').forEach((el, idx) => {
+        if (idx < currentMonthIndex) el.classList.add('hidden-month');
+        else if (idx === currentMonthIndex) el.classList.remove('hidden-month');
+        else if (idx === currentMonthIndex + 1) el.classList.remove('hidden-month');
+        else el.classList.add('hidden-month');
+      });
+    }
+  });
+  
+  nextBtn?.addEventListener('click', () => {
+    if (currentMonthIndex < monthsData.length - 1) {
+      currentMonthIndex++;
+      updateMonthTitle();
+      // Show/hide months with animation
+      document.querySelectorAll('.calendar-month').forEach((el, idx) => {
+        if (idx < currentMonthIndex) el.classList.add('hidden-month');
+        else if (idx === currentMonthIndex) el.classList.remove('hidden-month');
+        else if (idx === currentMonthIndex + 1) el.classList.remove('hidden-month');
+        else el.classList.add('hidden-month');
+      });
+    }
+  });
+  
+  // Initial render
+  renderMonths();
+  
+  // Fetch availability after initial render
+  fetchAvailability();
+</script>
+
+<style>
+.calendar-picker {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 2px solid #F0E0E2;
+  max-width: 400px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.calendar-nav-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  background: #fdf2f8;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e11d48;
+  transition: all 0.2s;
+}
+
+.calendar-nav-btn:hover:not(:disabled) {
+  background: #fce7f3;
+}
+
+.calendar-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.calendar-month-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1e293b;
+  text-transform: capitalize;
+}
+
+.calendar-months {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.calendar-month {
+  margin-bottom: 1rem;
+  transition: opacity 0.3s;
+}
+
+.calendar-month.hidden-month {
+  display: none;
+}
+
+.month-header {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+.day-names-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 0.25rem;
+}
+
+.day-name-cell {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+  padding: 0.25rem;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.day-cell {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 0.75rem;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-cell.empty {
+  cursor: default;
+}
+
+.day-cell.available-day {
+  background: #fdf2f8;
+  color: #e11d48;
+}
+
+.day-cell.available-day:hover {
+  background: #fce7f3;
+  transform: scale(1.05);
+}
+
+.day-cell.past,
+.day-cell.unavailable {
+  background: #f1f5f9;
+  color: #cbd5e1;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.day-cell.limited {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.day-cell.limited:hover {
+  background: #fde68a;
+}
+
+.day-cell.sunday {
+  color: #94a3b8;
+}
+
+.day-cell.saturday {
+  color: #64748b;
+}
+
+.day-cell.selected {
+  background: #e11d48 !important;
+  color: white !important;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+}
+
+.day-cell.selected.sunday,
+.day-cell.selected.saturday {
+  color: white !important;
+}
+
+/* Selected Display */
+.calendar-selected {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fdf2f8;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.selected-label {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.selected-date {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1e293b;
+  text-transform: capitalize;
+}
+
+.selected-slots {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.selected-slots.available {
+  color: #16a34a;
+}
+
+.selected-slots.unavailable {
+  color: #dc2626;
+}
+
+/* Legend */
+.calendar-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 0.25rem;
+}
+
+.legend-dot.available {
+  background: #fdf2f8;
+  border: 2px solid #e11d48;
+}
+
+.legend-dot.unavailable {
+  background: #f1f5f9;
+  border: 2px solid #cbd5e1;
+}
+
+.legend-dot.selected {
+  background: #e11d48;
+}
+</style>

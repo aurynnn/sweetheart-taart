@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import CalendarPicker from '../components/CalendarPicker.astro';
 ---
 
 <Layout title="Bestellen" description="Bestel uw feesttaart of mini-gebak bij Sweetheart Taart. Neem contact op voor een vrijblijvende aanvraag.">
@@ -87,11 +88,12 @@ import Footer from '../components/Footer.astro';
                   <input type="tel" name="phone" required placeholder="+32 xxx xx xx xx" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                 </div>
                 <!-- Date -->
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                    <i class="fa-solid fa-calendar"></i>
-                  </div>
-                  <input type="date" id="date-input" name="date" required class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
+                <div>
+                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
+                    <i class="fa-solid fa-calendar mr-2"></i>Selecteer een datum
+                  </label>
+                  <CalendarPicker id="date-input" name="date" />
+                </div>
                   <span id="date-availability-message" class="date-availability-message" style="display: none;"></span>
                 </div>
               </div>
@@ -400,62 +402,7 @@ import Footer from '../components/Footer.astro';
     itemDetailsSection.classList.add('hidden');
     addItemBtn.classList.add('hidden');
 
-    // Set min date
-    const dateInput = document.getElementById('date-input');
-    if (dateInput) {
-      dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
-    }
-    
-    // Fetch availability and show remaining slots
-    let availability = {};
-    async function fetchAvailability() {
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + 60);
-        const endDate = futureDate.toISOString().split('T')[0];
-        
-        const response = await fetch(`/api/availability?startDate=${today}&endDate=${endDate}`);
-        const data = await response.json();
-        availability = {};
-        
-        if (data.availability) {
-          data.availability.forEach(slot => {
-            availability[slot.date] = slot;
-          });
-          
-          // Show availability message on date input
-          if (dateInput) {
-            dateInput.addEventListener('change', function() {
-              const selectedDate = this.value;
-              const slot = availability[selectedDate];
-              const messageEl = document.getElementById('date-availability-message');
-              
-              if (slot) {
-                if (!slot.available) {
-                  this.classList.add('date-unavailable');
-                  if (messageEl) {
-                    messageEl.textContent = 'Deze datum is volledig bezet. Kies een andere datum.';
-                    messageEl.className = 'date-availability-message error';
-                    messageEl.style.display = 'block';
-                  }
-                } else {
-                  this.classList.remove('date-unavailable');
-                  if (messageEl) {
-                    messageEl.textContent = `${slot.remaining} plaats${slot.remaining !== 1 ? 'en' : ''} resterend op deze datum`;
-                    messageEl.className = 'date-availability-message available';
-                    messageEl.style.display = 'block';
-                  }
-                }
-              }
-            });
-          }
-        }
-      } catch (err) {
-        console.log('Could not fetch availability:', err);
-      }
-    }
-    fetchAvailability();
+    // CalendarPicker component handles its own availability fetching
 
     // Add item button - only for adding extra items (first item added on product click)
     addItemBtn.addEventListener('click', () => {
