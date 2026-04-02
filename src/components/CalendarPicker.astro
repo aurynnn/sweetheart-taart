@@ -7,7 +7,6 @@ interface Props {
 }
 
 const { id, name, minDate } = Astro.props;
-
 const today = new Date().toISOString().split('T')[0];
 const min = minDate || today;
 ---
@@ -15,7 +14,6 @@ const min = minDate || today;
 <div class="agenda-picker" id={`${id}-container`}>
   <input type="hidden" id={id} name={name} value="" />
   
-  <!-- Month Navigation -->
   <div class="agenda-nav">
     <button type="button" class="nav-btn" id={`${id}-prev`}>
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -30,9 +28,7 @@ const min = minDate || today;
     </button>
   </div>
   
-  <!-- Calendar Grid -->
   <div class="agenda-grid" id={`${id}-grid`}>
-    <!-- Day headers -->
     <div class="day-header">Ma</div>
     <div class="day-header">Di</div>
     <div class="day-header">Wo</div>
@@ -40,10 +36,8 @@ const min = minDate || today;
     <div class="day-header">Vr</div>
     <div class="day-header">Za</div>
     <div class="day-header">Zo</div>
-    <!-- Date cells will be injected here -->
   </div>
   
-  <!-- Selected Info -->
   <div class="selected-info" id={`${id}-selected`}>
     <span class="no-date">Selecteer een beschikbare datum</span>
   </div>
@@ -59,9 +53,7 @@ const min = minDate || today;
   
   let currentDate = new Date();
   let availabilityData = {};
-  let selectedValue = null;
   
-  // Day names in Dutch
   const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
   const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
   
@@ -80,10 +72,8 @@ const min = minDate || today;
           availabilityData[slot.date] = slot;
         });
       }
-      
       renderCalendar();
     } catch (err) {
-      console.log('Could not fetch availability:', err);
       renderCalendar();
     }
   }
@@ -91,32 +81,25 @@ const min = minDate || today;
   function renderCalendar() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    
-    // Update title
     title.textContent = `${monthNames[month]} ${year}`;
     
-    // Clear existing date cells (keep headers)
     const headers = grid.querySelectorAll('.day-header');
     grid.innerHTML = '';
     headers.forEach(h => grid.appendChild(h));
     
-    // Get first day of month and number of days
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     
-    // Get day of week for first day (0 = Sunday, convert to Monday = 0)
     let startDay = firstDay.getDay() - 1;
     if (startDay < 0) startDay = 6;
     
-    // Add empty cells before first day
     for (let i = 0; i < startDay; i++) {
       const empty = document.createElement('div');
       empty.className = 'date-cell empty';
       grid.appendChild(empty);
     }
     
-    // Add day cells
     const todayStr = new Date().toISOString().split('T')[0];
     
     for (let day = 1; day <= daysInMonth; day++) {
@@ -133,47 +116,32 @@ const min = minDate || today;
       const slot = availabilityData[dateStr];
       const isPast = dateStr < todayStr;
       const isSunday = dayOfWeek === 0;
-      const isSaturday = dayOfWeek === 6;
       
       if (isPast) {
         cell.classList.add('past');
-      } else if (slot && !slot.available) {
-        cell.classList.add('unavailable');
-        cell.title = slot.reason || 'Niet beschikbaar';
       } else if (isSunday) {
         cell.classList.add('unavailable');
-        cell.title = 'Gesloten op zondag';
-      } else if (isSaturday) {
-        cell.classList.add('saturday');
+      } else if (slot && !slot.available) {
+        cell.classList.add('unavailable');
+      } else if (slot && slot.remaining <= 2) {
+        cell.classList.add('limited');
         cell.addEventListener('click', () => selectDate(dateStr, cell));
       } else {
         cell.classList.add('available');
-        
-        // Show remaining if limited
-        if (slot && slot.remaining <= 2) {
-          cell.classList.add('limited');
-          cell.title = `${slot.remaining} plaats over`;
-        }
-        
         cell.addEventListener('click', () => selectDate(dateStr, cell));
       }
       
       grid.appendChild(cell);
     }
     
-    // Disable prev if current month
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     prevBtn.disabled = (month === currentMonth && year === currentYear);
   }
   
   function selectDate(dateStr, cell) {
-    // Remove previous selection
     document.querySelectorAll('.date-cell.selected').forEach(el => el.classList.remove('selected'));
-    
-    // Select new
     cell.classList.add('selected');
-    selectedValue = dateStr;
     hiddenInput.value = dateStr;
     
     const slot = availabilityData[dateStr];
@@ -200,7 +168,6 @@ const min = minDate || today;
     renderCalendar();
   });
   
-  // Initial render
   renderCalendar();
   fetchAvailability();
 </script>
@@ -209,22 +176,21 @@ const min = minDate || today;
 .agenda-picker {
   background: white;
   border-radius: 1rem;
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid #F0E0E2;
   font-family: inherit;
-  max-width: 280px;
 }
 
 .agenda-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .nav-btn {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2rem;
+  height: 2rem;
   border: none;
   background: #FDEEF0;
   border-radius: 0.5rem;
@@ -247,7 +213,7 @@ const min = minDate || today;
 }
 
 .month-title {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #1e293b;
   margin: 0;
@@ -256,27 +222,25 @@ const min = minDate || today;
 .agenda-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
 .day-header {
   text-align: center;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: #94a3b8;
-  padding: 0.25rem 0;
+  padding: 0.5rem 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .date-cell {
   aspect-ratio: 1;
-  border: none;
-  background: transparent;
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #334155;
   cursor: pointer;
   transition: all 0.15s;
   display: flex;
@@ -286,19 +250,22 @@ const min = minDate || today;
 
 .date-cell.empty {
   cursor: default;
+  border: none;
 }
 
 .date-cell.available {
   background: #FDEEF0;
   color: #E8788A;
+  border-color: #FDEEF0;
 }
 
 .date-cell.available:hover {
-  background: #fce7f3;
+  border-color: #E8788A;
   transform: scale(1.05);
 }
 
 .date-cell.past {
+  background: #f1f5f9;
   color: #cbd5e1;
   cursor: not-allowed;
   text-decoration: line-through;
@@ -308,52 +275,50 @@ const min = minDate || today;
   background: #f1f5f9;
   color: #cbd5e1;
   cursor: not-allowed;
+  border-color: #e2e8f0;
 }
 
 .date-cell.limited {
   background: #fef3c7;
   color: #92400e;
+  border-color: #fcd34d;
 }
 
-.date-cell.saturday {
-  background: #fef9c3;
-  color: #a16207;
-}
-
-.date-cell.saturday:hover {
-  background: #fef08a;
+.date-cell.limited:hover {
+  border-color: #eab308;
 }
 
 .date-cell.selected {
   background: #E8788A !important;
   color: white !important;
+  border-color: #E8788A !important;
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(232, 120, 138, 0.3);
+  box-shadow: 0 4px 12px rgba(232, 120, 138, 0.4);
 }
 
 .selected-info {
-  margin-top: 0.75rem;
-  padding: 0.625rem 0.75rem;
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
   background: #FDEEF0;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 0.25rem;
 }
 
 .selected-info .no-date {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: #64748b;
 }
 
 .selected-info .date-text {
   font-weight: 600;
   color: #1e293b;
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
 }
 
 .selected-info .slots-text {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
 }
 
