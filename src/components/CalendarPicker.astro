@@ -172,39 +172,40 @@ const min = minDate || today;
   fetchAvailability();
 </script>
 
-<style>
+<style is:global>
 .agenda-picker {
   background: white;
-  border-radius: 1rem;
-  padding: 1.25rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
   border: 1px solid #F0E0E2;
   font-family: inherit;
+  max-width: 360px;
 }
 
 .agenda-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .nav-btn {
-  width: 2rem;
-  height: 2rem;
+  width: 1.25rem;
+  height: 1.25rem;
   border: none;
-  background: #FDEEF0;
-  border-radius: 0.5rem;
+  background: #FDF2F4;
+  border-radius: 0.25rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #E8788A;
-  transition: all 0.2s;
+  transition: all 0.1s;
   padding: 0;
 }
 
 .nav-btn:hover:not(:disabled) {
-  background: #fce7f3;
+  background: #FDEEF0;
 }
 
 .nav-btn:disabled {
@@ -213,7 +214,7 @@ const min = minDate || today;
 }
 
 .month-title {
-  font-size: 1rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #1e293b;
   margin: 0;
@@ -222,111 +223,108 @@ const min = minDate || today;
 .agenda-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.5rem;
+  gap: 0.2rem;
 }
 
 .day-header {
   text-align: center;
-  font-size: 0.6875rem;
+  font-size: 0.5rem;
   font-weight: 600;
-  color: #94a3b8;
-  padding: 0.5rem 0;
+  color: #B0B0B0;
+  padding: 0.2rem 0;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 .date-cell {
   aspect-ratio: 1;
-  border: 2px solid transparent;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.5625rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.1s;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  min-height: 22px;
 }
 
 .date-cell.empty {
   cursor: default;
-  border: none;
+  background: transparent !important;
 }
 
 .date-cell.available {
-  background: #FDEEF0;
-  color: #E8788A;
-  border-color: #FDEEF0;
+  background: #E8788A;
+  color: white;
 }
 
 .date-cell.available:hover {
-  border-color: #E8788A;
+  background: #D66B7A;
   transform: scale(1.05);
 }
 
 .date-cell.past {
-  background: #f1f5f9;
-  color: #cbd5e1;
+  background: #FDF2F4;
+  color: #E0E0E0;
   cursor: not-allowed;
-  text-decoration: line-through;
 }
 
 .date-cell.unavailable {
-  background: #f1f5f9;
-  color: #cbd5e1;
+  background: #FDF2F4;
+  color: #D0D0D0;
   cursor: not-allowed;
-  border-color: #e2e8f0;
 }
 
 .date-cell.limited {
-  background: #fef3c7;
-  color: #92400e;
-  border-color: #fcd34d;
+  background: #FEF3C7;
+  color: #B45309;
 }
 
 .date-cell.limited:hover {
-  border-color: #eab308;
+  background: #FDE68A;
 }
 
 .date-cell.selected {
-  background: #E8788A !important;
-  color: white !important;
-  border-color: #E8788A !important;
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(232, 120, 138, 0.4);
+  background: white !important;
+  color: #E8788A !important;
+  border: 2px solid #E8788A;
+  transform: scale(1.05);
 }
 
 .selected-info {
-  margin-top: 1rem;
-  padding: 0.875rem 1rem;
-  background: #FDEEF0;
-  border-radius: 0.75rem;
+  margin-top: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  background: #FDF2F4;
+  border-radius: 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .selected-info .no-date {
-  font-size: 0.875rem;
-  color: #64748b;
+  font-size: 0.6875rem;
+  color: #94A3B8;
 }
 
 .selected-info .date-text {
   font-weight: 600;
-  color: #1e293b;
-  font-size: 0.9375rem;
+  color: #1E293B;
+  font-size: 0.75rem;
 }
 
 .selected-info .slots-text {
-  font-size: 0.8125rem;
+  font-size: 0.625rem;
   font-weight: 500;
 }
 
 .selected-info .slots-text.available {
-  color: #16a34a;
+  color: #16A34A;
 }
 
 .selected-info .slots-text.unavailable {
-  color: #dc2626;
+  color: #DC2626;
 }
 </style>
