@@ -340,6 +340,14 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           card.classList.add('selected');
           currentProduct = product;
           updateFeesttaartFields();
+          // Clear previous item details from form before showing
+          document.getElementById('event-select').selectedIndex = 0;
+          document.getElementById('persons-select').selectedIndex = 0;
+          document.getElementById('flavor-select').selectedIndex = 0;
+          document.getElementById('allergies-input').value = '';
+          document.getElementById('message-input').value = '';
+          document.getElementById('preview-image').classList.add('hidden');
+          document.getElementById('upload-placeholder').classList.remove('hidden');
           itemDetailsSection.classList.remove('hidden');
           editingIndex = null;
           // Add as new item to summary
