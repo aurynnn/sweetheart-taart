@@ -14,6 +14,9 @@ export default defineConfig({
   integrations: [svelte()],
 
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    server: {
+      allowedHosts: ['.trycloudflare.com', '.cloudflareaccess.com']
+    }
   }
 });

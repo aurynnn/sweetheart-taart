@@ -136,6 +136,25 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                   </div>
                 </div>
 
+                <!-- Pieces (koekjes & mini-gebak) -->
+                <div id="stuks-fields" class="stuks-only hidden">
+                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal stuks</label>
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                      <i class="fa-solid fa-box"></i>
+                    </div>
+                    <select id="stuks-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                      <option value="">Selecteer aantal</option>
+                      <option value="6">6 stuks</option>
+                      <option value="12">12 stuks</option>
+                      <option value="18">18 stuks</option>
+                      <option value="24">24 stuks</option>
+                      <option value="36">36 stuks</option>
+                      <option value="48">48 stuks</option>
+                    </select>
+                  </div>
+                </div>
+
                 <!-- Flavor -->
                 <div>
                   <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak voorkeur (vulling)</label>
@@ -329,11 +348,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       card.addEventListener('click', () => {
         var product = card.getAttribute('data-product');
         
-        // Can't add same product twice in "add new item" mode
-        if (readyToAddNewItem && addedItems.some(i => i.product === product)) {
-          return;
-        }
-        
         // If in "ready to add" mode, clicking a product adds it as a new item
         if (readyToAddNewItem) {
           productCards.forEach(function(c) { c.classList.remove('selected'); });
@@ -351,7 +365,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           itemDetailsSection.classList.remove('hidden');
           editingIndex = null;
           // Add as new item to summary
-          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+          var itemData = { product: product, event: '', persons: '', stuks: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
           renderItemsSummary();
           // Reset for next round - must click button again
@@ -384,7 +398,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         editingIndex = null;
         // First item - add to summary immediately
         if (addedItems.length === 0) {
-          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
+          var itemData = { product: product, event: '', persons: '', stuks: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
           orderInfoSection.style.display = '';
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
@@ -401,6 +415,11 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     function updateFeesttaartFields() {
       feesttaartFields.forEach(field => {
         field.style.display = currentProduct === 'feesttaart' ? '' : 'none';
+      });
+      // Show stuks fields for koekjes and mini-gebak
+      const stuksFields = document.querySelectorAll('.stuks-only');
+      stuksFields.forEach(field => {
+        field.style.display = (currentProduct === 'koekjes' || currentProduct === 'mini-gebak') ? '' : 'none';
       });
     }
 
@@ -419,6 +438,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           product: currentProduct,
           event: document.getElementById('event-select').value,
           persons: document.getElementById('persons-select').value,
+          stuks: document.getElementById('stuks-select').value,
           flavor: document.getElementById('flavor-select').value,
           allergies: document.getElementById('allergies-input').value,
           message: document.getElementById('message-input').value
@@ -478,6 +498,12 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         itemDetailsSection.classList.add('hidden');
         addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
         resetItemDetails();
+        return;
+      }
+
+      // Check max items limit (10)
+      if (addedItems.length >= 10) {
+        alert('Je kunt maximaal 10 items toevoegen.');
         return;
       }
       
@@ -548,6 +574,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       addItemBtn.classList.remove('hidden');
       document.getElementById('event-select').value = item.event || '';
       document.getElementById('persons-select').value = item.persons || '';
+      document.getElementById('stuks-select').value = item.stuks || '';
       document.getElementById('flavor-select').value = item.flavor || '';
       document.getElementById('allergies-input').value = item.allergies || '';
       document.getElementById('message-input').value = item.message || '';
@@ -569,6 +596,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       // Clear item details inputs only
       document.getElementById('event-select').selectedIndex = 0;
       document.getElementById('persons-select').selectedIndex = 0;
+      document.getElementById('stuks-select').selectedIndex = 0;
       document.getElementById('flavor-select').selectedIndex = 0;
       document.getElementById('allergies-input').value = '';
       document.getElementById('message-input').value = '';

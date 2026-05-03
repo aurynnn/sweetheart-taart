@@ -21,6 +21,13 @@ const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelij
   </head>
   <body class="min-h-screen flex flex-col">
     <slot />
+    <footer class="bg-white border-t border-gray-200 py-6 px-4 mt-auto">
+      <div class="max-w-4xl mx-auto text-center">
+        <a href="/tips" class="text-[#E8788A] hover:text-[#d66b7a] font-medium">
+          📋 Ophaalinfo & Tips
+        </a>
+      </div>
+    </footer>
     <script>
       // Intersection Observer for scroll animations
       const observer = new IntersectionObserver(
