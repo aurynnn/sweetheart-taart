@@ -180,11 +180,11 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                     </div>
                     <div class="flex gap-6">
                       <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="mini-type" value="cupcakes" checked class="w-4 h-4 accent-[#E8788A]" />
+                        <input type="radio" name="mini-type" value="cupcakes" checked class="w-4 h-4 accent-[#E8788A]" onchange="updateMiniStepper()" />
                         <span class="text-sm text-[var(--color-text)]">Cupcakes</span>
                       </label>
                       <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="mini-type" value="mini-cupcakes" class="w-4 h-4 accent-[#E8788A]" />
+                        <input type="radio" name="mini-type" value="mini-cupcakes" class="w-4 h-4 accent-[#E8788A]" onchange="updateMiniStepper()" />
                         <span class="text-sm text-[var(--color-text)]">Mini Cupcakes</span>
                       </label>
                     </div>
@@ -489,7 +489,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         miniAmountLabel.textContent = 'mini cupcakes';
       } else {
         miniAmountInput.min = 12;
-        miniAmountInput.step = 8;
+        miniAmountInput.step = 6;
         miniAmountInput.value = 12;
         miniAmountLabel.textContent = 'cupcakes';
       }
@@ -498,16 +498,15 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     // Mini-gebak amount stepper
     document.getElementById('mini-amount-minus').addEventListener('click', function() {
       var input = document.getElementById('mini-amount-input');
-      var step = input.min == '24' ? 12 : 6;
-      var newVal = parseInt(input.value) - step;
+      var newVal = parseInt(input.value) - parseInt(input.step);
       if (newVal >= parseInt(input.min)) input.value = newVal;
     });
     document.getElementById('mini-amount-plus').addEventListener('click', function() {
       var input = document.getElementById('mini-amount-input');
-      var step = input.min == '24' ? 12 : 6;
-      input.value = parseInt(input.value) + step;
+      input.value = parseInt(input.value) + parseInt(input.step);
     });
 
+    // Koekjes stepper
     // Koekjes stepper
     document.getElementById('koekjes-minus').addEventListener('click', function() {
       var input = document.getElementById('koekjes-input');
@@ -522,33 +521,12 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     // Mini-gebak amount stepper
     document.getElementById('mini-amount-minus').addEventListener('click', function() {
       var input = document.getElementById('mini-amount-input');
-      var step = input.min == '24' ? 12 : 6;
-      var newVal = parseInt(input.value) - step;
+      var newVal = parseInt(input.value) - parseInt(input.step);
       if (newVal >= parseInt(input.min)) input.value = newVal;
     });
     document.getElementById('mini-amount-plus').addEventListener('click', function() {
       var input = document.getElementById('mini-amount-input');
-      var step = input.min == '24' ? 12 : 6;
-      input.value = parseInt(input.value) + step;
-    });
-
-    // Mini-type radio change handler
-    document.querySelectorAll('input[name="mini-type"]').forEach(function(radio) {
-      radio.addEventListener('change', function() {
-        var miniAmountInput = document.getElementById('mini-amount-input');
-        var miniAmountLabel = document.getElementById('mini-amount-label');
-        if (this.value === 'mini-cupcakes') {
-          miniAmountInput.min = 24;
-          miniAmountInput.step = 12;
-          miniAmountInput.value = 24;
-          miniAmountLabel.textContent = 'mini cupcakes';
-        } else {
-          miniAmountInput.min = 12;
-          miniAmountInput.step = 6;
-          miniAmountInput.value = 12;
-          miniAmountLabel.textContent = 'cupcakes';
-        }
-      });
+      input.value = parseInt(input.value) + parseInt(input.step);
     });
 
     // Initialize - no product selected, item details hidden
