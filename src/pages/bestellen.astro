@@ -136,25 +136,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                   </div>
                 </div>
 
-                <!-- Pieces (koekjes & mini-gebak) -->
-                <div id="stuks-fields" class="stuks-only hidden">
-                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal stuks</label>
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                      <i class="fa-solid fa-box"></i>
-                    </div>
-                    <select id="stuks-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                      <option value="">Selecteer aantal</option>
-                      <option value="6">6 stuks</option>
-                      <option value="12">12 stuks</option>
-                      <option value="18">18 stuks</option>
-                      <option value="24">24 stuks</option>
-                      <option value="36">36 stuks</option>
-                      <option value="48">48 stuks</option>
-                    </select>
-                  </div>
-                </div>
-
                 <!-- Flavor -->
                 <div>
                   <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak voorkeur (vulling)</label>
@@ -171,6 +152,58 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                       <option value="chocolade">Chocolade</option>
                       <option value="anders">Anders (specificeer hieronder)</option>
                     </select>
+                  </div>
+                </div>
+
+                <!-- Quantity Stepper (koekjes) -->
+                <div id="koekjes-stepper" class="quantity-only" style="display:none;">
+                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal koekjes</label>
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                      <i class="fa-solid fa-cookie-bite"></i>
+                    </div>
+                    <div class="stepper-wrapper">
+                      <button type="button" class="stepper-btn" id="koekjes-minus">−</button>
+                      <input type="number" id="koekjes-input" class="stepper-input" value="24" min="24" step="12" readonly />
+                      <button type="button" class="stepper-btn" id="koekjes-plus">+</button>
+                    </div>
+                    <span class="qty-label">koekjes</span>
+                  </div>
+                </div>
+
+                <!-- Mini-gebak Type Selection -->
+                <div id="mini-type-section" class="quantity-only" style="display:none;">
+                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type mini-gebak</label>
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                      <i class="fa-solid fa-birthday-cake"></i>
+                    </div>
+                    <div class="flex gap-6">
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="mini-type" value="cupcakes" checked class="w-4 h-4 accent-[#E8788A]" onchange="updateMiniStepper()" />
+                        <span class="text-sm text-[var(--color-text)]">Cupcakes</span>
+                      </label>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="mini-type" value="mini-cupcakes" class="w-4 h-4 accent-[#E8788A]" onchange="updateMiniStepper()" />
+                        <span class="text-sm text-[var(--color-text)]">Mini Cupcakes</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Mini-gebak Amount Stepper -->
+                <div id="mini-amount-section" class="quantity-only" style="display:none;">
+                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal</label>
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                      <i class="fa-solid fa-cookie-bite"></i>
+                    </div>
+                    <div class="stepper-wrapper">
+                      <button type="button" class="stepper-btn" id="mini-amount-minus">−</button>
+                      <input type="number" id="mini-amount-input" class="stepper-input" value="12" min="12" step="6" readonly />
+                      <button type="button" class="stepper-btn" id="mini-amount-plus">+</button>
+                    </div>
+                    <span id="mini-amount-label" class="qty-label">cupcakes</span>
                   </div>
                 </div>
 
@@ -348,6 +381,11 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       card.addEventListener('click', () => {
         var product = card.getAttribute('data-product');
         
+        // Can't add same product twice in "add new item" mode
+        if (readyToAddNewItem && addedItems.some(i => i.product === product)) {
+          return;
+        }
+        
         // If in "ready to add" mode, clicking a product adds it as a new item
         if (readyToAddNewItem) {
           productCards.forEach(function(c) { c.classList.remove('selected'); });
@@ -365,7 +403,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           itemDetailsSection.classList.remove('hidden');
           editingIndex = null;
           // Add as new item to summary
-          var itemData = { product: product, event: '', persons: '', stuks: '', flavor: '', allergies: '', message: '' };
+          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
           renderItemsSummary();
           // Reset for next round - must click button again
@@ -398,7 +436,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         editingIndex = null;
         // First item - add to summary immediately
         if (addedItems.length === 0) {
-          var itemData = { product: product, event: '', persons: '', stuks: '', flavor: '', allergies: '', message: '' };
+          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
           addedItems.push(itemData);
           orderInfoSection.style.display = '';
           addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
@@ -414,14 +452,82 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     // Update feesttaart fields visibility
     function updateFeesttaartFields() {
       feesttaartFields.forEach(field => {
-        field.style.display = currentProduct === 'feesttaart' ? '' : 'none';
+        field.style.display = currentProduct === 'feesttaart' ? 'block' : 'none';
       });
-      // Show stuks fields for koekjes and mini-gebak
-      const stuksFields = document.querySelectorAll('.stuks-only');
-      stuksFields.forEach(field => {
-        field.style.display = (currentProduct === 'koekjes' || currentProduct === 'mini-gebak') ? '' : 'none';
-      });
+      // Show koekjes stepper
+      var koekjesStepper = document.getElementById('koekjes-stepper');
+      if (currentProduct === 'koekjes') {
+        koekjesStepper.style.display = 'block';
+      } else {
+        koekjesStepper.style.display = 'none';
+      }
+      // Show mini-type selection (first step)
+      var miniTypeSection = document.getElementById('mini-type-section');
+      var miniAmountSection = document.getElementById('mini-amount-section');
+      if (currentProduct === 'mini-gebak') {
+        miniTypeSection.style.display = 'block';
+        miniAmountSection.style.display = 'block';
+      } else {
+        miniTypeSection.style.display = 'none';
+        miniAmountSection.style.display = 'none';
+      }
     }
+
+    // Update mini-gebak amount stepper based on type selection
+    function updateMiniStepper() {
+      var miniType = document.querySelector('input[name="mini-type"]:checked').value;
+      var miniAmountSection = document.getElementById('mini-amount-section');
+      var miniAmountInput = document.getElementById('mini-amount-input');
+      var miniAmountLabel = document.getElementById('mini-amount-label');
+
+      miniAmountSection.style.display = 'block';
+
+      if (miniType === 'mini-cupcakes') {
+        miniAmountInput.min = 24;
+        miniAmountInput.step = 12;
+        miniAmountInput.value = 24;
+        miniAmountLabel.textContent = 'mini cupcakes';
+      } else {
+        miniAmountInput.min = 12;
+        miniAmountInput.step = 6;
+        miniAmountInput.value = 12;
+        miniAmountLabel.textContent = 'cupcakes';
+      }
+    }
+
+    // Mini-gebak amount stepper
+    document.getElementById('mini-amount-minus').addEventListener('click', function() {
+      var input = document.getElementById('mini-amount-input');
+      var newVal = parseInt(input.value) - parseInt(input.step);
+      if (newVal >= parseInt(input.min)) input.value = newVal;
+    });
+    document.getElementById('mini-amount-plus').addEventListener('click', function() {
+      var input = document.getElementById('mini-amount-input');
+      input.value = parseInt(input.value) + parseInt(input.step);
+    });
+
+    // Koekjes stepper
+    // Koekjes stepper
+    document.getElementById('koekjes-minus').addEventListener('click', function() {
+      var input = document.getElementById('koekjes-input');
+      var newVal = parseInt(input.value) - 12;
+      if (newVal >= 24) input.value = newVal;
+    });
+    document.getElementById('koekjes-plus').addEventListener('click', function() {
+      var input = document.getElementById('koekjes-input');
+      input.value = parseInt(input.value) + 12;
+    });
+
+    // Mini-gebak amount stepper
+    document.getElementById('mini-amount-minus').addEventListener('click', function() {
+      var input = document.getElementById('mini-amount-input');
+      var newVal = parseInt(input.value) - parseInt(input.step);
+      if (newVal >= parseInt(input.min)) input.value = newVal;
+    });
+    document.getElementById('mini-amount-plus').addEventListener('click', function() {
+      var input = document.getElementById('mini-amount-input');
+      input.value = parseInt(input.value) + parseInt(input.step);
+    });
 
     // Initialize - no product selected, item details hidden
     updateFeesttaartFields();
@@ -438,7 +544,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           product: currentProduct,
           event: document.getElementById('event-select').value,
           persons: document.getElementById('persons-select').value,
-          stuks: document.getElementById('stuks-select').value,
           flavor: document.getElementById('flavor-select').value,
           allergies: document.getElementById('allergies-input').value,
           message: document.getElementById('message-input').value
@@ -500,12 +605,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         resetItemDetails();
         return;
       }
-
-      // Check max items limit (10)
-      if (addedItems.length >= 10) {
-        alert('Je kunt maximaal 10 items toevoegen.');
-        return;
-      }
       
       // Enter "ready to add new item" mode
       readyToAddNewItem = true;
@@ -513,8 +612,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       currentProduct = null;
       itemDetailsSection.classList.add('hidden');
       addItemBtn.innerHTML = 'Selecteer een product';
-      
-      resetItemDetails();
     });
 
     // Render all items in summary
@@ -574,7 +671,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       addItemBtn.classList.remove('hidden');
       document.getElementById('event-select').value = item.event || '';
       document.getElementById('persons-select').value = item.persons || '';
-      document.getElementById('stuks-select').value = item.stuks || '';
       document.getElementById('flavor-select').value = item.flavor || '';
       document.getElementById('allergies-input').value = item.allergies || '';
       document.getElementById('message-input').value = item.message || '';
@@ -596,7 +692,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       // Clear item details inputs only
       document.getElementById('event-select').selectedIndex = 0;
       document.getElementById('persons-select').selectedIndex = 0;
-      document.getElementById('stuks-select').selectedIndex = 0;
       document.getElementById('flavor-select').selectedIndex = 0;
       document.getElementById('allergies-input').value = '';
       document.getElementById('message-input').value = '';
@@ -891,6 +986,87 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     .date-unavailable {
       border-color: #ef4444 !important;
       background: #fef2f2 !important;
+    }
+
+    .stepper-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stepper-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      border: 2px solid #E8788A;
+      background: white;
+      color: #E8788A;
+      font-size: 1.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .stepper-btn:hover {
+      background: #E8788A;
+      color: white;
+    }
+
+    .stepper-input {
+      width: 4rem;
+      height: 2.5rem;
+      text-align: center;
+      border: 2px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+
+    .qty-label {
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+
+    .quantity-only {
+      display: none;
+    }
+
+    .stepper-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stepper-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      border: 2px solid #E8788A;
+      background: white;
+      color: #E8788A;
+      font-size: 1.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .stepper-btn:hover {
+      background: #E8788A;
+      color: white;
+    }
+
+    .stepper-input {
+      width: 4rem;
+      height: 2.5rem;
+      text-align: center;
+      border: 2px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1e293b;
+      background: #f8fafc;
     }
   </style>
 </Layout>
