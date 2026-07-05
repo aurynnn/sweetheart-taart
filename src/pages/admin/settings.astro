@@ -176,14 +176,15 @@ const dayNames = [
         maxOrdersInput.value = String(settings.maxOrdersPerDay);
       }
 
-      // Update day availability toggles (the divs have data-day attributes)
+      // Update day availability toggles (the buttons have data-day attributes)
       const availableDays: number[] = settings.availableDays || [];
-      document.querySelectorAll('.day-toggle-btn').forEach(btn => {
-        const day = parseInt((btn as HTMLElement).dataset.day || '0');
-        btn.classList.toggle('active', availableDays.includes(day));
+      document.querySelectorAll<HTMLElement>('.day-toggle-btn').forEach(btn => {
+        const day = parseInt(btn.dataset.day || '0');
+        const isAvail = availableDays.includes(day);
+        btn.classList.toggle('active', isAvail);
         const row = btn.closest('.day-row');
         if (row) {
-          row.classList.toggle('disabled', !availableDays.includes(day));
+          row.classList.toggle('disabled', !isAvail);
         }
       });
     } catch (err) {
