@@ -32,3 +32,4 @@ public/videos/
 *.avi
 .env
 .wrangler/
+.dev.vars

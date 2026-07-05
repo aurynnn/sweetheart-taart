@@ -302,12 +302,17 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                   </div>
                   <div>
                     <label class="text-xs text-[var(--color-text-muted)]">Datum</label>
-                    <input type="date" id="review-date-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+                    <input type="date" id="review-date-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer" />
                   </div>
                 </div>
               </div>
 
-              <div id="review-items" class="space-y-4 mb-6"></div>
+              <div id="review-items" class="space-y-4 mb-4"></div>
+
+              <div id="review-total" class="flex justify-between items-center px-4 py-3 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)]">
+                <span class="font-semibold text-[var(--color-text)]">Totaal</span>
+                <span id="review-total-amount" class="text-xl font-bold text-[var(--color-primary)]">€0.00</span>
+              </div>
 
               <div class="flex gap-3">
                 <button type="button" id="back-btn" class="btn btn-secondary flex-1 justify-center text-lg py-4">
@@ -323,22 +328,22 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       </div>
     </section>
 
-    <!-- Alternative Contact -->
-    <section id="bestellen-alt-contact" class="section bg-[var(--color-surface)]">
+    <!-- Pickup Info -->
+    <section id="bestellen-ophaalinfo" class="section bg-[var(--color-surface)]">
       <div class="container">
         <div class="max-w-2xl mx-auto text-center">
-          <h2 class="font-heading text-2xl font-semibold text-[var(--color-text)] mb-4">
-            Liever telefonisch bestellen?
-          </h2>
-          <p class="text-[var(--color-text-muted)] mb-6">
-            Bel gerust naar Nathalie voor een vrijblijvend gesprek over uw wensen.
+          <div class="flex items-center justify-center gap-2 mb-4">
+            <span class="text-3xl">🚗</span>
+            <h2 class="font-heading text-2xl font-semibold text-[var(--color-text)]">
+              Ophaalinfo
+            </h2>
+          </div>
+          <p class="text-[var(--color-text-muted)] mb-4">
+            U kunt uw bestelling elke dag gratis ophalen na het telefonisch bevestigen van uw ophaalmoment.
           </p>
-          <a href="tel:+32486953210" class="inline-flex items-center gap-2 text-xl font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-            </svg>
-            +32 486 95 32 10
-          </a>
+          <p class="text-[var(--color-text-muted)]">
+            <strong>Bel gerust:</strong> <a href="tel:+32486953210" class="text-[var(--color-primary)] font-semibold hover:underline">+32 486 95 32 10</a>
+          </p>
         </div>
       </div>
     </section>
@@ -386,7 +391,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           return;
         }
         
-        // If in "ready to add" mode, clicking a product adds it as a new item
+        // If in "ready to add" mode, clicking a product shows the form (don't add yet)
         if (readyToAddNewItem) {
           productCards.forEach(function(c) { c.classList.remove('selected'); });
           card.classList.add('selected');
@@ -398,18 +403,16 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           document.getElementById('flavor-select').selectedIndex = 0;
           document.getElementById('allergies-input').value = '';
           document.getElementById('message-input').value = '';
+          document.getElementById('koekjes-input').value = '24';
+          document.getElementById('mini-amount-input').value = '12';
           document.getElementById('preview-image').classList.add('hidden');
           document.getElementById('upload-placeholder').classList.remove('hidden');
           itemDetailsSection.classList.remove('hidden');
           editingIndex = null;
-          // Add as new item to summary
-          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
-          addedItems.push(itemData);
-          renderItemsSummary();
-          // Reset for next round - must click button again
+          // Don't push item yet — wait for "Voeg toe" button to capture all fields
           readyToAddNewItem = false;
           orderInfoSection.style.display = 'none';
-          addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
+          addItemBtn.innerHTML = '<i class="fa-solid fa-check"></i> Bevestig';
           addItemBtn.classList.remove('hidden');
           return;
         }
@@ -434,12 +437,10 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         updateFeesttaartFields();
         itemDetailsSection.classList.remove('hidden');
         editingIndex = null;
-        // First item - add to summary immediately
+        // First item - show form, add when "Voeg toe" is clicked
         if (addedItems.length === 0) {
-          var itemData = { product: product, event: '', persons: '', flavor: '', allergies: '', message: '' };
-          addedItems.push(itemData);
           orderInfoSection.style.display = '';
-          addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
+          addItemBtn.innerHTML = '<i class="fa-solid fa-check"></i> Bevestig';
           addItemBtn.classList.remove('hidden');
         } else {
           // Update first item's product instantly
@@ -594,9 +595,22 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         orderInfoSection.style.display = 'none';
       }
       
-      // If button says "Voeg toe" (already added), just reset for next round
-      if (addItemBtn.innerHTML.includes('Voeg toe') && !addItemBtn.innerHTML.includes('nog een')) {
-        // Item already added - just reset for next round
+      // If button says "Bevestig", add the current item then enter "add another" mode
+      if (addItemBtn.innerHTML.includes('Bevestig')) {
+        // Collect all item fields
+        var newItem = {
+          product: currentProduct,
+          event: document.getElementById('event-select').value,
+          persons: document.getElementById('persons-select').value,
+          flavor: document.getElementById('flavor-select').value,
+          allergies: document.getElementById('allergies-input').value,
+          message: document.getElementById('message-input').value,
+          miniType: currentProduct === 'mini-gebak' ? (document.querySelector('input[name="mini-type"]:checked')?.value || '') : '',
+          quantity: currentProduct === 'koekjes' ? parseInt((document.getElementById('koekjes-input') as HTMLInputElement).value) : (currentProduct === 'mini-gebak' ? parseInt((document.getElementById('mini-amount-input') as HTMLInputElement).value) : 0)
+        };
+        addedItems.push(newItem);
+        renderItemsSummary();
+        // Reset for next round - enter "add another" mode
         readyToAddNewItem = false;
         productCards.forEach(c => c.classList.remove('selected'));
         currentProduct = null;
@@ -755,15 +769,15 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       var phone = document.querySelector('[name="phone"]').value;
       var date = document.getElementById('date-input').value;
       if (!name || !email || !phone) {
-        alert('Vul alstublieft alle contactgegevens in');
+        showToast('Vul alstublieft alle contactgegevens in', 'error');
         return;
       }
       if (!date) {
-        alert('Vul alstublieft een datum in');
+        showToast('Vul alstublieft een datum in', 'error');
         return;
       }
       if (addedItems.length === 0) {
-        alert('Kies eerst iets lekkers');
+        showToast('Kies eerst iets lekkers', 'error');
         return;
       }
       // Mark order-info as filled
@@ -775,19 +789,28 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       document.getElementById('review-date-input').value = date;
       var reviewItems = document.getElementById('review-items');
       var html = '';
+      var total = 0;
       for (var i = 0; i < addedItems.length; i++) {
         var item = addedItems[i];
+        var itemTotal = 0;
+        if (item.product === 'feesttaart') itemTotal = 45;
+        else if (item.product === 'koekjes') itemTotal = item.quantity ? Math.ceil(item.quantity / 24) * 12 : 12;
+        else if (item.product === 'mini-gebak') itemTotal = item.quantity ? Math.ceil(item.quantity / 12) * 9 : 9;
         html = html + '<div class="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] mb-4">';
-        html = html + '<div class="flex items-center gap-2 mb-2"><span class="text-xl">' + productIcons[item.product] + '</span><span class="font-semibold text-[var(--color-text)]">' + productNames[item.product] + '</span></div>';
+        html = html + '<div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="text-xl">' + productIcons[item.product] + '</span><span class="font-semibold text-[var(--color-text)]">' + productNames[item.product] + '</span></div><span class="font-bold text-[var(--color-primary)]">€' + itemTotal.toFixed(2) + '</span></div>';
         html = html + '<div class="text-sm text-[var(--color-text-muted)]">';
+        if (item.miniType) { html = html + '<div><span class="font-medium">Type:</span> ' + (item.miniType === 'cupcakes' ? 'Cupcakes' : 'Mini-cupcakes') + '</div>'; }
+        if (item.quantity) { html = html + '<div><span class="font-medium">Aantal:</span> ' + item.quantity + (item.product === 'koekjes' ? ' stuks' : ' stuks') + '</div>'; }
         if (item.event) { html = html + '<div><span class="font-medium">Gelegenheid:</span> ' + item.event + '</div>'; }
         if (item.persons) { html = html + '<div><span class="font-medium">Personen:</span> ' + item.persons + '</div>'; }
         if (item.flavor) { html = html + '<div><span class="font-medium">Smaak:</span> ' + item.flavor + '</div>'; }
         if (item.allergies) { html = html + '<div><span class="font-medium">Allergieën:</span> ' + item.allergies + '</div>'; }
         if (item.message) { html = html + '<div><span class="font-medium">Opmerkingen:</span> ' + item.message + '</div>'; }
         html = html + '</div></div>';
+        total = total + itemTotal;
       }
       reviewItems.innerHTML = html;
+      document.getElementById('review-total-amount')!.textContent = '€' + total.toFixed(2);
       form.classList.add('hidden');
       reviewSection.classList.remove('hidden');
     });
@@ -821,7 +844,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         const slot = data.availability?.[0];
         
         if (slot && !slot.available) {
-          alert('Helaas is deze datum volledig bezet. Kies een andere datum.');
+          showToast('Helaas is deze datum volledig bezet. Kies een andere datum.', 'error');
           return;
         }
       } catch (err) {
@@ -853,7 +876,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         });
         
         if (!saveResponse.ok) {
-          alert('Er ging iets mis bij het opslaan van uw bestelling. Probeer opnieuw.');
+          showToast('Er ging iets mis bij het opslaan. Probeer opnieuw.', 'error');
           return;
         }
       } catch (err) {
@@ -863,9 +886,34 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       reviewSection.classList.add('hidden');
       successMessage.classList.remove('hidden');
     });
+
+    function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
+      const container = document.getElementById('toast-container')!;
+      const icons: Record<string, string> = { success: '✓', error: '✕', info: 'ℹ' };
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'toastOut 0.2s ease forwards';
+        setTimeout(() => toast.remove(), 200);
+      }, 3500);
+    }
   </script>
 
   <style>
+    .toast-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .toast-error  { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .toast-info   { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; }
+    .toast-icon { font-size: 1rem; flex-shrink: 0; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(8px); }
+    }
     .product-card {
       display: flex;
       flex-direction: column;

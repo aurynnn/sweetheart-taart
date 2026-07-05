@@ -1,0 +1,8 @@
+name = "sweetheart"
+compatibility_date = "2024-01-01"
+account_id = "0c208fec72117fa28deae09152d2abe2"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sweetheart-db"
+database_id = "d4378307-5a1d-46b1-9c74-7097551a5006"

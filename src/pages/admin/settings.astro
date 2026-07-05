@@ -133,18 +133,13 @@ const dayNames = [
           return (
             <div class={`day-row ${!isAvailable ? 'disabled' : ''}`}>
               <span class="day-label">{day.name}</span>
-              {isAvailable ? (
-                <>
-                  <input type="time" value="09:00" class="time-input" />
-                  <span class="time-separator">tot</span>
-                  <input type="time" value="18:00" class="time-input" />
-                </>
-              ) : (
-                <span class="closed-text">Gesloten</span>
-              )}
+              <button type="button" class={`day-toggle-btn ${isAvailable ? 'active' : ''}`} data-day={day.num}>
+                {isAvailable ? 'Open' : 'Gesloten'}
+              </button>
             </div>
           );
         })}
+
       </div>
       
       <div class="form-group" style="margin-top: 1.5rem;">
@@ -157,25 +152,116 @@ const dayNames = [
       </div>
       
       <div class="card-actions">
-        <button class="btn btn-primary">Opslaan</button>
+        <button class="btn btn-primary" id="saveSettingsBtn">Opslaan</button>
       </div>
     </div>
   </div>
 </AdminLayout>
 
 <script>
+  // Load settings from API on page load
+  async function loadSettings() {
+    try {
+      const today = new Date();
+      const startDate = today.toISOString().split('T')[0];
+      const endDate = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const res = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const settings = data.settings || {};
+
+      // Update maxOrders
+      const maxOrdersInput = document.getElementById('maxOrders') as HTMLInputElement;
+      if (maxOrdersInput && settings.maxOrdersPerDay) {
+        maxOrdersInput.value = String(settings.maxOrdersPerDay);
+      }
+
+      // Update day availability toggles (the divs have data-day attributes)
+      const availableDays: number[] = settings.availableDays || [];
+      document.querySelectorAll('.day-toggle-btn').forEach(btn => {
+        const day = parseInt((btn as HTMLElement).dataset.day || '0');
+        btn.classList.toggle('active', availableDays.includes(day));
+        const row = btn.closest('.day-row');
+        if (row) {
+          row.classList.toggle('disabled', !availableDays.includes(day));
+        }
+      });
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+    }
+  }
+
   function adjustMaxOrders(delta: number) {
     const input = document.getElementById('maxOrders') as HTMLInputElement;
     const newValue = Math.min(20, Math.max(1, parseInt(input.value) + delta));
     input.value = String(newValue);
   }
-  
+
   function disconnectCalendar() {
     if (confirm('Weet je zeker dat je de Google Agenda wilt ontkoppelen?')) {
       fetch('/admin/api/calendar/disconnect', { method: 'POST' })
         .then(() => window.location.reload());
     }
   }
+
+  document.getElementById('saveSettingsBtn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('saveSettingsBtn') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Bezig met opslaan...';
+
+    try {
+      const maxOrders = parseInt((document.getElementById('maxOrders') as HTMLInputElement).value) || 3;
+
+      // Collect available days from toggle buttons
+      const availableDays: number[] = [];
+      document.querySelectorAll('.day-toggle-btn.active').forEach(btn => {
+        const day = parseInt((btn as HTMLElement).dataset.day || '0');
+        availableDays.push(day);
+      });
+
+      const allDays = [0, 1, 2, 3, 4, 5, 6];
+      const recurringUnavailableDays = allDays.filter(d => !availableDays.includes(d));
+
+      const res = await fetch('/api/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          maxOrdersPerDay: maxOrders,
+          availableDays,
+          recurringUnavailableDays,
+          blockedDates: [],
+          slotOverrides: {},
+        }),
+      });
+
+      if (res.ok) {
+        btn.textContent = '✓ Opgeslagen';
+        setTimeout(() => {
+          btn.textContent = 'Opslaan';
+          btn.disabled = false;
+        }, 2000);
+      } else {
+        throw new Error('Save failed');
+      }
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      btn.textContent = 'Fout bij opslaan';
+      btn.disabled = false;
+    }
+  });
+
+  // Toggle day availability
+  document.querySelectorAll('.day-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('active');
+      const row = btn.closest('.day-row');
+      if (row) {
+        row.classList.toggle('disabled', !btn.classList.contains('active'));
+      }
+    });
+  });
+
+  loadSettings();
 </script>
 
 <style>

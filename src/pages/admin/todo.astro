@@ -1,0 +1,439 @@
+---
+import AdminLayout from '../../layouts/admin/AdminLayout.astro';
+import { d1Query, d1Exec } from '../../lib/d1';
+
+let todos: any[] = [];
+
+try {
+  const res = await d1Query(`
+    SELECT
+      o.id, o.date, o.status, o.total, o.message,
+      c.name as customer, c.email, c.phone,
+      (SELECT GROUP_CONCAT(product, ', ') FROM order_items WHERE order_id = o.id) as products
+    FROM orders o
+    JOIN customers c ON o.customer_id = c.id
+    WHERE o.date >= date('now')
+      AND o.status NOT IN ('completed', 'cancelled')
+    ORDER BY o.date ASC
+    LIMIT 50
+  `);
+  todos = (res.results || []).map((row: any) => ({
+    id: row.id,
+    date: row.date,
+    status: row.status,
+    total: typeof row.total === 'string' ? row.total : (row.total ? `€${Number(row.total).toFixed(2)}` : '€0.00'),
+    customer: row.customer || 'Onbekend',
+    email: row.email || '',
+    phone: row.phone || '',
+    products: row.products || '—',
+    message: row.message || ''
+  }));
+} catch (e) {
+  // D1 unavailable
+}
+
+const statusBadge = (status: string) => {
+  const styles: Record<string, string> = {
+    pending: 'background:#fef3c7;color:#92400e;',
+    approved: 'background:#dbeafe;color:#1e40af;',
+    completed: 'background:#dcfce7;color:#166534;',
+    cancelled: 'background:#fee2e2;color:#991b1b;'
+  };
+  const labels: Record<string, string> = {
+    pending: 'In afwachting',
+    approved: 'Goedgekeurd',
+    completed: 'Voltooid',
+    cancelled: 'Geannuleerd'
+  };
+  return `<span style="display:inline-block;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;${styles[status] || styles.pending}">${labels[status] || status}</span>`;
+};
+
+const isToday = (date: string) => date === new Date().toISOString().split('T')[0];
+const isTomorrow = (date: string) => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return date === d.toISOString().split('T')[0];
+};
+const isOverdue = (date: string) => date < new Date().toISOString().split('T')[0];
+---
+
+<AdminLayout title="Todo">
+  <div class="page-header">
+    <div>
+      <h1>Todo</h1>
+      <p class="subtitle">Komende bestellingen — {todos.length} openstaand</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" id="print-btn" onclick="handlePrint()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        <span id="print-btn-text">Maak PDF</span>
+      </button>
+    </div>
+  </div>
+
+  {todos.length === 0 ? (
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 11l3 3L22 4"></path>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+      </svg>
+      <p>Geen openstaande bestellingen</p>
+    </div>
+  ) : (
+    <div class="todo-list">
+      {todos.map(order => (
+        <div class={`todo-card ${isOverdue(order.date) ? 'overdue' : isToday(order.date) ? 'today' : ''}`} data-order-id={order.id} onclick="togglePrintCard(this)">
+          <div class="date-block">
+            <span class="date-day">{new Date(order.date + 'T00:00:00').getDate()}</span>
+            <span class="date-month">{new Date(order.date + 'T00:00:00').toLocaleDateString('nl-BE', { month: 'short' })}</span>
+          </div>
+          <div class="info">
+            <div class="info-top">
+              <span class="customer-name">{order.customer}</span>
+              <span class="todo-status" set:html={statusBadge(order.status)} />
+              {isToday(order.date) && <span class="tag tag-today">Vandaag</span>}
+              {isTomorrow(order.date) && <span class="tag tag-tomorrow">Morgen</span>}
+              {isOverdue(order.date) && <span class="tag tag-overdue">Achterstallig</span>}
+            </div>
+            <p class="products">{order.products}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  <div id="toast-container"></div>
+</AdminLayout>
+
+<script>
+  function showToast(message: string, type: 'success' | 'error' = 'success') {
+    const container = document.getElementById('toast-container')!;
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'toastOut 0.2s ease forwards';
+      setTimeout(() => toast.remove(), 200);
+    }, 3000);
+  }
+
+  (window as any).updateStatus = async function(orderId: string, status: string) {
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status })
+      });
+      if (res.ok) {
+        showToast(`Bestelling ${status === 'approved' ? 'goedgekeurd' : status === 'completed' ? 'voltooid' : 'geannuleerd'}`);
+        // Reload to reflect changes
+        setTimeout(() => window.location.reload(), 800);
+      } else {
+        showToast('Fout bij updaten', 'error');
+      }
+    } catch {
+      showToast('Fout bij updaten', 'error');
+    }
+  };
+
+  // --- Print selection (click-to-select) ---
+  let selectedForPrint: string[] = [];
+  let printSelectionMode = false;
+
+  (window as any).togglePrintCard = function(card: HTMLElement) {
+    if (!printSelectionMode) return;
+
+    const orderId = card.getAttribute('data-order-id') || '';
+
+    if (selectedForPrint.includes(orderId)) {
+      selectedForPrint = selectedForPrint.filter(id => id !== orderId);
+      card.classList.remove('print-selected');
+    } else {
+      selectedForPrint.push(orderId);
+      card.classList.add('print-selected');
+    }
+
+    updatePrintButton();
+  };
+
+  function enterPrintSelectionMode() {
+    printSelectionMode = true;
+    document.querySelectorAll('.todo-card').forEach(c => c.classList.add('selection-mode'));
+    updatePrintButton();
+  }
+
+  function exitPrintSelectionMode() {
+    printSelectionMode = false;
+    selectedForPrint = [];
+    document.querySelectorAll('.todo-card').forEach(c => {
+      c.classList.remove('print-selected', 'selection-mode');
+    });
+    updatePrintButton();
+  }
+
+  function updatePrintButton() {
+    const btnText = document.getElementById('print-btn-text');
+    if (!btnText) return;
+
+    if (!printSelectionMode) {
+      btnText.textContent = 'Maak PDF';
+    } else if (selectedForPrint.length === 0) {
+      btnText.textContent = 'Klik op bestellingen om te selecteren';
+    } else if (selectedForPrint.length === 1) {
+      btnText.textContent = '1 bestelling — Download PDF';
+    } else {
+      btnText.textContent = `${selectedForPrint.length} bestellingen — Download PDF`;
+    }
+  }
+
+  (window as any).handlePrint = async function() {
+    if (!printSelectionMode) {
+      // Enter selection mode
+      enterPrintSelectionMode();
+      return;
+    }
+
+    if (selectedForPrint.length === 0) {
+      showToast('Klik eerst op een of meer bestellingen om te selecteren', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('print-btn') as HTMLButtonElement | null;
+    if (btn) btn.disabled = true;
+
+    try {
+      const res = await fetch('/admin/api/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderIds: selectedForPrint })
+      });
+
+      if (!res.ok) throw new Error('Failed');
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bestellingen-${Date.now()}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      exitPrintSelectionMode();
+    } catch {
+      showToast('Kon PDF niet genereren', 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
+</script>
+
+<style>
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.todo-card.print-selected {
+  outline: 3px solid #E8788A;
+  outline-offset: 1px;
+  background: #fff8f9;
+}
+
+.todo-card.print-selected .todo-date {
+  background: #E8788A;
+  color: white;
+}
+
+.todo-card.print-selected .date-tag {
+  background: rgba(255,255,255,0.25);
+  color: white;
+}
+
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.todo-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  transition: all 0.15s;
+  cursor: pointer;
+  position: relative;
+}
+
+.todo-card:hover {
+  border-color: #fecdd3;
+  box-shadow: 0 2px 8px rgba(232, 120, 138, 0.08);
+}
+
+.todo-card.overdue {
+  border-left: 3px solid #ef4444;
+}
+
+.todo-card.today {
+  border-left: 3px solid #f59e0b;
+}
+
+.todo-card.selection-mode {
+  cursor: pointer;
+}
+
+.todo-card.print-selected {
+  border-color: #E8788A;
+  background: #fff5f6;
+  box-shadow: 0 0 0 2px #E8788A33;
+}
+
+.todo-card.print-selected .date-block {
+  background: #E8788A;
+  color: white;
+  border-radius: 0.5rem;
+}
+
+.todo-card.print-selected .date-block .date-month {
+  color: rgba(255,255,255,0.8);
+}
+
+/* Date block */
+.date-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fdf0f2;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  min-width: 3.5rem;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.date-day {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #e8788a;
+  line-height: 1;
+}
+
+.date-month {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+}
+
+/* Info section */
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.info-top {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.customer-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.tag-today {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.tag-tomorrow {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.tag-overdue {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.products {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Total price */
+.total {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #1e293b;
+  flex-shrink: 0;
+}
+
+/* Toast */
+#toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 9999;
+}
+
+.toast {
+  background: #1e293b;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  animation: toastIn 0.2s ease;
+}
+
+.toast-success { background: #16a34a; }
+.toast-error { background: #ef4444; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(0.5rem); }
+}
+</style>

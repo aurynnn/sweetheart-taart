@@ -1,57 +1,78 @@
 ---
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 import StatCard from '../../components/admin/StatCard.astro';
+import { d1Query } from '../../lib/d1';
 
-// Mock data - in production, fetch from your API
-const stats = {
-  totalOrders: 127,
-  pendingOrders: 8,
-  monthlyRevenue: '€2,847',
-  avgOrderValue: '€22.40'
-};
+// Fetch real stats from D1
+let stats = { totalOrders: 0, pendingOrders: 0, monthlyRevenue: '€0', avgOrderValue: '€0' };
+let recentOrders: any[] = [];
+let upcomingOrders: any[] = [];
 
-const recentOrders = [
-  {
-    id: 'ORD-001',
-    customer: 'Sophie Janssens',
-    product: 'Feesttaart - Verjaardag',
-    date: '2026-03-31',
-    total: '€45.00',
-    status: 'pending'
-  },
-  {
-    id: 'ORD-002',
-    customer: 'Emma Peeters',
-    product: 'Mini-gebak (12 stuks)',
-    date: '2026-03-30',
-    total: '€18.00',
-    status: 'completed'
-  },
-  {
-    id: 'ORD-003',
-    customer: 'Lisa Mertens',
-    product: 'Koekjes - Chocolade',
-    date: '2026-03-30',
-    total: '€12.00',
-    status: 'completed'
-  },
-  {
-    id: 'ORD-004',
-    customer: 'Marie Jacobs',
-    product: 'Feesttaart - Huwelijk',
-    date: '2026-03-29',
-    total: '€85.00',
-    status: 'pending'
-  },
-  {
-    id: 'ORD-005',
-    customer: 'Anne de Smedt',
-    product: 'Mini-gebak (6 stuks)',
-    date: '2026-03-29',
-    total: '€9.00',
-    status: 'completed'
-  }
-];
+try {
+  const countRes = await d1Query('SELECT COUNT(*) as cnt FROM orders');
+  const totalOrders = (countRes.results?.[0]?.cnt as number) ?? 0;
+
+  const pendingRes = await d1Query("SELECT COUNT(*) as cnt FROM orders WHERE status = 'pending'");
+  const pendingOrders = (pendingRes.results?.[0]?.cnt as number) ?? 0;
+
+  const monthRes = await d1Query(
+    "SELECT SUM(total) as sum FROM orders WHERE status != 'cancelled' AND date >= date('now', 'start of month')"
+  );
+  const monthlyRevenue = monthRes.results?.[0]?.sum as number ?? 0;
+
+  const avgRes = await d1Query(
+    "SELECT AVG(total) as avg FROM orders WHERE status != 'cancelled'"
+  );
+  const avgOrderValue = avgRes.results?.[0]?.avg as number ?? 0;
+
+  stats = {
+    totalOrders,
+    pendingOrders,
+    monthlyRevenue: `€${monthlyRevenue.toFixed(2)}`,
+    avgOrderValue: `€${avgOrderValue.toFixed(2)}`
+  };
+
+  // Upcoming orders — next 14 days, sorted by delivery date ascending
+  try {
+    const upcomingRes = await d1Query(`
+      SELECT o.id, o.date, o.status, o.total, c.name as customer,
+             (SELECT product FROM order_items WHERE order_id = o.id LIMIT 1) as product
+      FROM orders o
+      JOIN customers c ON o.customer_id = c.id
+      WHERE o.date >= date('now') AND o.date <= date('now', '+14 days')
+        AND o.status NOT IN ('completed', 'cancelled')
+      ORDER BY o.date ASC
+      LIMIT 10
+    `);
+    upcomingOrders = (upcomingRes.results || []).map((row: any) => ({
+      id: row.id,
+      customer: row.customer || 'Onbekend',
+      product: row.product || '—',
+      date: row.date,
+      total: row.total ? `€${Number(row.total).toFixed(2)}` : '€0.00',
+      status: row.status
+    }));
+  } catch (e) { /* ignore */ }
+
+  const ordersRes = await d1Query(`
+    SELECT o.id, o.date, o.status, o.total, c.name as customer,
+           (SELECT product FROM order_items WHERE order_id = o.id LIMIT 1) as product
+    FROM orders o
+    JOIN customers c ON o.customer_id = c.id
+    ORDER BY o.created_at DESC
+    LIMIT 5
+  `);
+  recentOrders = (ordersRes.results || []).map((row: any) => ({
+    id: row.id,
+    customer: row.customer || 'Onbekend',
+    product: row.product || '—',
+    date: row.date,
+    total: row.total ? `€${Number(row.total).toFixed(2)}` : '€0.00',
+    status: row.status
+  }));
+} catch (e) {
+  // D1 not available — stats stay at 0
+}
 
 const statusBadge = (status: string) => {
   const styles = {
@@ -101,6 +122,32 @@ const statusBadge = (status: string) => {
     />
   </div>
   
+  {upcomingOrders.length > 0 && (
+    <div class="upcoming-orders">
+      <div class="section-header">
+        <h2>Opkomend <span class="badge">{upcomingOrders.length}</span></h2>
+        <a href="/admin/orders" class="view-all">Bekijk alles →</a>
+      </div>
+
+      <div class="upcoming-cards">
+        {upcomingOrders.map(order => (
+          <a href={`/admin/orders/${order.id}`} class="upcoming-card">
+            <div class="upcoming-date">
+              <span class="date-day">{new Date(order.date + 'T00:00:00').getDate()}</span>
+              <span class="date-month">{new Date(order.date + 'T00:00:00').toLocaleDateString('nl-BE', { month: 'short' })}</span>
+            </div>
+            <div class="upcoming-info">
+              <strong>{order.customer}</strong>
+              <span>{order.product}</span>
+            </div>
+            <div class="upcoming-total">{order.total}</div>
+            <div class="upcoming-status"><Fragment set:html={statusBadge(order.status)} /></div>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
   <div class="recent-orders">
     <div class="section-header">
       <h2>Recente Bestellingen</h2>
@@ -166,6 +213,96 @@ const statusBadge = (status: string) => {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+}
+
+.upcoming-orders {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.upcoming-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.upcoming-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #f1f5f9;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.upcoming-card:hover {
+  border-color: #e8788a;
+  background: #fef8f8;
+}
+
+.upcoming-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 2.5rem;
+}
+
+.date-day {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e8788a;
+  line-height: 1;
+}
+
+.date-month {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.upcoming-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.upcoming-info strong {
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.upcoming-info span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.upcoming-total {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8788a;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.4rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
 }
 
 .recent-orders {

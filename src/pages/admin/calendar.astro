@@ -2,6 +2,9 @@
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 import CalendarPicker from '../../components/CalendarPicker.astro';
 
+// Feature flag — set to true to enable Google Calendar integration
+const GOOGLE_CALENDAR_ENABLED = false;
+
 // Check connection status from URL
 const url = Astro.url;
 const connected = url.searchParams.get('connected') === 'true';
@@ -94,7 +97,8 @@ const weeks = getMonthWeeks(currentYear, currentMonth);
     </div>
   )}
 
-  <!-- Google Connection -->
+  {/* Google Calendar integration — hidden but code preserved. Set GOOGLE_CALENDAR_ENABLED = true to re-enable. */}
+  {GOOGLE_CALENDAR_ENABLED && (
   <div class="connection-card">
     <div class="connection-info">
       <div class={`connection-icon ${settings.googleConnected ? 'connected' : ''}`}>
@@ -120,16 +124,10 @@ const weeks = getMonthWeeks(currentYear, currentMonth);
       )}
     </div>
   </div>
+  )}
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('maand')">Maandoverzicht</button>
-    <button class="tab-btn" onclick="switchTab('blockeren')">Datum Blokkeren</button>
-    <button class="tab-btn" onclick="switchTab('uren')">Werkuren</button>
-  </div>
-
-  <!-- Tab: Month Overview -->
-  <div class="tab-content active" id="tab-maand">
+  <!-- Month Overview -->
+  <div>
     <div class="month-overview">
       <div class="month-header">
         <h3>{monthNames[currentMonth]} {currentYear}</h3>
@@ -147,30 +145,69 @@ const weeks = getMonthWeeks(currentYear, currentMonth);
         </div>
       </div>
       
+      <!-- Bulk Action Bar (hidden until dates selected) -->
+      <div id="bulk-bar" class="bulk-bar" style="display:none">
+        <span id="bulk-count">0 dagen geselecteerd</span>
+        <div class="bulk-actions">
+          <button class="btn btn-sm" type="button" onclick="setBulkAvail('open')">🟢 Open</button>
+          <button class="btn btn-sm" type="button" onclick="setBulkAvail('beperkt')">🟡 Beperkt</button>
+          <button class="btn btn-sm" type="button" onclick="setBulkAvail('vol')">🔴 Vol</button>
+          <button class="btn btn-sm" type="button" onclick="setBulkAvail('geblokkeerd')">⚫ Geblokkeerd</button>
+          <button class="btn btn-sm btn-secondary" type="button" onclick="clearSelection()">Wissen</button>
+        </div>
+      </div>
+
       <div class="calendar-grid">
         <div class="day-headers">
           <span>Ma</span><span>Di</span><span>Wo</span><span>Do</span><span>Vr</span><span>Za</span><span>Zo</span>
         </div>
         <div class="days-grid" id="availability-calendar">
-          {weeks.map((week) => (
-            <div class="week-row">
-              {week.map((day) => (
-                <div class={`day-cell ${day === null ? 'empty' : ''}`}>
-                  {day !== null && (
-                    <div class="day-content" data-day={day}>
-                      <span class="day-number">{day}</span>
-                      <div class="day-status">
-                        <div class="status-bar">
-                          <div class="status-fill" style="width: 0%"></div>
+          {weeks.map((week) => {
+            // Compute the Sunday date of this week's Sunday to derive adjacent-month days
+            // First, find the first day of the visible month grid
+            const firstOfMonth = new Date(currentYear, currentMonth, 1);
+            // Monday-first: 0=Mon,...,6=Sun. getDay() is 0=Sun,...,6=Sat
+            const firstDow = (firstOfMonth.getDay() + 6) % 7; // Mon-based index of month start
+            // Find the date of the Monday before (or of) the 1st of month
+            const mondayOfFirstWeek = new Date(firstOfMonth);
+            mondayOfFirstWeek.setDate(1 - firstDow);
+
+            return (
+              <div class="week-row">
+                {week.map((day) => {
+                  if (day === null) {
+                    return <div class="day-cell empty"><div class="day-content"><span class="day-number"></span></div></div>;
+                  }
+                  // Compute absolute day index from start of first week
+                  const weekIndex = weeks.indexOf(week);
+                  const dayIndex = week.indexOf(day);
+                  const d = new Date(mondayOfFirstWeek);
+                  d.setDate(d.getDate() + weekIndex * 7 + dayIndex);
+                  const isoDate = d.toISOString().split('T')[0];
+                  const isCurrentMonth = d.getMonth() === currentMonth;
+                  return (
+                    <div class={`day-cell ${!isCurrentMonth ? 'other-month' : ''}`}>
+                      <button
+                        class="day-content day-editable"
+                        data-date={isoDate}
+                        onclick="toggleDateSelect(this, event)"
+                        type="button"
+                      >
+                        <span class="day-number">{d.getDate()}</span>
+                        <div class="day-status">
+                          <div class="status-bar">
+                            <div class="status-fill" style="width:0%"></div>
+                          </div>
+                          <span class="status-text">0/3</span>
                         </div>
-                        <span class="status-text">0/3</span>
-                      </div>
+                        <span class="selected-check" style="display:none">✓</span>
+                      </button>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
       
@@ -191,209 +228,450 @@ const weeks = getMonthWeeks(currentYear, currentMonth);
     </div>
   </div>
 
-  <!-- Tab: Block Dates -->
-  <div class="tab-content" id="tab-blockeren">
-    <div class="block-section">
-      <h3>Datum Blokkeren</h3>
-      <p>Gebruik de kalender om specifieke datums te blokkeren waarop je niet beschikbaar bent.</p>
-      
-      <div class="block-calendar">
-        <CalendarPicker id="block-date" name="blockDate" />
-      </div>
-      
-      <div class="blocked-list">
-        <h4>Geblokkeerde data</h4>
-        <div class="blocked-items" id="blocked-dates-list">
-          <div class="blocked-item">
-            <div class="blocked-date">
-              <span class="blocked-day">Za</span>
-              <span>12 april 2026</span>
-            </div>
-            <div class="blocked-reason">Persoonlijke reden</div>
-            <button class="btn btn-sm btn-secondary" onclick="removeBlockedDate(this)">Verwijder</button>
-          </div>
-          <div class="blocked-item">
-            <div class="blocked-date">
-              <span class="blocked-day">Zo</span>
-              <span>20 april 2026</span>
-            </div>
-            <div class="blocked-reason">Vakantie</div>
-            <button class="btn btn-sm btn-secondary" onclick="removeBlockedDate(this)">Verwijder</button>
-          </div>
+  <!-- Werkuren & Max Orders — below calendar -->
+  <div class="work-days-section">
+    <div class="week-grid">
+      <div class="day-setting">
+        <label>Maandag</label>
+        <div class="day-toggle active">
+          <input type="checkbox" checked data-day="1" onchange="toggleDay(this)" />
+          <span class="toggle-slider"></span>
         </div>
+      </div>
+      <div class="day-setting">
+        <label>Dinsdag</label>
+        <div class="day-toggle active">
+          <input type="checkbox" checked data-day="2" onchange="toggleDay(this)" />
+          <span class="toggle-slider"></span>
+        </div>
+      </div>
+      <div class="day-setting">
+        <label>Woensdag</label>
+        <div class="day-toggle active">
+          <input type="checkbox" checked data-day="3" onchange="toggleDay(this)" />
+          <span class="toggle-slider"></span>
+        </div>
+      </div>
+      <div class="day-setting">
+        <label>Donderdag</label>
+        <div class="day-toggle active">
+          <input type="checkbox" checked data-day="4" onchange="toggleDay(this)" />
+          <span class="toggle-slider"></span>
+        </div>
+      </div>
+      <div class="day-setting">
+        <label>Vrijdag</label>
+        <div class="day-toggle active">
+          <input type="checkbox" checked data-day="5" onchange="toggleDay(this)" />
+          <span class="toggle-slider"></span>
+        </div>
+      </div>
+      <div class="day-setting">
+        <label>Zaterdag</label>
+        <div class="day-toggle active">
+          <input type="checkbox" checked data-day="6" onchange="toggleDay(this)" />
+          <span class="toggle-slider"></span>
+        </div>
+      </div>
+      <div class="day-setting">
+        <label>Zondag</label>
+        <div class="day-toggle">
+          <input type="checkbox" data-day="0" onchange="toggleDay(this)" />
+          <span class="toggle-slider"></span>
+        </div>
+      </div>
+    </div>
+    <div class="max-orders-setting">
+      <h4>Maximale bestellingen per dag</h4>
+      <div class="number-input">
+        <button type="button" onclick="adjustMaxOrders(-1)">−</button>
+        <input type="number" id="maxOrders" value={settings.maxOrdersPerDay} min="1" max="20" />
+        <button type="button" onclick="adjustMaxOrders(1)">+</button>
       </div>
     </div>
   </div>
 
-  <!-- Tab: Work Hours -->
-  <div class="tab-content" id="tab-uren">
-    <div class="hours-section">
-      <h3>Wekelijks Schema</h3>
-      <p>Stel in op welke dagen je beschikbaar bent voor bestellingen.</p>
-      
-      <div class="week-grid">
-        <div class="day-setting">
-          <label>Maandag</label>
-          <div class="day-toggle active">
-            <input type="checkbox" checked data-day="1" onchange="toggleDay(this)" />
-            <span class="toggle-slider"></span>
+  <!-- Single Date Edit Modal -->
+  <!-- Confirm Popup -->
+  <div id="confirm-modal" class="modal-overlay" style="display:none">
+    <div class="modal-card" style="width:360px;">
+      <div class="modal-header">
+        <h3 id="confirm-title">Waarschuwing</h3>
+        <button class="modal-close" onclick="closeConfirmModal()" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-message" style="margin:0;font-size:0.9rem;color:#475569;"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeConfirmModal()" type="button">Annuleer</button>
+        <button class="btn btn-danger" id="confirm-btn" onclick="confirmAction()" type="button">Bevestig</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="date-modal" class="modal-overlay" style="display:none">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-date-title">Datum bewerken</h3>
+        <button class="modal-close" onclick="closeDateModal()" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-date-display" id="modal-date-display"></p>
+
+        <div class="modal-section">
+          <label class="modal-label">Beschikbaarheid</label>
+          <div class="modal-availability-options">
+            <button class="avail-btn" id="avail-open" onclick="setAvail('open')" type="button">
+              <span class="avail-dot green"></span>Open
+            </button>
+            <button class="avail-btn" id="avail-beperkt" onclick="setAvail('beperkt')" type="button">
+              <span class="avail-dot yellow"></span>Beperkt (1 plek)
+            </button>
+            <button class="avail-btn" id="avail-vol" onclick="setAvail('vol')" type="button">
+              <span class="avail-dot red"></span>Vol
+            </button>
+            <button class="avail-btn" id="avail-geblokkeerd" onclick="setAvail('geblokkeerd')" type="button">
+              <span class="avail-dot gray"></span>Geblokkeerd
+            </button>
           </div>
         </div>
-        <div class="day-setting">
-          <label>Dinsdag</label>
-          <div class="day-toggle active">
-            <input type="checkbox" checked data-day="2" onchange="toggleDay(this)" />
-            <span class="toggle-slider"></span>
+
+        <div class="modal-section">
+          <label class="modal-label">Of aangepast aantal beschikbaar</label>
+          <div class="number-input">
+            <button type="button" onclick="adjustModalOrders(-1)">−</button>
+            <input type="number" id="modal-orders" value="3" min="0" max="20" />
+            <button type="button" onclick="adjustModalOrders(1)">+</button>
           </div>
+          <p class="modal-hint">Gebruik dit om een specifiek aantal plaatsen in te stellen.</p>
         </div>
-        <div class="day-setting">
-          <label>Woensdag</label>
-          <div class="day-toggle active">
-            <input type="checkbox" checked data-day="3" onchange="toggleDay(this)" />
-            <span class="toggle-slider"></span>
-          </div>
-        </div>
-        <div class="day-setting">
-          <label>Donderdag</label>
-          <div class="day-toggle active">
-            <input type="checkbox" checked data-day="4" onchange="toggleDay(this)" />
-            <span class="toggle-slider"></span>
-          </div>
-        </div>
-        <div class="day-setting">
-          <label>Vrijdag</label>
-          <div class="day-toggle active">
-            <input type="checkbox" checked data-day="5" onchange="toggleDay(this)" />
-            <span class="toggle-slider"></span>
-          </div>
-        </div>
-        <div class="day-setting">
-          <label>Zaterdag</label>
-          <div class="day-toggle active">
-            <input type="checkbox" checked data-day="6" onchange="toggleDay(this)" />
-            <span class="toggle-slider"></span>
-          </div>
-        </div>
-        <div class="day-setting">
-          <label>Zondag</label>
-          <div class="day-toggle">
-            <input type="checkbox" data-day="0" onchange="toggleDay(this)" />
-            <span class="toggle-slider"></span>
-          </div>
+
+        <div class="modal-section">
+          <label class="modal-label">Reden (optioneel)</label>
+          <input type="text" id="modal-reason" class="modal-input" placeholder="Bijv. Vakantie, bezet, ..." />
         </div>
       </div>
-      
-      <div class="max-orders-setting">
-        <h4>Maximale bestellingen per dag</h4>
-        <p>Hoeveel bestellingen kun je per dag verwerken?</p>
-        <div class="number-input">
-          <button type="button" onclick="adjustMaxOrders(-1)">−</button>
-          <input type="number" id="maxOrders" value={settings.maxOrdersPerDay} min="1" max="20" />
-          <button type="button" onclick="adjustMaxOrders(1)">+</button>
-        </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeDateModal()" type="button">Annuleer</button>
+        <button class="btn btn-primary" onclick="saveDateModal()" type="button">Opslaan</button>
       </div>
     </div>
   </div>
 </AdminLayout>
 
 <script>
-  function switchTab(tab: string) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    
-    document.querySelector(`[onclick="switchTab('${tab}')"]`)?.classList.add('active');
-    document.getElementById(`tab-${tab}`)?.classList.add('active');
+  // --- Toast Notifications ---
+  function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
+    const container = document.getElementById('toast-container')!;
+    const icons = { success: '✓', error: '✕', info: 'ℹ' };
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'toastOut 0.2s ease forwards';
+      setTimeout(() => toast.remove(), 200);
+    }, 3000);
   }
-  
+
+  // --- Confirm Dialog ---
+  let confirmResolve: ((value: boolean) => void) | null = null;
+
+  (window as any).closeConfirmModal = function() {
+    document.getElementById('confirm-modal')!.style.display = 'none';
+    if (confirmResolve) { confirmResolve(false); confirmResolve = null; }
+  };
+
+  (window as any).confirmAction = async function() {
+    document.getElementById('confirm-modal')!.style.display = 'none';
+    if (confirmResolve) { confirmResolve(true); confirmResolve = null; }
+  };
+
+  function showConfirm(title: string, message: string): Promise<boolean> {
+    return new Promise(resolve => {
+      confirmResolve = resolve;
+      document.getElementById('confirm-title')!.textContent = title;
+      document.getElementById('confirm-message')!.textContent = message;
+      document.getElementById('confirm-modal')!.style.display = 'flex';
+    });
+  }
+
+  // --- Tab switching ---
   function adjustMaxOrders(delta: number) {
     const input = document.getElementById('maxOrders') as HTMLInputElement;
     const newValue = Math.min(20, Math.max(1, parseInt(input.value) + delta));
     input.value = String(newValue);
   }
-  
+
   function toggleDay(checkbox: HTMLInputElement) {
     const toggle = checkbox.closest('.day-toggle');
-    if (checkbox.checked) {
-      toggle?.classList.add('active');
+    toggle?.classList.toggle('active', checkbox.checked);
+    // Immediately save the day toggle and refresh the calendar
+    window.saveSettings(true);
+  }
+
+
+  // --- Multi-select state ---
+  let selectedDates: Set<string> = new Set();
+  let slotOverrides: Record<string, { mode: string; orders: number; reason?: string }> = {};
+
+  (window as any).toggleDateSelect = function(el: HTMLElement, event: MouseEvent) {
+    event.stopPropagation();
+    const dateStr = el.dataset.date || '';
+    if (!dateStr) return;
+
+    if (selectedDates.has(dateStr)) {
+      selectedDates.delete(dateStr);
+      el.classList.remove('selected');
+      el.querySelector<HTMLElement>('.selected-check')!.style.display = 'none';
     } else {
-      toggle?.classList.remove('active');
+      selectedDates.add(dateStr);
+      el.classList.add('selected');
+      el.querySelector<HTMLElement>('.selected-check')!.style.display = 'flex';
+    }
+
+    updateBulkBar();
+  };
+
+  function updateBulkBar() {
+    const bar = document.getElementById('bulk-bar')!;
+    const count = document.getElementById('bulk-count')!;
+    if (selectedDates.size === 0) {
+      bar.style.display = 'none';
+    } else {
+      bar.style.display = 'flex';
+      count.textContent = `${selectedDates.size} ${selectedDates.size === 1 ? 'dag' : 'dagen'} geselecteerd`;
     }
   }
-  
-  function removeBlockedDate(btn: HTMLButtonElement) {
-    const item = btn.closest('.blocked-item');
-    if (item) {
-      item.remove();
-    }
-  }
-  
-  function saveSettings() {
-    const maxOrders = (document.getElementById('maxOrders') as HTMLInputElement).value;
-    
-    // Collect available days
-    const availableDays: number[] = [];
-    document.querySelectorAll('[data-day]').forEach(el => {
-      const input = el as HTMLInputElement;
-      if (input.checked) {
-        availableDays.push(parseInt(input.dataset.day || '0'));
+
+  (window as any).clearSelection = function() {
+    selectedDates.clear();
+    document.querySelectorAll('.day-editable.selected').forEach(el => {
+      el.classList.remove('selected');
+      el.querySelector<HTMLElement>('.selected-check')!.style.display = 'none';
+    });
+    updateBulkBar();
+  };
+
+  (window as any).setBulkAvail = async function(mode: string) {
+    if (selectedDates.size === 0) return;
+
+    selectedDates.forEach(date => {
+      if (mode === 'open') {
+        delete slotOverrides[date];
+      } else {
+        const orders = mode === 'vol' || mode === 'geblokkeerd' ? 0
+          : mode === 'beperkt' ? 3 // will be decremented in loadAvailability
+          : 3;
+        slotOverrides[date] = { mode, orders };
       }
     });
-    
-    const settings = {
-      maxOrdersPerDay: parseInt(maxOrders),
-      availableDays
-    };
-    
-    console.log('Saving:', settings);
-    
-    fetch('/api/availability', {
+
+    await persistOverrides();
+    clearSelection();
+    loadAvailability();
+  };
+
+  async function persistOverrides() {
+    await fetch('/api/availability', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings)
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        alert('Instellingen opgeslagen!');
-      }
-    })
-    .catch(err => {
-      console.error('Error:', err);
-      alert('Opgeslagen!');
+      body: JSON.stringify({
+        maxOrdersPerDay: parseInt((document.getElementById('maxOrders') as HTMLInputElement).value),
+        slotOverrides
+      })
     });
   }
-  
-  // Fetch and update availability display
+
+  (window as any).saveSettings = async function(silent = false) {
+    const maxOrders = parseInt((document.getElementById('maxOrders') as HTMLInputElement).value);
+    const availableDays: number[] = [];
+    const allDays = [0, 1, 2, 3, 4, 5, 6];
+    document.querySelectorAll<HTMLInputElement>('[data-day]').forEach(el => {
+      if (el.checked) {
+        availableDays.push(parseInt(el.dataset.day || '0'));
+      }
+    });
+    const recurringUnavailableDays = allDays.filter(d => !availableDays.includes(d));
+    try {
+      const res = await fetch('/api/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          maxOrdersPerDay: maxOrders,
+          availableDays,
+          recurringUnavailableDays,
+          slotOverrides
+        })
+      });
+      const data = await res.json();
+      if (!silent) {
+        showToast(data.success ? 'Instellingen opgeslagen!' : 'Opgeslagen!', 'success');
+      }
+    } catch {
+      if (!silent) showToast('Fout bij opslaan', 'error');
+    }
+    // Refresh the calendar to reflect the new recurring day settings
+    loadAvailability();
+  };
+
+  // --- Single date modal ---
+  let currentEditDate: string | null = null;
+  let currentAvailMode = 'open';
+
+  (window as any).openDateModal = function(el: HTMLElement) {
+    const dateStr = el.dataset.date || '';
+    currentEditDate = dateStr;
+    currentAvailMode = 'open';
+
+    const d = new Date(dateStr + 'T00:00:00');
+    const modal = document.getElementById('date-modal')!;
+    document.getElementById('modal-date-title')!.textContent = 'Datum bewerken';
+    document.getElementById('modal-date-display')!.textContent = d.toLocaleDateString('nl-BE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    (document.getElementById('modal-reason') as HTMLInputElement).value = '';
+    (document.getElementById('modal-orders') as HTMLInputElement).value = '3';
+
+    const override = slotOverrides[dateStr];
+    if (override) {
+      currentAvailMode = override.mode;
+      (document.getElementById('modal-orders') as HTMLInputElement).value = String(override.orders);
+      if (override.reason) (document.getElementById('modal-reason') as HTMLInputElement).value = override.reason;
+    }
+    updateAvailButtons(currentAvailMode);
+    modal.style.display = 'flex';
+  };
+
+  (window as any).closeDateModal = function() {
+    document.getElementById('date-modal')!.style.display = 'none';
+    currentEditDate = null;
+  };
+
+  function updateAvailButtons(mode: string) {
+    document.querySelectorAll('.avail-btn').forEach(b => b.classList.remove('active'));
+    const idMap: Record<string, string> = {
+      'open': 'avail-open',
+      'beperkt': 'avail-beperkt',
+      'vol': 'avail-vol',
+      'geblokkeerd': 'avail-geblokkeerd',
+      'custom': 'avail-beperkt'
+    };
+    const btn = document.getElementById(idMap[mode] || 'avail-open');
+    btn?.classList.add('active');
+  }
+
+  (window as any).setAvail = function(mode: string) {
+    currentAvailMode = mode;
+    updateAvailButtons(mode);
+  };
+
+  (window as any).adjustModalOrders = function(delta: number) {
+    const input = document.getElementById('modal-orders') as HTMLInputElement;
+    input.value = String(Math.min(20, Math.max(0, parseInt(input.value) + delta)));
+    currentAvailMode = 'custom';
+    updateAvailButtons('custom');
+  };
+
+  (window as any).saveDateModal = async function() {
+    if (!currentEditDate) return;
+    const orders = parseInt((document.getElementById('modal-orders') as HTMLInputElement).value);
+    const reason = (document.getElementById('modal-reason') as HTMLInputElement).value.trim();
+
+    if (currentAvailMode === 'open') {
+      delete slotOverrides[currentEditDate];
+    } else {
+      slotOverrides[currentEditDate] = {
+        mode: currentAvailMode === 'custom' ? 'custom' : currentAvailMode,
+        orders,
+        reason
+      };
+    }
+
+    await persistOverrides();
+    closeDateModal();
+    loadAvailability();
+  };
+
+  // Also wire double-click on calendar cell to open modal
+  document.addEventListener('dblclick', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('.day-editable');
+    if (btn) openDateModal(btn);
+  });
+
+  // --- Load availability from API ---
   async function loadAvailability() {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + 1);
-      
-      const response = await fetch(`/api/availability?startDate=${today}&endDate=${endDate.toISOString().split('T')[0]}`);
-      const data = await response.json();
-      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = new Date(today);
+      endDate.setMonth(endDate.getMonth() + 2);
+
+      const res = await fetch(`/api/availability?startDate=${today.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`);
+      const data = await res.json();
+
+      if (data.settings?.slotOverrides) {
+        slotOverrides = data.settings.slotOverrides;
+      }
+
+      // Apply settings to UI: day toggles and max orders
+      if (data.settings) {
+        const { availableDays, maxOrdersPerDay, recurringUnavailableDays } = data.settings;
+        // Set max orders input
+        const maxInput = document.getElementById('maxOrders') as HTMLInputElement;
+        if (maxInput && maxOrdersPerDay) maxInput.value = String(maxOrdersPerDay);
+
+        // Build the set of available days (0=Sun..6=Sat)
+        const availSet = new Set(availableDays ?? []);
+
+        // Set checkboxes — all days start unchecked, then check the available ones
+        document.querySelectorAll<HTMLInputElement>('[data-day]').forEach(el => {
+          const day = parseInt(el.dataset.day || '0');
+          el.checked = availSet.has(day);
+          const toggle = el.closest('.day-toggle');
+          if (toggle) toggle.classList.toggle('active', availSet.has(day));
+        });
+      }
+
       if (data.availability) {
         data.availability.forEach((slot: any) => {
-          const dayContent = document.querySelector(`[data-day="${new Date(slot.date).getDate()}"]`);
-          if (dayContent) {
-            const bar = dayContent.querySelector('.status-fill') as HTMLElement;
-            const text = dayContent.querySelector('.status-text');
-            const cell = dayContent.closest('.day-cell');
-            
-            if (bar && text && cell) {
-              const percentage = (slot.orders / slot.maxOrders) * 100;
-              bar.style.width = `${percentage}%`;
-              text.textContent = `${slot.orders}/${slot.maxOrders}`;
-              
-              cell.classList.remove('available', 'limited', 'full');
-              if (!slot.available) {
-                cell.classList.add('full');
-              } else if (slot.remaining <= 1) {
-                cell.classList.add('limited');
-              } else {
-                cell.classList.add('available');
-              }
+          const dayContent = document.querySelector<HTMLElement>(`.day-editable[data-date="${slot.date}"]`);
+          if (!dayContent) return;
+
+          const bar = dayContent.querySelector<HTMLElement>('.status-fill');
+          const text = dayContent.querySelector<HTMLElement>('.status-text');
+          const cell = dayContent.closest<HTMLElement>('.day-cell');
+
+          let displayOrders = slot.orders;
+          let displayMax = slot.maxOrders;
+          let available = slot.available;
+          const override = slotOverrides[slot.date];
+
+          if (override) {
+            if (override.mode === 'geblokkeerd') {
+              available = false;
+              displayOrders = 0; displayMax = 0;
+            } else if (override.mode === 'vol') {
+              available = false;
+              displayOrders = displayMax;
+            } else if (override.mode === 'beperkt') {
+              available = true;
+              displayOrders = Math.max(0, displayMax - 1);
+            } else if (override.mode === 'custom') {
+              available = override.orders > 0;
+              displayOrders = override.orders;
+            }
+          }
+
+          if (bar && text && cell) {
+            bar.style.width = displayMax > 0 ? `${(displayOrders / displayMax) * 100}%` : '0%';
+            text.textContent = `${displayOrders}/${displayMax}`;
+            cell.classList.remove('available', 'limited', 'full', 'blocked', 'other-month');
+            if (!available) {
+              cell.classList.add('full');
+              if (override?.mode === 'geblokkeerd') cell.classList.add('blocked');
+            } else if (displayMax - displayOrders <= 1) {
+              cell.classList.add('limited');
+            } else {
+              cell.classList.add('available');
             }
           }
         });
@@ -402,7 +680,7 @@ const weeks = getMonthWeeks(currentYear, currentMonth);
       console.log('Could not load availability:', err);
     }
   }
-  
+
   loadAvailability();
 </script>
 
@@ -502,36 +780,6 @@ const weeks = getMonthWeeks(currentYear, currentMonth);
   padding: 0.5rem;
   border-radius: 1rem;
   border: 1px solid #e2e8f0;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: none;
-  background: none;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tab-btn:hover {
-  background: #f8fafc;
-}
-
-.tab-btn.active {
-  background: #E8788A;
-  color: white;
-}
-
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
 }
 
 /* Month Overview */
@@ -732,68 +980,21 @@ const weeks = getMonthWeeks(currentYear, currentMonth);
   margin-bottom: 2rem;
 }
 
-.blocked-list h4 {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.blocked-items {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.blocked-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  background: #fef2f2;
-  border-radius: 0.5rem;
-}
-
-.blocked-date {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 140px;
-}
-
-.blocked-day {
-  width: 2rem;
-  height: 2rem;
-  background: #fee2e2;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #dc2626;
-}
-
-.blocked-reason {
-  flex: 1;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
 /* Hours Section */
-.hours-section {
+.work-days-section {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
   padding: 1.5rem;
 }
 
-.hours-section h3 {
+.work-days-section h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.125rem;
   font-weight: 600;
 }
 
-.hours-section > p {
+.work-days-section > p {
   margin: 0 0 1.5rem 0;
   color: #64748b;
   font-size: 0.875rem;
@@ -945,5 +1146,281 @@ const weeks = getMonthWeeks(currentYear, currentMonth);
 
 .btn-secondary:hover {
   background: #e2e8f0;
+}
+
+/* Day editable */
+.day-editable {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  border-radius: 0.25rem;
+  transition: background 0.15s;
+}
+
+.day-editable:hover {
+  background: rgba(232, 120, 138, 0.08);
+}
+
+/* Date Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  background: white;
+  border-radius: 1rem;
+  width: 420px;
+  max-width: 95vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.modal-close {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.modal-close:hover {
+  background: #e2e8f0;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modal-date-display {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  text-transform: capitalize;
+}
+
+.modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modal-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.modal-availability-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.avail-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.625rem;
+  background: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.avail-btn:hover {
+  border-color: #E8788A;
+  background: #fef8f8;
+}
+
+.avail-btn.active {
+  border-color: #E8788A;
+  background: #fdf0f2;
+  color: #E8788A;
+}
+
+.avail-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.avail-dot.green { background: #22c55e; }
+.avail-dot.yellow { background: #f59e0b; }
+.avail-dot.red { background: #ef4444; }
+.avail-dot.gray { background: #94a3b8; }
+
+.modal-input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: #E8788A;
+  box-shadow: 0 0 0 3px rgba(232, 120, 138, 0.1);
+}
+
+.modal-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Day states */
+.day-cell.blocked {
+  background: repeating-linear-gradient(
+    45deg,
+    #f8fafc,
+    #f8fafc 4px,
+    #f1f5f9 4px,
+    #f1f5f9 8px
+  ) !important;
+}
+
+.day-cell.blocked .day-number,
+.day-cell.blocked .status-text {
+  color: #94a3b8;
+}
+
+.day-cell.empty {
+  pointer-events: none;
+}
+
+.day-cell.other-month {
+  opacity: 0.35;
+}
+
+.day-editable.selected {
+  background: rgba(232, 120, 138, 0.15) !important;
+  border-radius: 0.375rem;
+}
+
+.day-editable.selected .day-number {
+  color: #E8788A;
+  font-weight: 700;
+}
+
+.selected-check {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: #E8788A;
+  border-radius: 50%;
+  color: white;
+  font-size: 10px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.day-content {
+  position: relative;
+}
+
+/* Bulk Action Bar */
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--color-primary);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-md);
+}
+
+.bulk-bar span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bulk-actions .btn {
+  font-size: 0.8rem;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1.5px solid rgba(255,255,255,0.4);
+}
+
+.bulk-actions .btn:hover {
+  background: rgba(255,255,255,0.35);
+}
+
+/* Month nav */
+.month-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 </style>

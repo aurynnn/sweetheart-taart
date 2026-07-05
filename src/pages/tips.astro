@@ -1,9 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
 ---
 
 <Layout title="Tips - Ophaalinfo & Tips">
-  <div class="tips-page">
+  <Header />
+
+  <main id="tips-main" class="tips-page">
     <div class="tips-header">
       <h1>📋 Tips & Info</h1>
       <p class="intro">Alles wat je moet weten voor een perfecte ervaring</p>
@@ -186,7 +190,9 @@ import Layout from '../layouts/Layout.astro';
     <div class="back-link">
       <a href="/bestellen">← Terug naar bestellen</a>
     </div>
-  </div>
+  </main>
+
+  <Footer id="tips-footer" />
 </Layout>
 
 <script is:inline>

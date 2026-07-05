@@ -1,137 +1,8 @@
 ---
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
-import DataTable from '../../components/admin/DataTable.astro';
 
-// Mock data - in production, fetch from your API
-const orders = [
-  {
-    id: 'ORD-001',
-    customer: 'Sophie Janssens',
-    email: 'sophie@email.be',
-    phone: '+32 xxx xx xx xx',
-    product: 'Feesttaart - Verjaardag',
-    items: [
-      { product: 'Feesttaart', event: 'Verjaardag', persons: '12', flavor: 'Aardbei', date: '2026-04-05' }
-    ],
-    date: '2026-03-31',
-    total: '€45.00',
-    status: 'pending'
-  },
-  {
-    id: 'ORD-002',
-    customer: 'Emma Peeters',
-    email: 'emma@email.be',
-    phone: '+32 xxx xx xx xx',
-    product: 'Mini-gebak (12 stuks)',
-    items: [
-      { product: 'Mini-gebak', flavor: 'Chocolade', quantity: '12', date: '2026-04-03' }
-    ],
-    date: '2026-03-30',
-    total: '€18.00',
-    status: 'completed'
-  },
-  {
-    id: 'ORD-003',
-    customer: 'Lisa Mertens',
-    email: 'lisa@email.be',
-    phone: '+32 xxx xx xx xx',
-    product: 'Koekjes - Chocolade',
-    items: [
-      { product: 'Koekjes', flavor: 'Chocolade', quantity: '24', date: '2026-04-02' }
-    ],
-    date: '2026-03-30',
-    total: '€12.00',
-    status: 'completed'
-  },
-  {
-    id: 'ORD-004',
-    customer: 'Marie Jacobs',
-    email: 'marie@email.be',
-    phone: '+32 xxx xx xx xx',
-    product: 'Feesttaart - Huwelijk',
-    items: [
-      { product: 'Feesttaart', event: 'Huwelijk', persons: '40', flavor: 'Vanie', date: '2026-04-10' }
-    ],
-    date: '2026-03-29',
-    total: '€85.00',
-    status: 'pending'
-  },
-  {
-    id: 'ORD-005',
-    customer: 'Anne de Smedt',
-    email: 'anne@email.be',
-    phone: '+32 xxx xx xx xx',
-    product: 'Mini-gebak (6 stuks)',
-    items: [
-      { product: 'Mini-gebak', flavor: 'Vanille', quantity: '6', date: '2026-04-01' }
-    ],
-    date: '2026-03-29',
-    total: '€9.00',
-    status: 'completed'
-  },
-  {
-    id: 'ORD-006',
-    customer: 'Thomas Claus',
-    email: 'thomas@email.be',
-    phone: '+32 xxx xx xx xx',
-    product: 'Koekjes - Mixed',
-    items: [
-      { product: 'Koekjes', flavor: 'Aardbei & Framboos', quantity: '36', date: '2026-04-04' }
-    ],
-    date: '2026-03-28',
-    total: '€18.00',
-    status: 'cancelled'
-  }
-];
-
-const statusBadge = (status: string) => {
-  const styles: Record<string, string> = {
-    pending: 'background: #fef3c7; color: #92400e;',
-    approved: 'background: #dbeafe; color: #1e40af;',
-    completed: 'background: #dcfce7; color: #166534;',
-    cancelled: 'background: #fee2e2; color: #991b1b;'
-  };
-  const labels: Record<string, string> = {
-    pending: 'In afwachting',
-    approved: 'Goedgekeurd',
-    completed: 'Voltooid',
-    cancelled: 'Geannuleerd'
-  };
-  return `<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; ${styles[status] || styles.pending}">${labels[status] || status}</span>`;
-};
-
-const actionButtons = (status: string, orderId: string) => {
-  if (status === 'pending') {
-    return `
-      <button class="btn btn-sm btn-approve" onclick="approveOrder('${orderId}')">Goedkeur</button>
-      <button class="btn btn-sm btn-cancel" onclick="cancelOrder('${orderId}')">Annuleer</button>
-    `;
-  }
-  if (status === 'approved') {
-    return `
-      <button class="btn btn-sm btn-primary" onclick="completeOrder('${orderId}')">Voltooid</button>
-    `;
-  }
-  return `<button class="btn btn-sm btn-secondary" onclick="viewOrder('${orderId}')">Bekijk</button>`;
-};
-
-const columns = [
-  { key: 'id', label: 'Order ID', class: 'font-mono text-gray-500' },
-  { key: 'customer', label: 'Klant' },
-  { key: 'product', label: 'Product' },
-  { key: 'date', label: 'Datum' },
-  { key: 'total', label: 'Totaal', class: 'font-semibold' },
-  { 
-    key: 'status', 
-    label: 'Status',
-    render: (val: string) => statusBadge(val)
-  },
-  { 
-    key: 'actions', 
-    label: '',
-    render: (_: any, row: any) => `<button onclick="viewOrder('${row.id}')" class="btn btn-sm btn-secondary">Bekijk</button>`
-  }
-];
+// Orders are loaded client-side from /api/orders
+const orders: any[] = [];
 
 // Stats
 const stats = {
@@ -156,6 +27,13 @@ const stats = {
           <line x1="12" y1="15" x2="12" y2="3"></line>
         </svg>
         Exporteren
+      </button>
+      <button class="btn btn-primary" onclick="openNewOrderModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Nieuwe Bestelling
       </button>
     </div>
   </div>
@@ -207,55 +85,23 @@ const stats = {
     </div>
   </div>
 
-  <!-- Orders Table -->
-  <div class="table-container">
-    <table class="data-table" id="ordersTable">
-      <thead>
-        <tr>
-          <th>Order ID</th>
-          <th>Klant</th>
-          <th>Product</th>
-          <th>Datum</th>
-          <th>Totaal</th>
-          <th>Status</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="ordersTableBody">
-        {orders.map(order => (
-          <tr data-order-id={order.id} data-status={order.status}>
-            <td class="order-id">{order.id}</td>
-            <td>
-              <div class="customer-cell">
-                <strong>{order.customer}</strong>
-                <span>{order.email}</span>
-              </div>
-            </td>
-            <td>{order.product}</td>
-            <td>{order.date}</td>
-            <td class="order-total">{order.total}</td>
-            <td><Fragment set:html={statusBadge(order.status)} /></td>
-            <td class="actions-cell">
-              <Fragment set:html={actionButtons(order.status, order.id)} />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+  <!-- Orders Grid -->
+  <div class="orders-grid" id="ordersGrid">
+    <!-- Orders loaded dynamically via /api/orders -->
   </div>
 
   <!-- Order Detail Modal -->
   <div class="modal-overlay" id="orderModal">
-    <div class="modal">
+    <div class="modal modal-wide">
       <div class="modal-header">
         <h3 class="modal-title">Bestelling Details</h3>
-        <button class="modal-close" onclick="closeOrderModal()">&times;</button>
+        <button class="modal-close" data-action="close">&times;</button>
       </div>
       <div class="modal-body" id="orderModalBody">
         <!-- Filled dynamically -->
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeOrderModal()">Sluiten</button>
+        <button class="btn btn-secondary" data-action="close">Sluiten</button>
         <select class="action-select" id="orderStatusAction">
           <option value="">Status wijzigen...</option>
           <option value="approved">Goedkeur</option>
@@ -263,183 +109,221 @@ const stats = {
           <option value="cancelled">Markeer als geannuleerd</option>
           <option value="pending">Zet terug naar in afwachting</option>
         </select>
-        <button class="btn btn-primary" onclick="updateOrderStatus()">Opslaan</button>
+        <button class="btn btn-primary" id="updateStatusBtn">Opslaan</button>
       </div>
     </div>
   </div>
 </AdminLayout>
 
-<script>
-  // Orders data - in production this would be fetched from API
-  const orders = [
-  {
-    id: 'ORD-001',
-    customer: 'Sophie Janssens',
-    email: 'sophie.janssens@email.be',
-    phone: '+32 470 12 34 56',
-    product: 'Feesttaart - Verjaardag',
-    items: [
-      { product: 'Feesttaart', event: 'Verjaardag', persons: '12', flavor: 'Aardbei', date: '2026-04-05', size: 'Medium (20cm)', filling: 'Aardbeienroom', decoration: 'Rode glazuur met sierstrip', text: 'Van harte gefeliciteerd!', allergies: 'Geen', delivery: 'Ophalen' }
-    ],
-    date: '2026-03-31',
-    notes: 'Graag mooie afwerking, is voor een kind van 12 jaar.',
-    total: '€45.00',
-    status: 'pending'
-  },
-  {
-    id: 'ORD-002',
-    customer: 'Emma Peeters',
-    email: 'emma.peeters@gmail.com',
-    phone: '+32 485 23 45 67',
-    product: 'Mini-gebak (12 stuks)',
-    items: [
-      { product: 'Mini-gebak', flavor: 'Chocolade', quantity: '12', date: '2026-04-03', colors: 'Wit & Goud', box: 'Luxebox', allergies: 'Gluten', delivery: 'Bezorgen' }
-    ],
-    date: '2026-03-30',
-    notes: 'Bezorgen tussen 14:00 en 16:00.',
-    address: 'Kerkstraat 45, 3000 Leuven',
-    total: '€18.00',
-    status: 'completed'
-  },
-  {
-    id: 'ORD-003',
-    customer: 'Lisa Mertens',
-    email: 'lisa.mertens@outlook.com',
-    phone: '+32 471 34 56 78',
-    product: 'Koekjes - Chocolade',
-    items: [
-      { product: 'Koekjes', flavor: 'Chocolade', quantity: '24', date: '2026-04-02', shape: 'Hartjes', packaging: 'Cadeauverpakking', allergies: 'Geen', delivery: 'Ophalen' }
-    ],
-    date: '2026-03-30',
-    notes: '',
-    total: '€12.00',
-    status: 'completed'
-  },
-  {
-    id: 'ORD-004',
-    customer: 'Marie Jacobs',
-    email: 'marie.jacobs@skynet.be',
-    phone: '+32 495 45 67 89',
-    product: 'Feesttaart - Huwelijk',
-    items: [
-      { product: 'Feesttaart', event: 'Huwelijk', persons: '40', flavor: 'Vanie', date: '2026-04-10', size: 'Groot (30cm)', filling: 'Vanille met aardbeien', decoration: 'Witte versiering met bloemen', text: 'Marie & Jan', allergies: 'Geen', delivery: 'Bezorgen' }
-    ],
-    date: '2026-03-29',
-    notes: 'Bruiloftstaart - graag elegant design. Kleuren: wit en zacht roze.',
-    address: 'Feestlocatie Kasteel van Horst, 2860 Sint-Katelijne-Waver',
-    total: '€85.00',
-    status: 'pending'
-  },
-  {
-    id: 'ORD-005',
-    customer: 'Anne de Smedt',
-    email: 'anne.smedt@telenet.be',
-    phone: '+32 472 56 78 90',
-    product: 'Mini-gebak (6 stuks)',
-    items: [
-      { product: 'Mini-gebak', flavor: 'Vanille', quantity: '6', date: '2026-04-01', colors: 'Pastelkleuren', box: 'Standaard', allergies: 'Geen', delivery: 'Ophalen' }
-    ],
-    date: '2026-03-29',
-    notes: '',
-    total: '€9.00',
-    status: 'completed'
-  },
-  {
-    id: 'ORD-006',
-    customer: 'Thomas Claus',
-    email: 'thomas.claus@yahoo.com',
-    phone: '+32 473 67 89 01',
-    product: 'Koekjes - Mixed',
-    items: [
-      { product: 'Koekjes', flavor: 'Aardbei & Framboos', quantity: '36', date: '2026-04-04', shape: 'Mixed', packaging: 'Cadeauzak', allergies: 'Noten', delivery: 'Ophalen' }
-    ],
-    date: '2026-03-28',
-    notes: 'Let op: notenallergie!',
-    total: '€18.00',
-    status: 'cancelled'
+<script is:inline>
+  // Orders loaded from /api/orders
+  let orders = [];
+  let currentOrderId = null;
+
+  const statusBadge = (status) => {
+    const styles = {
+      pending: 'background: #fef3c7; color: #92400e;',
+      approved: 'background: #dbeafe; color: #1e40af;',
+      completed: 'background: #dcfce7; color: #166534;',
+      cancelled: 'background: #fee2e2; color: #991b1b;'
+    };
+    const labels = {
+      pending: 'In afwachting',
+      approved: 'Goedgekeurd',
+      completed: 'Voltooid',
+      cancelled: 'Geannuleerd'
+    };
+    return `<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; ${styles[status] || styles.pending}">${labels[status] || status}</span>`;
+  };
+
+  const actionButtons = (status, orderId) => {
+    let btns = `<button class="btn btn-sm btn-secondary" data-action="view" data-order-id="${orderId}">Bekijk</button>`;
+    if (status === 'pending') {
+      btns += `
+        <button class="btn btn-sm btn-approve" data-action="approve" data-order-id="${orderId}">Goedkeur</button>
+        <button class="btn btn-sm btn-cancel" data-action="cancel" data-order-id="${orderId}">Annuleer</button>
+      `;
+    }
+    if (status === 'approved') {
+      btns += `
+        <button class="btn btn-sm btn-primary" data-action="complete" data-order-id="${orderId}">Voltooid</button>
+      `;
+    }
+    return btns;
+  };
+
+  async function initOrders() {
+    try {
+      const res = await fetch('/api/orders');
+      if (!res.ok) throw new Error('Failed to load orders');
+      orders = await res.json();
+      renderOrdersGrid();
+      updateStats();
+    } catch (err) {
+      console.error('Error loading orders:', err);
+    }
   }
-];
+
+  function renderOrdersGrid() {
+    const grid = document.getElementById('ordersGrid');
+    if (!grid) return;
+    if (orders.length === 0) {
+      grid.innerHTML = '<div class="empty-state"><p>Geen bestellingen gevonden.</p></div>';
+      return;
+    }
+    grid.innerHTML = orders.map(order => {
+      const customerName = order.customer?.name || 'Onbekend';
+      const customerEmail = order.customer?.email || '';
+      const customerPhone = order.customer?.phone || '';
+      const firstItem = order.items?.[0];
+      const productLabel = firstItem ? firstItem.product : '—';
+      const eventLabel = firstItem?.event || '';
+      const itemsCount = order.items?.length || 0;
+      const statusColors = {
+        pending: { bg: '#fef3c7', color: '#92400e', label: 'In afwachting' },
+        approved: { bg: '#dbeafe', color: '#1e40af', label: 'Goedgekeurd' },
+        completed: { bg: '#dcfce7', color: '#166534', label: 'Voltooid' },
+        cancelled: { bg: '#fee2e2', color: '#991b1b', label: 'Geannuleerd' }
+      };
+      const sc = statusColors[order.status] || statusColors.pending;
+      const actionBtns = actionButtons(order.status, order.id);
+      return `
+        <div class="order-card" data-order-id="${order.id}" data-status="${order.status}">
+          <div class="order-card-header">
+            <div class="order-id-date">
+              <span class="order-id">${order.id}</span>
+              <span class="order-date">${order.date || '—'}</span>
+            </div>
+            <span class="order-status-badge" style="background:${sc.bg};color:${sc.color}">${sc.label}</span>
+          </div>
+          <div class="order-card-body">
+            <div class="order-customer">
+              <strong>${customerName}</strong>
+              <span>${customerEmail}</span>
+              ${customerPhone ? `<span>${customerPhone}</span>` : ''}
+            </div>
+            <div class="order-products">
+              <div class="product-main">${productLabel}</div>
+              ${eventLabel ? `<div class="product-event">${eventLabel}</div>` : ''}
+              ${itemsCount > 1 ? `<div class="product-more">+ ${itemsCount - 1} meer item${itemsCount > 2 ? 's' : ''}</div>` : ''}
+            </div>
+            <div class="order-meta">
+              ${order.items?.[0]?.persons ? `<span>👥 ${order.items[0].persons} personen</span>` : ''}
+              ${order.items?.[0]?.flavor ? `<span>🍰 ${order.items[0].flavor}</span>` : ''}
+            </div>
+          </div>
+          <div class="order-card-footer">
+            <div class="order-total">${order.total || '—'}</div>
+            <div class="order-actions">
+              ${actionBtns}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function getStats() {
+    let total = orders.length;
+    let pending = 0, approved = 0, completed = 0, cancelled = 0;
+    orders.forEach(o => {
+      if (o.status === 'pending') pending++;
+      else if (o.status === 'approved') approved++;
+      else if (o.status === 'completed') completed++;
+      else if (o.status === 'cancelled') cancelled++;
+    });
+    return { total, pending, approved, completed, cancelled };
+  }
+
+  // Init on page load
+  initOrders();
+
+  // Event delegation for action buttons
+  document.addEventListener('click', (e) => {
+    const btn = (e.target ).closest('[data-action]')  ;
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const orderId = btn.dataset.orderId;
+    if (!action || !orderId) return;
+
+    if (action === 'view') viewOrder(orderId);
+    else if (action === 'approve') updateOrderRow(orderId, 'approved');
+    else if (action === 'cancel') {
+      if (confirm('Weet je zeker dat je deze bestelling wilt annuleren?')) {
+        updateOrderRow(orderId, 'cancelled');
+      }
+    }
+    else if (action === 'complete') updateOrderRow(orderId, 'completed');
+    else if (action === 'close') closeOrderModal();
+  });
+
   
   // Search functionality
   document.getElementById('searchInput')?.addEventListener('input', (e) => {
-    const query = (e.target as HTMLInputElement).value.toLowerCase();
-    const rows = document.querySelectorAll('#ordersTableBody tr');
+    const query = (e.target ).value.toLowerCase();
+    const rows = document.querySelectorAll('.order-card');
     rows.forEach(row => {
       const text = row.textContent?.toLowerCase() || '';
-      (row as HTMLElement).style.display = text.includes(query) ? '' : 'none';
+      (row ).style.display = text.includes(query) ? '' : 'none';
     });
   });
   
   // Status filter
   document.getElementById('statusFilter')?.addEventListener('change', (e) => {
-    const status = (e.target as HTMLSelectElement).value;
-    const rows = document.querySelectorAll('#ordersTableBody tr');
+    const status = (e.target ).value;
+    const rows = document.querySelectorAll('.order-card');
     rows.forEach(row => {
-      const rowStatus = (row as HTMLElement).dataset.status;
-      (row as HTMLElement).style.display = !status || rowStatus === status ? '' : 'none';
+      const rowStatus = (row ).dataset.status;
+      (row ).style.display = !status || rowStatus === status ? '' : 'none';
     });
   });
   
   // View order
-  window['viewOrder'] = function(orderId: string) {
-    const order = orders.find((o: any) => o.id === orderId);
+  window['viewOrder'] = function(orderId) {
+    const order = orders.find((o) => o.id === orderId);
     if (!order) return;
     
-    const itemsList = order.items.map((item: any) => `
+    const itemsList = order.items.map((item) => `
       <div class="order-item-detail">
         <div class="item-header">
           <strong>${item.product}</strong>
           ${item.event ? `<span class="event-badge">${item.event}</span>` : ''}
         </div>
         <div class="item-grid">
-          ${item.event ? `<div class="item-field"><label>Type evenement</label><span>${item.event}</span></div>` : ''}
-          ${item.persons ? `<div class="item-field"><label>Aantal personen</label><span>${item.persons}</span></div>` : ''}
-          ${item.filling ? `<div class="item-field"><label>Vulling</label><span>${item.filling}</span></div>` : ''}
-          ${item.flavor ? `<div class="item-field"><label>Smaak</label><span>${item.flavor}</span></div>` : ''}
-          ${item.size ? `<div class="item-field"><label>Formaat</label><span>${item.size}</span></div>` : ''}
+          ${item.miniType ? `<div class="item-field"><label>Type</label><span>${item.miniType === 'cupcakes' ? 'Cupcakes' : 'Mini-cupcakes'}</span></div>` : ''}
           ${item.quantity ? `<div class="item-field"><label>Aantal</label><span>${item.quantity} stuks</span></div>` : ''}
-          ${item.colors ? `<div class="item-field"><label>Kleuren</label><span>${item.colors}</span></div>` : ''}
-          ${item.decoration ? `<div class="item-field"><label>Versiering</label><span>${item.decoration}</span></div>` : ''}
-          ${item.text ? `<div class="item-field"><label>Tekst op taart</label><span>"${item.text}"</span></div>` : ''}
-          ${item.shape ? `<div class="item-field"><label>Vorm</label><span>${item.shape}</span></div>` : ''}
-          ${item.packaging ? `<div class="item-field"><label>Verpakking</label><span>${item.packaging}</span></div>` : ''}
-          ${item.box ? `<div class="item-field"><label>Doos</label><span>${item.box}</span></div>` : ''}
-          <div class="item-field"><label>Leverdatum</label><span>${item.date}</span></div>
-          <div class="item-field"><label>Levering</label><span>${item.delivery}</span></div>
-          ${item.allergies && item.allergies !== 'Geen' ? `<div class="item-field allergy"><label>Allergieën</label><span>⚠️ ${item.allergies}</span></div>` : ''}
+          ${item.event ? `<div class="item-field"><label>Gelegenheid</label><span>${item.event}</span></div>` : ''}
+          ${item.persons ? `<div class="item-field"><label>Personen</label><span>${item.persons}</span></div>` : ''}
+          ${item.flavor ? `<div class="item-field"><label>Smaak</label><span>${item.flavor}</span></div>` : ''}
+          ${item.allergies ? `<div class="item-field allergy"><label>Allergieën</label><span>⚠️ ${item.allergies}</span></div>` : ''}
+          ${item.message ? `<div class="item-field full-width"><label>Opmerkingen</label><span>${item.message}</span></div>` : ''}
         </div>
       </div>
     `).join('');
     
-    const statusLabels: Record<string, string> = {
+    const statusLabels = {
       pending: 'In afwachting',
       approved: 'Goedgekeurd',
       completed: 'Voltooid',
       cancelled: 'Geannuleerd'
     };
     
-    document.getElementById('orderModalBody')!.innerHTML = `
+    const el = document.getElementById('orderModalBody'); if (el) el.innerHTML = `
       <div class="order-detail-section">
         <h4>📋 Contactgegevens</h4>
         <div class="order-detail-grid">
           <div class="detail-row">
             <span class="detail-label">Naam</span>
-            <span class="detail-value">${order.customer}</span>
+            <span class="detail-value">${order.customer?.name || 'Onbekend'}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">E-mail</span>
-            <span class="detail-value">${order.email}</span>
+            <span class="detail-value">${order.customer?.email || '—'}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Telefoon</span>
-            <span class="detail-value">${order.phone}</span>
+            <span class="detail-value">${order.customer?.phone || '—'}</span>
           </div>
-          ${order.address ? `
-          <div class="detail-row full-width">
-            <span class="detail-label">Adres</span>
-            <span class="detail-value">${order.address}</span>
-          </div>
-          ` : ''}
         </div>
       </div>
       
@@ -451,17 +335,17 @@ const stats = {
             <span class="detail-value font-mono">${order.id}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">Besteldatum</span>
+            <span class="detail-label">Datum</span>
             <span class="detail-value">${order.date}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Status</span>
             <span class="detail-value status-${order.status}">${statusLabels[order.status] || order.status}</span>
           </div>
-          ${order.notes ? `
+          ${order.message ? `
           <div class="detail-row full-width">
             <span class="detail-label">Notities</span>
-            <span class="detail-value notes">${order.notes}</span>
+            <span class="detail-value notes">${order.message}</span>
           </div>
           ` : ''}
         </div>
@@ -474,105 +358,118 @@ const stats = {
       
       <div class="order-total-row">
         <span>Totaal</span>
-        <span class="total-price">${order.total}</span>
+        <span class="total-price">${order.total || '—'}</span>
       </div>
     `;
     
-    window['currentOrderId'] = orderId;
+    currentOrderId = orderId;
     document.getElementById('orderModal')?.classList.add('active');
   };
   
-  window['closeOrderModal'] = function() {
+  function closeOrderModal() {
     document.getElementById('orderModal')?.classList.remove('active');
-  };
-  
-  window['approveOrder'] = function(orderId: string) {
-    updateOrderRow(orderId, 'approved');
-  };
-  
-  window['cancelOrder'] = function(orderId: string) {
-    if (confirm('Weet je zeker dat je deze bestelling wilt annuleren?')) {
-      updateOrderRow(orderId, 'cancelled');
-    }
-  };
-  
-  window['completeOrder'] = function(orderId: string) {
-    updateOrderRow(orderId, 'completed');
-  };
-  
-  function updateOrderRow(orderId: string, newStatus: string) {
-    const row = document.querySelector(`tr[data-order-id="${orderId}"]`) as HTMLElement;
-    if (!row) return;
-    
-    row.dataset.status = newStatus;
-    
-    // Update status badge
-    const statusCell = row.querySelector('td:nth-child(6)');
-    if (statusCell) {
-      const badges: Record<string, string> = {
-        pending: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #fef3c7; color: #92400e;">In afwachting</span>',
-        approved: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #dbeafe; color: #1e40af;">Goedgekeurd</span>',
-        completed: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #dcfce7; color: #166534;">Voltooid</span>',
-        cancelled: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #fee2e2; color: #991b1b;">Geannuleerd</span>'
-      };
-      statusCell.innerHTML = badges[newStatus] || badges.pending;
-    }
-    
-    // Update actions
-    const actionsCell = row.querySelector('.actions-cell');
-    if (actionsCell) {
-      actionsCell.innerHTML = actionButtons(newStatus, orderId);
-    }
-    
-    // Update stats
-    updateStats();
-    
-    console.log('Order', orderId, 'updated to', newStatus);
+    currentOrderId = null;
   }
   
+  async function updateOrderRow(orderId, newStatus) {
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status: newStatus }),
+      });
+      if (!res.ok) throw new Error('API error');
+    } catch (err) {
+      console.error('Failed to update order status:', err);
+      return;
+    }
+
+    // Re-render the whole grid to reflect status changes
+    renderOrdersGrid();
+
+    // Sync local state
+    const order = orders.find(o => o.id === orderId);
+    if (order) order.status = newStatus;
+    updateStats();
+  }
+
   function updateStats() {
-    const rows = document.querySelectorAll('#ordersTableBody tr');
-    let pending = 0, approved = 0, completed = 0, cancelled = 0;
-    rows.forEach(row => {
-      const status = (row as HTMLElement).dataset.status;
-      if (status === 'pending') pending++;
-      else if (status === 'approved') approved++;
-      else if (status === 'completed') completed++;
-      else if (status === 'cancelled') cancelled++;
-    });
-    
-    const total = pending + approved + completed + cancelled;
+    const { total, pending, approved, completed, cancelled } = getStats();
     const statValues = document.querySelectorAll('.stat-value');
     if (statValues[0]) statValues[0].textContent = String(total);
     if (statValues[1]) statValues[1].textContent = String(pending);
     if (statValues[2]) statValues[2].textContent = String(approved + completed);
     if (statValues[3]) statValues[3].textContent = String(cancelled);
   }
-  
-  window['updateOrderStatus'] = function() {
-    const select = document.getElementById('orderStatusAction') as HTMLSelectElement;
+
+  document.getElementById('updateStatusBtn')?.addEventListener('click', async () => {
+    const select = document.getElementById('orderStatusAction') ;
     const newStatus = select.value;
-    if (!newStatus || !window['currentOrderId']) return;
-    
-    // In production, this would call your API
-    console.log('Updating order', window['currentOrderId'], 'to', newStatus);
-    
-    // Update UI
-    const row = document.querySelector(`tr[data-order-id="${window['currentOrderId']}"]`) as HTMLElement;
-    if (row) {
-      row.dataset.status = newStatus;
-      const statusCell = row.querySelector('td:nth-child(6)');
-      if (statusCell) {
-        const badges: Record<string, string> = {
-          pending: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #fef3c7; color: #92400e;">In afwachting</span>',
-          completed: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #dcfce7; color: #166534;">Voltooid</span>',
-          cancelled: '<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #fee2e2; color: #991b1b;">Geannuleerd</span>'
-        };
-        statusCell.innerHTML = badges[newStatus] || badges.pending;
-      }
-    }
-    
+    if (!newStatus || !currentOrderId) return;
+    await updateOrderRow(currentOrderId, newStatus);
     closeOrderModal();
+  });
+
+  // --- New Order Modal ---
+  window.openNewOrderModal = function() {
+    document.getElementById('new-order-form')?.reset();
+    const m = document.getElementById('new-order-modal');
+    if (m) m.classList.add('active');
+  };
+
+  window.closeNewOrderModal = function() {
+    const m = document.getElementById('new-order-modal');
+    if (m) m.classList.remove('active');
+  };
+
+  window.submitNewOrder = async function() {
+    const form = document.getElementById('new-order-form');
+    if (!form) return;
+    const fd = new FormData(form);
+
+    const name = String(fd.get('name') || '').trim();
+    const email = String(fd.get('email') || '').trim();
+    const phone = String(fd.get('phone') || '').trim();
+    const product = String(fd.get('product') || '').trim();
+    const event = String(fd.get('event') || '').trim();
+    const persons = String(fd.get('persons') || '').trim();
+    const flavor = String(fd.get('flavor') || '').trim();
+    const priceVal = String(fd.get('price') || '').trim();
+    const allergies = String(fd.get('allergies') || '').trim();
+
+    if (!name && !email && !phone && !product) {
+      alert('Vul minstens één veld in.');
+      return;
+    }
+
+    // Build customer object (API handles find-or-create)
+    const customer = (name || email || phone) ? { name, email, phone } : null;
+
+    // Build items
+    const items = [];
+    if (product) {
+      items.push({ product, event, persons, flavor, allergies, price: priceVal ? parseFloat(priceVal) : 0 });
+    }
+
+    // Format total as euro string
+    const total = priceVal ? `€${parseFloat(priceVal).toFixed(2)}` : '€0.00';
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer, items, total, isAdmin: true })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Kon bestelling niet aanmaken.');
+        return;
+      }
+      closeNewOrderModal();
+      await initOrders();
+    } catch {
+      alert('Kon bestelling niet aanmaken.');
+    }
   };
 </script>
 
@@ -1099,5 +996,308 @@ const stats = {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+}
+
+/* Order Cards Grid */
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.order-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.875rem;
+  padding: 0;
+  overflow: hidden;
+  transition: box-shadow 0.15s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+}
+
+.order-card:hover {
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0.875rem;
+  gap: 0.5rem;
+}
+
+.order-id-date {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.order-card .order-id {
+  font-family: monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.order-card .order-date {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.order-status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.order-card-body {
+  padding: 0.5rem 0.875rem 0.625rem;
+  border-top: 1px solid #f1f5f9;
+  flex: 1;
+}
+
+.order-customer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  margin-bottom: 0.5rem;
+}
+
+.order-customer strong {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.order-customer span {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.order-products {
+  margin-bottom: 0.375rem;
+}
+
+.product-main {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.0625rem;
+}
+
+.product-event {
+  font-size: 0.75rem;
+  color: #db2777;
+  font-weight: 500;
+}
+
+.product-more {
+  font-size: 0.6875rem;
+  color: #64748b;
+  margin-top: 0.0625rem;
+}
+
+.order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.order-meta span {
+  font-size: 0.6875rem;
+  color: #475569;
+  background: #f8fafc;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 0.25rem;
+}
+
+.order-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.875rem;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.order-total {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.order-actions {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.order-actions .btn {
+  padding: 0.3125rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+/* Wide Modal */
+.modal-wide {
+  max-width: 680px;
+}
+
+/* Empty state */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #64748b;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .orders-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<!-- New Order Modal -->
+<div id="new-order-modal" class="modal-overlay">
+  <div class="modal-card" style="max-width:560px">
+    <div class="modal-header">
+      <h3>Nieuwe Bestelling</h3>
+      <button class="modal-close" onclick="closeNewOrderModal()" type="button">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="new-order-form" class="new-order-form">
+        <div class="form-section">
+          <h4>Contactgegevens</h4>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Naam</label>
+              <input type="text" name="name" placeholder="Klant naam" />
+            </div>
+            <div class="form-field">
+              <label>E-mail</label>
+              <input type="email" name="email" placeholder="klant@email.be" />
+            </div>
+            <div class="form-field">
+              <label>Telefoon</label>
+              <input type="tel" name="phone" placeholder="+32 xxx xx xx xx" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h4>Bestelling</h4>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Product</label>
+              <select name="product" id="modal-product-select">
+                <option value="">— selecteer —</option>
+                <option value="feesttaart">Feesttaart</option>
+                <option value="koekjes">Koekjes</option>
+                <option value="mini-gebak">Mini-gebak</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Gelegelheid</label>
+              <input type="text" name="event" placeholder="Bijv. Verjaardag, Bruiloft" />
+            </div>
+            <div class="form-field">
+              <label>Aantal personen</label>
+              <input type="text" name="persons" placeholder="Bijv. 15-25" />
+            </div>
+            <div class="form-field">
+              <label>Smaak</label>
+              <input type="text" name="flavor" placeholder="Bijv. Aardbei, Choco" />
+            </div>
+            <div class="form-field">
+              <label>Prijs</label>
+              <input type="text" name="price" placeholder="Bijv. 45.00" />
+            </div>
+            <div class="form-field form-field--full">
+              <label>Allergieën / Opmerkingen</label>
+              <textarea name="allergies" rows="2" placeholder="Allergieën of opmerkingen (optioneel)"></textarea>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeNewOrderModal()" type="button">Annuleer</button>
+      <button class="btn btn-primary" onclick="submitNewOrder()" type="button">Bestelling Aanmaken</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.new-order-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-section h4 {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.form-field--full {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: white;
+  color: #1e293b;
+  transition: border-color 0.15s;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #E8788A;
+  box-shadow: 0 0 0 3px rgba(232,120,138,0.1);
+}
+
+.form-field textarea {
+  resize: none;
 }
 </style>
