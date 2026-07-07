@@ -201,9 +201,21 @@
 
   /* Logo SVG icon: white + pink glow */
   .logo-img {
-    fill: #ffffff !important;
-    color: #ffffff !important;
+    fill: #ffffff;
+    color: #ffffff;
     filter: drop-shadow(0 0 6px #ffcce0) drop-shadow(0 0 12px #ffd9e6) drop-shadow(0 0 20px #ffe4ed);
+  }
+
+  #main-header:not(.scrolled) .logo-img {
+    fill: #ffffff;
+    color: #ffffff;
+    filter: drop-shadow(0 0 6px #ffcce0) drop-shadow(0 0 12px #ffd9e6) drop-shadow(0 0 20px #ffe4ed);
+  }
+
+  #main-header.scrolled .logo-img {
+    fill: var(--color-primary);
+    color: var(--color-primary);
+    filter: none;
   }
 
   /* Animate on scroll */
