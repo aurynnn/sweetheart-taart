@@ -245,18 +245,21 @@ const navLinks = [
     box-shadow: none;
   }
 
-  /* ── Logo text: comic font + white glow over dark hero ───────────────── */
+  /* ── Logo text: Caveat + full glow, same as hero title ───────────────── */
   :global(.header-logo-text) {
     font-family: var(--font-heading);
-    color: rgba(255, 255, 255, 0.95);
+    font-weight: 900;
+    color: #ffffff;
     transition: color 300ms ease;
     text-shadow:
-      0.75px 0.75px 0px #ffcce0,
-      -0.25px -0.25px 0px #ffcce0,
-      0.25px -0.25px 0px #ffcce0,
-      -0.25px 0.25px 0px #ffcce0,
-      0px 0px 8px #ffccd5,
-      0px 0px 16px #ffd9e6;
+      1.5px 1.5px 0px #ffcce0,
+      -0.5px -0.5px 0px #ffcce0,
+      0.5px -0.5px 0px #ffcce0,
+      -0.5px 0.5px 0px #ffcce0,
+      0px 0px 10px #ffccd5,
+      0px 0px 20px #ffd9e6,
+      0px 0px 40px #ffe4ed,
+      0px 0px 60px #fff0f5;
   }
 
   #main-header.scrolled :global(.header-logo-text) {
