@@ -43,9 +43,42 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
     <OrderFilters />
   </div>
 
-  <!-- Orders Grid -->
-  <div class="orders-grid" id="ordersGrid">
-    <div class="empty-state" id="emptyState">
+  <!-- Orders Table -->
+  <div class="orders-table-wrap">
+    <table class="orders-table" id="ordersTable">
+      <thead>
+        <tr>
+          <th class="sortable" data-sort="id">
+            <div class="th-inner">
+              #
+              <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            </div>
+          </th>
+          <th class="sortable" data-sort="date">
+            <div class="th-inner">
+              Datum
+              <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            </div>
+          </th>
+          <th>Klant</th>
+          <th>Product</th>
+          <th class="sortable" data-sort="total">
+            <div class="th-inner">
+              Totaal
+              <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            </div>
+          </th>
+          <th>Status</th>
+          <th style="text-align:right">Acties</th>
+        </tr>
+      </thead>
+      <tbody id="ordersTbody">
+        <!-- Filled by JS -->
+      </tbody>
+    </table>
+
+    <!-- Empty state -->
+    <div class="table-empty" id="tableEmpty" style="display:none">
       <div class="empty-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
@@ -55,6 +88,12 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
       <p class="empty-title">Geen bestellingen</p>
       <p class="empty-sub">Bestellingen verschijnen hier wanneer klanten bestellen.</p>
     </div>
+
+    <!-- Pagination -->
+    <div class="pagination-bar" id="paginationBar">
+      <span class="pagination-info" id="paginationInfo"></span>
+      <div class="pagination-controls" id="paginationControls"></div>
+    </div>
   </div>
 
   <!-- Modals -->
@@ -63,89 +102,163 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
 
 </AdminLayout>
 
+<style>
+  /* Page layout — scoped to static HTML elements */
+  .page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap; }
+  .header-left { display:flex; flex-direction:column; gap:0.25rem; }
+  .page-title { margin:0; font-size:1.375rem; font-weight:700; color:#0f172a; line-height:1.2; }
+  .page-subtitle { margin:0; font-size:0.875rem; color:#64748b; }
+  .header-actions { display:flex; gap:0.625rem; align-items:center; flex-shrink:0; }
+  .stats-section { margin-bottom:1rem; }
+  .filters-section { margin-bottom:1.25rem; }
+  /* Buttons used in static HTML */
+  .btn { display:inline-flex; align-items:center; gap:0.375rem; padding:0.5rem 1rem; border-radius:0.5rem; font-size:0.875rem; font-weight:600; cursor:pointer; border:none; transition:all 0.15s; white-space:nowrap; }
+  .btn-primary { background:#E8788A; color:white; }
+  .btn-primary:hover { background:#d66b7a; transform:translateY(-1px); box-shadow:0 4px 12px rgba(232,120,138,0.35); }
+  .btn-secondary { background:white; color:#334155; border:1px solid #e2e8f0; }
+  .btn-secondary:hover { background:#f8fafc; border-color:#cbd5e1; }
+  /* Table empty state */
+  .table-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem 2rem; text-align:center; }
+  .empty-icon { width:4rem; height:4rem; border-radius:1rem; background:#fdf2f4; display:flex; align-items:center; justify-content:center; color:#E8788A; margin-bottom:1rem; }
+  .empty-title { margin:0 0 0.375rem; font-size:1rem; font-weight:600; color:#1e293b; }
+  .empty-sub { margin:0; font-size:0.875rem; color:#94a3b8; }
+  @media (max-width:768px) { .page-header { flex-direction:column; } }
+</style>
+
 <script>
-  import { getOrders, setOrders, setCurrentOrderId, STATUS_CONFIG } from '../../lib/orders';
-  import { renderOrderDetail } from '../../lib/orders';
+  import { getOrders, setOrders, setCurrentOrderId, STATUS_CONFIG, renderOrderDetail } from '../../lib/orders';
+
+  // ── Config ─────────────────────────────────────────────────────────────────
+  const PER_PAGE = 20;
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let currentPage = 1;
+  let sortKey: string = 'date';
+  let sortDir: 'asc' | 'desc' = 'desc';
+  let filterQuery = '';
+  let filterStatus = '';
+  let filterDate = '';
 
   // ── DOM refs ───────────────────────────────────────────────────────────────
-
-  const grid       = document.getElementById('ordersGrid')!;
-  const emptyState = document.getElementById('emptyState')!;
-  const statsEl    = document.querySelector('.stats-bar') as HTMLElement | null;
+  const tbody      = document.getElementById('ordersTbody')!;
+  const tableEmpty = document.getElementById('tableEmpty')!;
+  const table      = document.getElementById('ordersTable') as HTMLTableElement;
+  const pagInfo    = document.getElementById('paginationInfo')!;
+  const pagCtrls   = document.getElementById('paginationControls')!;
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
-
   async function loadOrders() {
     try {
       const res = await fetch('/api/orders');
       if (!res.ok) throw new Error('Failed to load');
       const data = await res.json();
       setOrders(Array.isArray(data) ? data : []);
-      renderGrid();
       updateStats();
+      renderPage();
     } catch (e) {
       console.error('Load orders failed:', e);
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
-  function renderGrid() {
-    const orders = getOrders();
-    if (orders.length === 0) {
-      grid.innerHTML = '';
-      grid.appendChild(emptyState);
-      emptyState.style.display = '';
-      return;
-    }
-    emptyState.style.display = 'none';
-    grid.innerHTML = orders.map(renderCard).join('');
+  // ── Filter + sort ─────────────────────────────────────────────────────────
+  function getFiltered(): any[] {
+    const q = filterQuery.toLowerCase();
+    return getOrders().filter(o => {
+      if (filterStatus && o.status !== filterStatus) return false;
+      if (q) {
+        const name = o.customer?.name?.toLowerCase() || '';
+        const email = o.customer?.email?.toLowerCase() || '';
+        const id = o.id.toLowerCase();
+        if (!name.includes(q) && !email.includes(q) && !id.includes(q)) return false;
+      }
+      if (filterDate) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const d = new Date((o.date || '') + 'T00:00:00');
+        const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - today.getDay());
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        if (filterDate === 'today' && d < today) return false;
+        if (filterDate === 'week' && d < startOfWeek) return false;
+        if (filterDate === 'month' && d < startOfMonth) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      let av: string = '', bv: string = '';
+      if (sortKey === 'id')      { av = a.id;      bv = b.id; }
+      else if (sortKey === 'date') { av = a.date || ''; bv = b.date || ''; }
+      else if (sortKey === 'total') { av = a.total || ''; bv = b.total || ''; }
+      const cmp = av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
   }
 
-  function renderCard(order: any): string {
+  function getPaged(filtered: any[]) {
+    const start = (currentPage - 1) * PER_PAGE;
+    return filtered.slice(start, start + PER_PAGE);
+  }
+
+  function totalPages(filtered: number) {
+    return Math.max(1, Math.ceil(filtered / PER_PAGE));
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function renderPage() {
+    const filtered = getFiltered();
+    const paged = getPaged(filtered);
+
+    // Sync sort indicators
+    document.querySelectorAll('.orders-table th.sortable').forEach(th => {
+      const key = (th as HTMLElement).dataset.sort;
+      th.classList.toggle('sort-active', key === sortKey);
+      th.classList.toggle('sort-asc', key === sortKey && sortDir === 'asc');
+      th.classList.toggle('sort-desc', key === sortKey && sortDir === 'desc');
+    });
+
+    if (paged.length === 0) {
+      table.style.display = 'none';
+      tableEmpty.style.display = 'flex';
+      pagInfo.innerHTML = '';
+      pagCtrls.innerHTML = '';
+      return;
+    }
+
+    table.style.display = '';
+    tableEmpty.style.display = 'none';
+    tbody.innerHTML = paged.map(renderRow).join('');
+    renderPagination(filtered.length);
+  }
+
+  function renderRow(order: any): string {
     const c = order.customer || {};
     const name = c.name || 'Onbekend';
     const first = order.items?.[0];
-    const itemsCount = order.items?.length || 0;
     const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
 
     return `
-      <div class="order-card" data-order-id="${order.id}" data-status="${order.status}">
-        <div class="card-header">
-          <div class="card-meta">
-            <span class="order-id">#${order.id}</span>
-            <span class="order-date">${order.date || '—'}</span>
+      <tr data-order-id="${order.id}" data-status="${order.status}">
+        <td class="td-id">#${order.id}</td>
+        <td class="td-date">${order.date || '—'}</td>
+        <td>
+          <div class="td-customer">
+            <div class="td-avatar">${name.charAt(0).toUpperCase()}</div>
+            <div class="td-customer-info">
+              <span class="td-customer-name">${escHtml(name)}</span>
+              <span class="td-customer-email">${escHtml(c.email || '—')}</span>
+            </div>
           </div>
+        </td>
+        <td class="td-product">
+          <span class="td-product-name">${first?.product || '—'}</span>
+          ${first?.event ? `<span class="td-product-event">${escHtml(first.event)}</span>` : ''}
+        </td>
+        <td class="td-total">${order.total || '—'}</td>
+        <td class="td-status">
           <span class="status-badge" style="background:${sc.bg};color:${sc.color}">
             <span class="status-dot" style="background:${sc.dot}"></span>
             ${sc.label}
           </span>
-        </div>
-        <div class="card-body">
-          <div class="customer-block">
-            <div class="customer-avatar">${name.charAt(0).toUpperCase()}</div>
-            <div class="customer-info">
-              <span class="customer-name">${name}</span>
-              <span class="customer-contact">${c.email || '—'}</span>
-            </div>
-          </div>
-          <div class="product-block">
-            <span class="product-name">${first?.product || '—'}</span>
-            ${first?.event ? `<span class="product-event">${first.event}</span>` : ''}
-            ${itemsCount > 1 ? `<span class="product-more">+ ${itemsCount - 1} meer item${itemsCount > 2 ? 's' : ''}</span>` : ''}
-          </div>
-          <div class="info-chips">
-            ${first?.persons ? `<span class="chip">
-              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-              ${first.persons} personen</span>` : ''}
-            ${first?.flavor ? `<span class="chip">
-              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/></svg>
-              ${first.flavor}</span>` : ''}
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="order-total">${order.total || '—'}</span>
-          <div class="card-actions">
+        </td>
+        <td class="td-actions">
+          <div class="row-actions">
             <button class="btn-icon" data-action="view" data-order-id="${order.id}" title="Bekijk">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
@@ -161,12 +274,49 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               </button>` : ''}
           </div>
-        </div>
-      </div>`;
+        </td>
+      </tr>`;
+  }
+
+  function escHtml(s: string): string {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  function renderPagination(total: number) {
+    const tp = totalPages(total);
+    const start = (currentPage - 1) * PER_PAGE + 1;
+    const end = Math.min(currentPage * PER_PAGE, total);
+
+    pagInfo.innerHTML = total === 0
+      ? ''
+      : `<strong>${start}–${end}</strong> van <strong>${total}</strong> bestellingen`;
+
+    const pages: (number|'...')[] = [];
+    if (tp <= 7) {
+      for (let i = 1; i <= tp; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(tp - 1, currentPage + 1); i++) pages.push(i);
+      if (currentPage < tp - 2) pages.push('...');
+      pages.push(tp);
+    }
+
+    const btn = (n: number, label?: string, disabled = false, active = false) =>
+      `<button class="pagination-btn${active?' active':''}" ${disabled?'disabled':''} data-page="${n}">${label || String(n)}</button>`;
+
+    let html = btn(currentPage - 1, '‹', currentPage <= 1);
+    pages.forEach(p => {
+      if (p === '...') html += `<span class="pagination-ellipsis">…</span>`;
+      else html += btn(p, undefined, false, p === currentPage);
+    });
+    html += btn(currentPage + 1, '›', currentPage >= tp);
+
+    pagCtrls.innerHTML = html;
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
-
   function updateStats() {
     const orders = getOrders();
     const counts = { total: 0, pending: 0, approved: 0, completed: 0, cancelled: 0 };
@@ -177,30 +327,23 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
       else if (o.status === 'cancelled') counts.cancelled++;
     });
     counts.total = orders.length;
-
-    if (statsEl) {
-      const vals = statsEl.querySelectorAll('.pill-value');
-      if (vals[0]) vals[0].textContent = String(counts.total);
-      if (vals[1]) vals[1].textContent = String(counts.pending);
-      if (vals[2]) vals[2].textContent = String(counts.approved);
-      if (vals[3]) vals[3].textContent = String(counts.completed);
-      if (vals[4]) vals[4].textContent = String(counts.cancelled);
-    }
+    const vals = document.querySelectorAll('.pill-value');
+    if (vals[0]) vals[0].textContent = String(counts.total);
+    if (vals[1]) vals[1].textContent = String(counts.pending);
+    if (vals[2]) vals[2].textContent = String(counts.approved);
+    if (vals[3]) vals[3].textContent = String(counts.completed);
+    if (vals[4]) vals[4].textContent = String(counts.cancelled);
   }
 
   // ── Modal helpers ─────────────────────────────────────────────────────────
-
   function openModal(orderId: string) {
     const order = getOrders().find((o: any) => o.id === orderId);
     if (!order) return;
     setCurrentOrderId(orderId);
-
     const subtitle = document.getElementById('modalOrderId');
     if (subtitle) subtitle.textContent = `#${order.id} · ${order.date || '—'}`;
-
     const body = document.getElementById('orderModalBody');
     if (body) body.innerHTML = renderOrderDetail(order);
-
     document.getElementById('orderModal')?.classList.add('active');
   }
 
@@ -208,8 +351,6 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
     document.getElementById('orderModal')?.classList.remove('active');
     setCurrentOrderId(null);
   }
-
-  // ── Status update ──────────────────────────────────────────────────────────
 
   async function patchStatus(orderId: string, status: string) {
     try {
@@ -221,56 +362,14 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
       const orders = getOrders();
       const o = orders.find((x: any) => x.id === orderId);
       if (o) (o as any).status = status;
-      renderGrid();
+      renderPage();
       updateStats();
     } catch (e) {
       console.error('Status update failed:', e);
     }
   }
 
-  // ── Search & Filter ───────────────────────────────────────────────────────
-
-  function applyFilters() {
-    const query = (document.getElementById('searchInput') as HTMLInputElement)?.value.toLowerCase() || '';
-    const status = (document.getElementById('statusFilter') as HTMLSelectElement)?.value || '';
-    const dateVal = (document.getElementById('dateFilter') as HTMLSelectElement)?.value || '';
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - today.getDay());
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    const cards = grid.querySelectorAll('.order-card');
-    let visible = 0;
-    cards.forEach(card => {
-      const el = card as HTMLElement;
-      const text = el.textContent?.toLowerCase() || '';
-      const cardStatus = el.dataset.status || '';
-      const cardDate = el.querySelector('.order-date')?.textContent || '';
-
-      let dateMatch = !dateVal;
-      if (dateVal) {
-        const d = new Date(cardDate + 'T00:00:00');
-        if (dateVal === 'today') dateMatch = d >= today;
-        else if (dateVal === 'week') dateMatch = d >= startOfWeek;
-        else if (dateVal === 'month') dateMatch = d >= startOfMonth;
-      }
-
-      const show = text.includes(query) && (!status || cardStatus === status) && dateMatch;
-      el.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-
-    const countEl = document.getElementById('resultsCount');
-    if (countEl) {
-      countEl.textContent = visible > 0 ? `${visible} van ${cards.length} bestellingen` : '';
-    }
-
-    // Toggle clear button
-    const clearBtn = document.getElementById('searchClearBtn') as HTMLButtonElement | null;
-    if (clearBtn) clearBtn.style.display = query ? '' : 'none';
-  }
-
   // ── Event delegation ───────────────────────────────────────────────────────
-
   document.addEventListener('click', e => {
     const btn = (e.target as Element).closest('[data-action]') as HTMLElement | null;
     if (!btn) return;
@@ -283,18 +382,60 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
       if (confirm('Deze bestelling annuleren?')) patchStatus(orderId, 'cancelled');
     }
     else if (action === 'complete' && orderId) patchStatus(orderId, 'completed');
-    else if (action === 'close') closeModal();
   });
 
-  // Filter inputs
-  document.getElementById('searchInput')?.addEventListener('input', applyFilters);
-  document.getElementById('statusFilter')?.addEventListener('change', applyFilters);
-  document.getElementById('dateFilter')?.addEventListener('change', applyFilters);
+  // Table row click → open modal
+  tbody.addEventListener('click', e => {
+    const row = (e.target as Element).closest('tr');
+    if (!row) return;
+    if ((e.target as Element).closest('[data-action]')) return; // let buttons handle
+    const orderId = (row as HTMLElement).dataset.orderId;
+    if (orderId) openModal(orderId);
+  });
 
-  // Clear search
+  // Sort headers
+  document.querySelectorAll('.orders-table th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = (th as HTMLElement).dataset.sort!;
+      if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      else { sortKey = key; sortDir = 'asc'; }
+      currentPage = 1;
+      renderPage();
+    });
+  });
+
+  // Pagination
+  pagCtrls.addEventListener('click', e => {
+    const btn = (e.target as Element).closest('[data-page]') as HTMLElement | null;
+    if (!btn || btn.disabled) return;
+    const p = parseInt(btn.dataset.page!, 10);
+    if (!isNaN(p)) { currentPage = p; renderPage(); }
+  });
+
+  // Filters
+  document.getElementById('searchInput')?.addEventListener('input', e => {
+    filterQuery = (e.target as HTMLInputElement).value;
+    currentPage = 1;
+    renderPage();
+    const clearBtn = document.getElementById('searchClearBtn') as HTMLButtonElement | null;
+    if (clearBtn) clearBtn.style.display = filterQuery ? '' : 'none';
+  });
+
+  document.getElementById('statusFilter')?.addEventListener('change', e => {
+    filterStatus = (e.target as HTMLSelectElement).value;
+    currentPage = 1;
+    renderPage();
+  });
+
+  document.getElementById('dateFilter')?.addEventListener('change', e => {
+    filterDate = (e.target as HTMLSelectElement).value;
+    currentPage = 1;
+    renderPage();
+  });
+
   document.getElementById('searchClearBtn')?.addEventListener('click', () => {
     const inp = document.getElementById('searchInput') as HTMLInputElement;
-    if (inp) { inp.value = ''; applyFilters(); }
+    if (inp) { inp.value = ''; filterQuery = ''; renderPage(); }
   });
 
   // Update status from modal
@@ -309,27 +450,22 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
     }
   });
 
-  // Modal close buttons
+  // Modal close
   document.getElementById('closeOrderModalBtn')?.addEventListener('click', closeModal);
   document.getElementById('closeOrderModalBtn2')?.addEventListener('click', closeModal);
-
-  // Overlay click closes modal
   document.getElementById('orderModal')?.addEventListener('click', e => {
     if ((e.target as Element).classList.contains('modal-overlay')) closeModal();
   });
 
-  // ── New order modal ────────────────────────────────────────────────────────
-
+  // New order modal
   document.getElementById('newOrderBtn')?.addEventListener('click', () => {
     document.getElementById('new-order-form')?.reset();
     document.getElementById('new-order-modal')?.classList.add('active');
   });
-
   document.getElementById('closeNewOrderModalBtn')?.addEventListener('click', () =>
     document.getElementById('new-order-modal')?.classList.remove('active'));
   document.getElementById('closeNewOrderModalBtn2')?.addEventListener('click', () =>
     document.getElementById('new-order-modal')?.classList.remove('active'));
-
   document.getElementById('new-order-modal')?.addEventListener('click', e => {
     if ((e.target as Element).classList.contains('modal-overlay'))
       document.getElementById('new-order-modal')?.classList.remove('active');
@@ -338,378 +474,25 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
   document.getElementById('submitNewOrderBtn')?.addEventListener('click', async () => {
     const fd = new FormData(document.getElementById('new-order-form') as HTMLFormElement);
     const get = (n: string) => String(fd.get(n) || '').trim();
-
     const name = get('name'), email = get('email'), phone = get('phone');
     const product = get('product'), event = get('event');
     const persons = get('persons'), flavor = get('flavor');
     const priceStr = get('price'), allergies = get('allergies');
-
-    if (!name && !email && !phone) {
-      alert('Vul minstens naam, e-mail of telefoon in.');
-      return;
-    }
-
+    if (!name && !email && !phone) { alert('Vul minstens naam, e-mail of telefoon in.'); return; }
     const items = product ? [{ product, event, persons, flavor, allergies, price: priceStr ? parseFloat(priceStr) : 0 }] : [];
     const total = priceStr ? `€${parseFloat(priceStr).toFixed(2)}` : '€0,00';
-
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ customer: { name, email, phone }, items, total, isAdmin: true }),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || 'Aanmaak mislukt.');
-        return;
-      }
+      if (!res.ok) { const err = await res.json(); alert(err.error || 'Aanmaak mislukt.'); return; }
       document.getElementById('new-order-modal')?.classList.remove('active');
       await loadOrders();
-    } catch {
-      alert('Aanmaak mislukt.');
-    }
+    } catch { alert('Aanmaak mislukt.'); }
   });
 
   // ── Boot ──────────────────────────────────────────────────────────────────
   loadOrders();
 </script>
-
-<style>
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1.5rem;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .header-left {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .page-title {
-    margin: 0;
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: #0f172a;
-    line-height: 1.2;
-  }
-
-  .page-subtitle {
-    margin: 0;
-    font-size: 0.875rem;
-    color: #64748b;
-  }
-
-  .header-actions {
-    display: flex;
-    gap: 0.625rem;
-    align-items: center;
-    flex-shrink: 0;
-  }
-
-  .stats-section {
-    margin-bottom: 1rem;
-  }
-
-  .filters-section {
-    margin-bottom: 1.25rem;
-  }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-
-  .btn-primary {
-    background: #E8788A;
-    color: white;
-  }
-  .btn-primary:hover {
-    background: #d66b7a;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(232, 120, 138, 0.35);
-  }
-
-  .btn-secondary {
-    background: white;
-    color: #334155;
-    border: 1px solid #e2e8f0;
-  }
-  .btn-secondary:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-  }
-
-  /* Orders grid */
-  .orders-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-    align-content: start;
-    min-height: 200px;
-  }
-
-  /* Empty state */
-  .empty-state {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 2rem;
-    text-align: center;
-  }
-
-  .empty-icon {
-    width: 4rem;
-    height: 4rem;
-    border-radius: 1rem;
-    background: #fdf2f4;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #E8788A;
-    margin-bottom: 1rem;
-  }
-
-  .empty-title {
-    margin: 0 0 0.375rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1e293b;
-  }
-
-  .empty-sub {
-    margin: 0;
-    font-size: 0.875rem;
-    color: #94a3b8;
-  }
-
-  /* Order card styles (inlined for now, shared via OrderCard component would be ideal) */
-  .order-card {
-    background: white;
-    border-radius: 1rem;
-    border: 1px solid #e2e8f0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
-  }
-
-  .order-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
-    border-color: #fda4af;
-  }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #f1f5f9;
-    gap: 0.5rem;
-  }
-
-  .card-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
-
-  .order-id {
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #1e293b;
-    letter-spacing: -0.02em;
-  }
-
-  .order-date {
-    font-size: 0.6875rem;
-    color: #94a3b8;
-  }
-
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.25rem 0.625rem;
-    border-radius: 9999px;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .card-body {
-    padding: 0.875rem 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    flex: 1;
-  }
-
-  .customer-block {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-  }
-
-  .customer-avatar {
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #E8788A, #fda4af);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.875rem;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-
-  .customer-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.0625rem;
-    min-width: 0;
-  }
-
-  .customer-name {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #1e293b;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .customer-contact {
-    font-size: 0.6875rem;
-    color: #94a3b8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .product-block {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    padding: 0.625rem 0.75rem;
-    background: #f8fafc;
-    border-radius: 0.5rem;
-    border-left: 3px solid #E8788A;
-  }
-
-  .product-name {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: #1e293b;
-  }
-
-  .product-event {
-    font-size: 0.6875rem;
-    color: #db2777;
-    font-weight: 500;
-  }
-
-  .product-more {
-    font-size: 0.6875rem;
-    color: #64748b;
-    margin-top: 0.0625rem;
-  }
-
-  .info-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.375rem;
-    font-size: 0.6875rem;
-    color: #475569;
-    font-weight: 500;
-  }
-
-  .chip svg { opacity: 0.6; }
-
-  .card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.625rem 1rem;
-    border-top: 1px solid #f1f5f9;
-    background: #f8fafc;
-  }
-
-  .order-total {
-    font-size: 1.0625rem;
-    font-weight: 700;
-    color: #1e293b;
-  }
-
-  .card-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-
-  .btn-icon {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 0.5rem;
-    border: 1px solid #e2e8f0;
-    background: white;
-    color: #64748b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    padding: 0;
-  }
-
-  .btn-icon:hover { background: #f1f5f9; color: #1e293b; }
-  .btn-icon.btn-approve { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
-  .btn-icon.btn-approve:hover { background: #dcfce7; }
-  .btn-icon.btn-cancel { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
-  .btn-icon.btn-cancel:hover { background: #fee2e2; }
-  .btn-icon.btn-complete { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
-  .btn-icon.btn-complete:hover { background: #dcfce7; }
-
-  @media (max-width: 768px) {
-    .orders-grid { grid-template-columns: 1fr; }
-    .page-header { flex-direction: column; }
-  }
-</style>
