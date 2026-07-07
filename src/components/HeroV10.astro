@@ -1,0 +1,242 @@
+---
+// HeroV10.astro — "Floating Bottom Card"
+// Video fully visible as hero background
+// Floating rounded card anchored at bottom — content is contained
+interface Props {
+  title?: string;
+  subtitle?: string;
+  showCTA?: boolean;
+}
+const {
+  title = "De prachtigste taarten...",
+  subtitle = "fijnste koekjes en heerlijkste cake, met liefde gebakken in Oostende",
+  showCTA = true
+} = Astro.props;
+---
+
+<section class="relative min-h-screen flex items-end overflow-hidden">
+  <!-- Background video — full viewport, no cropping -->
+  <div class="absolute inset-0 z-0">
+    <video class="w-full h-full object-cover" autoplay muted loop playsinline>
+      <source src="/videos/hero-pie.mp4" type="video/mp4" />
+    </video>
+    <!-- Dark gradient from bottom for card contrast -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+  </div>
+
+  <!-- Floating bottom card -->
+  <div class="relative z-10 w-full px-6 md:px-12 pb-0">
+    <div class="float-card animate-on-scroll">
+      <div class="float-card-inner">
+        <!-- Left: text content -->
+        <div class="float-left">
+          <div class="float-eyebrow">
+            <span class="float-eyebrow-dot"></span>
+            Ambachtelijke Bakkerij · Oostende
+          </div>
+          <h1 class="float-title">{title}</h1>
+          <p class="float-subtitle">{subtitle}</p>
+        </div>
+
+        <!-- Right: CTA -->
+        <div class="float-right">
+          {showCTA && (
+            <div class="float-actions">
+              <a href="/feestcollectie" class="float-btn-primary">
+                Bekijk collecties
+              </a>
+              <a href="/bestellen" class="float-btn-ghost">
+                Bestel nu
+              </a>
+            </div>
+          )}
+          <div class="float-meta">
+            <span>Donderdag 17u–20u</span>
+            <span class="float-meta-dot">·</span>
+            <span>Allergievriendelijk</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll up hint -->
+  <div class="absolute top-8 right-8 z-10 animate-on-scroll">
+    <div class="float-scroll-hint">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/>
+      </svg>
+      Bekijk meer
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ── Floating bottom card ─────────────────────────────────────────────── */
+  .float-card {
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 1.5rem 1.5rem 0 0;
+    padding: 2rem 2.5rem 2rem;
+    box-shadow: 0 -4px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .float-card-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── Left: text ─────────────────────────────────────────────────────── */
+  .float-left {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  .float-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #E8788A;
+    margin-bottom: 0.625rem;
+  }
+
+  .float-eyebrow-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #E8788A;
+    flex-shrink: 0;
+  }
+
+  .float-title {
+    font-family: var(--font-heading, inherit);
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem;
+  }
+
+  .float-subtitle {
+    font-size: 0.9375rem;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+    max-width: 400px;
+  }
+
+  /* ── Right: CTA ─────────────────────────────────────────────────────── */
+  .float-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.875rem;
+    flex-shrink: 0;
+  }
+
+  .float-actions {
+    display: flex;
+    gap: 0.625rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .float-btn-primary {
+    background: #E8788A;
+    color: white;
+    border-radius: 999px;
+    padding: 0.6875rem 1.75rem;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .float-btn-primary:hover {
+    background: #d66b7a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(232, 120, 138, 0.4);
+  }
+
+  .float-btn-ghost {
+    background: transparent;
+    border: 1.5px solid #d1d5db;
+    color: #444;
+    border-radius: 999px;
+    padding: 0.6875rem 1.75rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .float-btn-ghost:hover {
+    border-color: #E8788A;
+    color: #E8788A;
+  }
+
+  .float-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    color: #999;
+    font-weight: 500;
+  }
+
+  .float-meta-dot {
+    color: #ccc;
+  }
+
+  /* ── Scroll hint ─────────────────────────────────────────────────────── */
+  .float-scroll-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.55);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+
+  @media (max-width: 640px) {
+    .float-card {
+      border-radius: 1.25rem 1.25rem 0 0;
+      padding: 1.5rem 1.25rem;
+    }
+    .float-card-inner {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .float-right {
+      align-items: flex-start;
+      width: 100%;
+    }
+    .float-actions {
+      width: 100%;
+    }
+    .float-btn-primary, .float-btn-ghost {
+      flex: 1;
+      justify-content: center;
+    }
+    .float-scroll-hint { display: none; }
+  }
+</style>

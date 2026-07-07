@@ -1,0 +1,236 @@
+---
+// HeroV7.astro — "Shadow Pop"
+// Bold white text with layered shadows — no overlay panel
+// Shadows create depth and pop against the video
+interface Props {
+  title?: string;
+  subtitle?: string;
+  showCTA?: boolean;
+}
+const {
+  title = "De prachtigste taarten...",
+  subtitle = "fijnste koekjes en heerlijkste cake, met liefde gebakken in Oostende",
+  showCTA = true
+} = Astro.props;
+---
+
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden">
+  <!-- Background video — full bleed, minimal overlay -->
+  <div class="absolute inset-0 z-0">
+    <video class="w-full h-full object-cover" autoplay muted loop playsinline>
+      <source src="/videos/hero-pie.mp4" type="video/mp4" />
+    </video>
+    <!-- Very light overlay — shadows do the work -->
+    <div class="absolute inset-0 bg-black/25"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="container relative z-10 text-center py-32 px-4">
+    <!-- Eyebrow -->
+    <div class="shadow-eyebrow animate-on-scroll">
+      <span class="shadow-eyebrow-line"></span>
+      <span>Oostende · Bakkerij</span>
+      <span class="shadow-eyebrow-line"></span>
+    </div>
+
+    <!-- Title with layered shadows -->
+    <h1 class="shadow-title animate-on-scroll stagger-2">
+      {title}
+    </h1>
+
+    <!-- Subtitle with subtle shadow -->
+    <p class="shadow-subtitle animate-on-scroll stagger-3">
+      {subtitle}
+    </p>
+
+    <!-- CTAs with shadow depth -->
+    {showCTA && (
+      <div class="flex justify-center gap-4 animate-on-scroll stagger-4">
+        <a href="/feestcollectie" class="shadow-btn-primary">
+          Bekijk collecties
+        </a>
+        <a href="/bestellen" class="shadow-btn-outline">
+          Bestel nu
+        </a>
+      </div>
+    )}
+
+    <!-- Stats strip -->
+    <div class="shadow-stats animate-on-scroll stagger-4">
+      <div class="shadow-stat">
+        <span class="shadow-stat-num">2018</span>
+        <span class="shadow-stat-label">Gestart</span>
+      </div>
+      <div class="shadow-stat-sep"></div>
+      <div class="shadow-stat">
+        <span class="shadow-stat-num">100%</span>
+        <span class="shadow-stat-label">Vers</span>
+      </div>
+      <div class="shadow-stat-sep"></div>
+      <div class="shadow-stat">
+        <span class="shadow-stat-num">♥</span>
+        <span class="shadow-stat-label">Liefde</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-bounce">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+  </div>
+</section>
+
+<style>
+  /* ── Eyebrow ─────────────────────────────────────────────────────────── */
+  .shadow-eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 1.5rem;
+  }
+
+  .shadow-eyebrow-line {
+    display: block;
+    width: 2rem;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  /* ── Title with layered shadow depth ─────────────────────────────────── */
+  .shadow-title {
+    font-family: var(--font-heading, inherit);
+    font-size: clamp(3.5rem, 9vw, 8rem);
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    margin: 0 auto 1.5rem;
+    /* Layered shadows = pop effect */
+    text-shadow:
+      0 0 40px rgba(0, 0, 0, 0.5),
+      0 4px 12px rgba(0, 0, 0, 0.4),
+      0 12px 40px rgba(0, 0, 0, 0.3),
+      0 24px 60px rgba(0, 0, 0, 0.2);
+  }
+
+  /* ── Subtitle with softer shadow ─────────────────────────────────────── */
+  .shadow-subtitle {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.6;
+    margin: 0 auto 2.5rem;
+    max-width: 500px;
+    text-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.4),
+      0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  /* ── Buttons with shadow ─────────────────────────────────────────────── */
+  .shadow-btn-primary {
+    background: #ffffff;
+    color: #1a1a1a;
+    border-radius: 0.5rem;
+    padding: 0.875rem 2.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      0 2px 6px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  }
+
+  .shadow-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, 0.35),
+      0 4px 10px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  }
+
+  .shadow-btn-outline {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1.5px solid rgba(255, 255, 255, 0.45);
+    color: #ffffff;
+    border-radius: 0.5rem;
+    padding: 0.875rem 2.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.2),
+      0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .shadow-btn-outline:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.65);
+    transform: translateY(-2px);
+  }
+
+  /* ── Stats strip ──────────────────────────────────────────────────────── */
+  .shadow-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 3rem;
+    padding: 1.25rem 2rem;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    border-radius: 999px;
+    display: inline-flex;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .shadow-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+  }
+
+  .shadow-stat-num {
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .shadow-stat-label {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .shadow-stat-sep {
+    width: 1px;
+    height: 2rem;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  @media (max-width: 640px) {
+    .shadow-stats { gap: 1.25rem; padding: 1rem 1.5rem; }
+    .shadow-stat-num { font-size: 1.125rem; }
+  }
+</style>

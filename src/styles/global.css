@@ -159,6 +159,45 @@
     max-width: var(--max-width-prose);
   }
 
+  /* ── Glow heading style (comic/handwriting, white + pink glow) ── */
+  h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+    text-shadow:
+      /* Thin border via layered shadows */
+      1.5px 1.5px 0px #ffcce0,
+      -0.5px -0.5px 0px #ffcce0,
+      0.5px -0.5px 0px #ffcce0,
+      -0.5px 0.5px 0px #ffcce0,
+      /* Soft pastel pink glow layers */
+      0px 0px 10px #ffccd5,
+      0px 0px 20px #ffd9e6,
+      0px 0px 40px #ffe4ed,
+      0px 0px 60px #fff0f5;
+  }
+
+  /* Body/section headings below hero stay dark */
+  #home-intro h2,
+  #home-collections h2,
+  #home-testimonials h2,
+  #home-info h3,
+  .section-title {
+    color: var(--color-text) !important;
+    text-shadow: none !important;
+  }
+
+  /* Subtitle glow variant */
+  .glow-subtitle {
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow:
+      0.75px 0.75px 0px #ffcce0,
+      -0.25px -0.25px 0px #ffcce0,
+      0.25px -0.25px 0px #ffcce0,
+      -0.25px 0.25px 0px #ffcce0,
+      0px 0px 8px #ffccd5,
+      0px 0px 16px #ffd9e6,
+      0px 0px 32px #ffe4ed;
+  }
+
   /* Animate on scroll */
   .animate-on-scroll {
     opacity: 0;

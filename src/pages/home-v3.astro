@@ -1,0 +1,129 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import HeroV3 from '../components/HeroV3.astro';
+import Footer from '../components/Footer.astro';
+import CollectionCard from '../components/CollectionCard.astro';
+import TestimonialCard from '../components/TestimonialCard.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+
+import collectionsData from '../data/collections.json';
+import testimonialsData from '../data/testimonials.json';
+
+const collections = collectionsData.collections.filter(c => c.id !== 'vaste-collectie');
+const testimonials = testimonialsData.testimonials;
+
+const customerPhotos: Record<string, string> = {
+  'Gilles Cresis': '/images/mini-collectie/gilles.jpg',
+  'Sofie Missiaen': '/images/mini-collectie/sofie.jpg',
+  'Vanessa Anaïs Verkempynck': '/images/mini-collectie/vanessa.jpg',
+};
+---
+
+<Layout title="Home V3">
+  <Header />
+  <main id="home-main">
+    <HeroV3 id="home-hero" />
+    <section id="home-intro" class="section">
+      <div class="container">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div id="home-intro-text" class="animate-on-scroll">
+            <span id="home-intro-label" class="inline-block text-sm font-semibold uppercase tracking-widest text-[var(--color-accent)] mb-4">Even voorstellen</span>
+            <h2 id="home-intro-title" class="font-heading text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--color-text)] mb-6">Hoi! Mijn naam is Nathalie</h2>
+            <div id="home-intro-content" class="space-y-4 text-[var(--color-text-muted)] leading-relaxed">
+              <p>Mijn passie… bakken. Steeds weer vind ik het magisch hoe je met een paar simpele ingrediënten, de lekkerste taarten uit de oven kan toveren.</p>
+              <p>Vandaar dat ik enkele jaren terug besloot om daar ook effectief iets mee te gaan doen. Zo maakte ons tuinhuis net voor de zomer van 2018 plaats voor een bakatelier waar ik me naar hartelust kan uitleven.</p>
+              <p>Ik werk met kwaliteitsvolle ingrediënten zoals speltbloem en bio-eitjes, en hou rekening met allergieën en dieetwensen. Lactose-intolerantie of glutenallergie? Geen probleem!</p>
+            </div>
+          </div>
+          <div id="home-intro-image-wrapper" class="animate-on-scroll stagger-2">
+            <div id="home-intro-image" class="aspect-[4/5] rounded-2xl overflow-hidden shadow-xl">
+              <img src="/images/nathalie-e1542633374448.jpg" alt="Nathalie - Bakker" id="home-intro-img" class="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="home-collections" class="section bg-[var(--color-surface)]">
+      <div class="container">
+        <div id="home-collections-header" class="text-center mb-12 animate-on-scroll">
+          <h2 id="home-collections-title" class="section-title">de collecties</h2>
+          <p id="home-collections-subtitle" class="section-subtitle mx-auto">Ontdek onze heerlijke selectie van taarten, koekjes en gebak, elk met dezelfde liefde en zorg gemaakt.</p>
+        </div>
+        <div id="home-collections-grid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          {collections.slice(0, 4).map((collection, index) => (
+            <div id={`home-collection-card-${collection.id}`} class={`animate-on-scroll stagger-${index + 1} flex`}>
+              <CollectionCard title={collection.title} description={collection.description} href={collection.href} badge={collection.badge} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+    <section id="home-testimonials" class="section bg-grain">
+      <div class="container">
+        <div id="home-testimonials-header" class="text-center mb-12 animate-on-scroll">
+          <span id="home-testimonials-label" class="inline-block text-sm font-semibold uppercase tracking-widest text-[var(--color-accent)] mb-4">Tevreden klanten</span>
+          <h2 id="home-testimonials-title" class="section-title">Wat onze klanten zeggen</h2>
+        </div>
+        <div id="home-testimonials-grid" class="grid md:grid-cols-3 gap-8">
+          {testimonials.map((testimonial, index) => (
+            <div id={`home-testimonial-${index + 1}`} class={`animate-on-scroll stagger-${index + 1}`}>
+              <TestimonialCard quote={testimonial.quote} author={testimonial.author} role={testimonial.role} authorImage={customerPhotos[testimonial.author]} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+    <section id="home-info" class="section bg-[var(--color-surface)]">
+      <div class="container">
+        <div class="grid lg:grid-cols-2 gap-12">
+          <div id="home-opening-hours" class="animate-on-scroll">
+            <div id="home-opening-hours-card" class="card p-8 h-full">
+              <div id="home-opening-hours-header" class="flex items-start gap-4 mb-6">
+                <div id="home-opening-hours-icon" class="w-12 h-12 rounded-lg bg-[var(--color-secondary)] flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div>
+                  <h3 class="font-heading text-xl font-semibold text-[var(--color-text)] mb-2">Openingsuren</h3>
+                  <p class="text-sm text-[var(--color-text-muted)]">Kom langs om jouw taart te bespreken</p>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center py-2 border-b border-[var(--color-border-light)]">
+                  <span class="text-[var(--color-text)]">Donderdag</span>
+                  <span class="font-medium text-[var(--color-primary)]">17u - 20u</span>
+                </div>
+                <p class="text-sm text-[var(--color-text-muted)] italic">* Niet tijdens schoolvakanties</p>
+                <p class="text-sm text-[var(--color-text-muted)]">Andere momenten zijn mogelijk op afspraak. Mail of bel gerust!</p>
+              </div>
+            </div>
+          </div>
+          <div id="home-allergies" class="animate-on-scroll stagger-2">
+            <div id="home-allergies-card" class="card p-8 h-full">
+              <div class="flex items-start gap-4 mb-6">
+                <div class="w-12 h-12 rounded-lg bg-[var(--color-accent)]/10 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>
+                </div>
+                <div>
+                  <h3 class="font-heading text-xl font-semibold text-[var(--color-text)] mb-2">Allergieën? Geen probleem!</h3>
+                  <p class="text-sm text-[var(--color-text-muted)]">We denken graag mee</p>
+                </div>
+              </div>
+              <p class="text-[var(--color-text-muted)] leading-relaxed">Ik heb ervaring met het aanpassen van recepten voor diverse dieetwensen en allergieën. Lactose-intolerantie, glutenallergie, diabetes... neem gerust contact op om de mogelijkheden te bespreken.</p>
+              <ul class="mt-4 space-y-2">
+                {['Lactose-intolerantie', 'Glutenallergie', 'Diabetes'].map((item, i) => (
+                  <li class="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[var(--color-accent)]" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <ContactCTA id="home-contact-cta" />
+  </main>
+  <Footer id="home-footer" />
+</Layout>

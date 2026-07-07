@@ -1,0 +1,254 @@
+---
+// HeroV4.astro — "Electric Glow"
+// Neon gradient text with ambient glow + pulsing accent
+// Bold, modern, unmistakable readability
+interface Props {
+  title?: string;
+  subtitle?: string;
+  showCTA?: boolean;
+}
+const {
+  title = "De prachtigste taarten...",
+  subtitle = "fijnste koekjes en heerlijkste cake, met liefde gebakken in Oostende",
+  showCTA = true
+} = Astro.props;
+---
+
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden">
+  <!-- Background video -->
+  <div class="absolute inset-0 z-0">
+    <video class="w-full h-full object-cover" autoplay muted loop playsinline>
+      <source src="/videos/hero-pie.mp4" type="video/mp4" />
+    </video>
+    <!-- Very light overlay — the glow does the heavy lifting -->
+    <div class="absolute inset-0 bg-black/30"></div>
+  </div>
+
+  <!-- Ambient glow blobs -->
+  <div class="glow-blob glow-blob-1"></div>
+  <div class="glow-blob glow-blob-2"></div>
+
+  <!-- Content -->
+  <div class="container relative z-10 text-center py-32 px-4">
+    <!-- Animated top line -->
+    <div class="glow-topline animate-on-scroll"></div>
+
+    <!-- Eyebrow -->
+    <div class="animate-on-scroll stagger-1">
+      <span class="glow-eyebrow">
+        <span class="glow-dot"></span>
+        Ambachtelijke bakkerij · Oostende
+      </span>
+    </div>
+
+    <!-- Main heading — THE HERO -->
+    <h1 class="glow-title animate-on-scroll stagger-2">
+      {title}
+    </h1>
+
+    <!-- Subtitle -->
+    <p class="glow-subtitle animate-on-scroll stagger-3">
+      {subtitle}
+    </p>
+
+    <!-- CTAs -->
+    {showCTA && (
+      <div class="flex justify-center gap-4 animate-on-scroll stagger-4">
+        <a href="/feestcollectie" class="btn btn-primary-glow px-10 py-4 text-base font-semibold">
+          Bekijk collecties
+        </a>
+        <a href="/bestellen" class="btn btn-outline-glow px-10 py-4 text-base font-semibold">
+          Bestel nu
+        </a>
+      </div>
+    )}
+
+    <!-- Bottom badge -->
+    <div class="glow-bottom animate-on-scroll stagger-4">
+      <span class="glow-badge">Vers gebakken dagelijks</span>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-bounce">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+  </div>
+</section>
+
+<style>
+  /* ── Ambient glow blobs ─────────────────────────────────────────────── */
+  .glow-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    pointer-events: none;
+    animation: float-blob 6s ease-in-out infinite;
+  }
+
+  .glow-blob-1 {
+    width: 500px;
+    height: 400px;
+    background: radial-gradient(circle, #E8788A 0%, transparent 70%);
+    top: 10%;
+    left: 20%;
+    animation-delay: 0s;
+  }
+
+  .glow-blob-2 {
+    width: 400px;
+    height: 350px;
+    background: radial-gradient(circle, #fda4af 0%, transparent 70%);
+    bottom: 15%;
+    right: 15%;
+    animation-delay: -3s;
+    animation-direction: alternate;
+  }
+
+  @keyframes float-blob {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-20px) scale(1.05); }
+  }
+
+  /* ── Top decorative line ───────────────────────────────────────────── */
+  .glow-topline {
+    width: 4rem;
+    height: 3px;
+    background: linear-gradient(to right, transparent, #E8788A, transparent);
+    border-radius: 2px;
+    margin: 0 auto 1.5rem;
+  }
+
+  /* ── Eyebrow ────────────────────────────────────────────────────────── */
+  .glow-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 1.5rem;
+  }
+
+  .glow-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #E8788A;
+    box-shadow: 0 0 10px #E8788A, 0 0 20px rgba(232, 120, 138, 0.5);
+    animation: glow-pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 8px #E8788A, 0 0 16px rgba(232,120,138,0.4); }
+    50% { box-shadow: 0 0 16px #E8788A, 0 0 32px rgba(232,120,138,0.7); }
+  }
+
+  /* ── Title — electric gradient text ───────────────────────────────── */
+  .glow-title {
+    font-family: var(--font-heading, inherit);
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.0;
+    margin: 0 auto 1.5rem;
+    max-width: 900px;
+    background: linear-gradient(
+      135deg,
+      #ffffff 0%,
+      #ffffff 40%,
+      #fda4af 70%,
+      #f0abfc 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(232, 120, 138, 0.4));
+    animation: title-glow 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes title-glow {
+    0% { filter: drop-shadow(0 0 20px rgba(232,120,138,0.3)); }
+    100% { filter: drop-shadow(0 0 40px rgba(232,120,138,0.6)); }
+  }
+
+  /* ── Subtitle ──────────────────────────────────────────────────────── */
+  .glow-subtitle {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+    margin: 0 auto 2.5rem;
+    max-width: 540px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+
+  /* ── Glow CTA buttons ─────────────────────────────────────────────── */
+  .btn-primary-glow {
+    background: #E8788A;
+    color: white;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 0 20px rgba(232, 120, 138, 0.35);
+    border: none;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-primary-glow:hover {
+    background: #d66b7a;
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(232, 120, 138, 0.55);
+  }
+
+  .btn-outline-glow {
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .btn-outline-glow:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.5);
+    transform: translateY(-2px);
+  }
+
+  /* ── Bottom badge ──────────────────────────────────────────────────── */
+  .glow-bottom {
+    margin-top: 3rem;
+  }
+
+  .glow-badge {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.5);
+    padding: 0.375rem 1rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+    background: rgba(255,255,255,0.05);
+  }
+
+  @media (max-width: 640px) {
+    .glow-blob { opacity: 0.2; }
+    .btn-primary-glow, .btn-outline-glow { padding: 0.75rem 1.5rem; font-size: 0.9375rem; }
+  }
+</style>

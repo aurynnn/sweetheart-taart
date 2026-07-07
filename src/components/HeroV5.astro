@@ -1,0 +1,171 @@
+---
+// HeroV5.astro — "Minimal Matter"
+// Ultra-minimal: minimal overlay, maximum whitespace, refined typography
+// Video breathes, text is surgical and sharp
+interface Props {
+  title?: string;
+  subtitle?: string;
+  showCTA?: boolean;
+}
+const {
+  title = "De prachtigste taarten...",
+  subtitle = "fijnste koekjes en heerlijkste cake, met liefde gebakken in Oostende",
+  showCTA = true
+} = Astro.props;
+---
+
+<section class="relative min-h-screen flex items-end justify-start overflow-hidden">
+  <!-- Background video: full bleed -->
+  <div class="absolute inset-0 z-0">
+    <video class="w-full h-full object-cover object-center" autoplay muted loop playsinline>
+      <source src="/videos/hero-pie.mp4" type="video/mp4" />
+    </video>
+    <!-- Very subtle bottom-heavy darkening only -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+  </div>
+
+  <!-- Content anchored bottom-left -->
+  <div class="relative z-10 w-full pb-20 pt-48 px-6 md:px-12 lg:px-20">
+    <div class="max-w-3xl">
+      <!-- Thin label -->
+      <div class="minimal-label animate-on-scroll">
+        <span class="minimal-label-dot"></span>
+        Oostende · Bakkerij
+      </div>
+
+      <!-- Large typographic title -->
+      <h1 class="minimal-title animate-on-scroll stagger-2">
+        {title}
+      </h1>
+
+      <!-- Subtitle — restrained -->
+      <p class="minimal-subtitle animate-on-scroll stagger-3">
+        {subtitle}
+      </p>
+
+      <!-- CTA row -->
+      {showCTA && (
+        <div class="flex flex-wrap items-center gap-4 animate-on-scroll stagger-4">
+          <a href="/feestcollectie" class="minimal-btn-primary">
+            Bekijk collecties
+          </a>
+          <a href="/bestellen" class="minimal-btn-ghost">
+            Bestel nu
+          </a>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <!-- Bottom right: small tagline -->
+  <div class="absolute bottom-8 right-8 lg:right-16 z-10 animate-on-scroll stagger-5">
+    <p class="minimal-tagline">Met liefde gebakken · 2018</p>
+  </div>
+</section>
+
+<style>
+  /* ── Label ──────────────────────────────────────────────────────────── */
+  .minimal-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 1.25rem;
+  }
+
+  .minimal-label-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #E8788A;
+    flex-shrink: 0;
+  }
+
+  /* ── Title ──────────────────────────────────────────────────────────── */
+  .minimal-title {
+    font-family: var(--font-heading, inherit);
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    margin: 0 0 1.25rem;
+    /* Crisp, sharp text */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── Subtitle ──────────────────────────────────────────────────────── */
+  .minimal-subtitle {
+    font-size: clamp(1rem, 2vw, 1.1875rem);
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.6;
+    margin: 0 0 2.25rem;
+    max-width: 500px;
+    font-weight: 400;
+    letter-spacing: 0.005em;
+  }
+
+  /* ── Buttons ────────────────────────────────────────────────────────── */
+  .minimal-btn-primary {
+    background: #E8788A;
+    color: white;
+    border-radius: 0.375rem;
+    padding: 0.75rem 1.75rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.18s ease;
+  }
+
+  .minimal-btn-primary:hover {
+    background: #d66b7a;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(232, 120, 138, 0.35);
+  }
+
+  .minimal-btn-ghost {
+    color: rgba(255, 255, 255, 0.85);
+    border-radius: 0.375rem;
+    padding: 0.75rem 1.75rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.18s ease;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .minimal-btn-ghost:hover {
+    color: white;
+    border-color: rgba(255,255,255,0.7);
+  }
+
+  /* ── Bottom tagline ────────────────────────────────────────────────── */
+  .minimal-tagline {
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 500;
+    text-align: right;
+  }
+
+  @media (max-width: 640px) {
+    .minimal-title {
+      font-size: clamp(2.5rem, 12vw, 4rem);
+    }
+    .minimal-tagline {
+      display: none;
+    }
+  }
+</style>
