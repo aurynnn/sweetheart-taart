@@ -15,8 +15,8 @@ const navLinks = [
       <a href="/" class="flex items-center gap-3 group">
         <img src="/favicon.svg" alt="Sweetheart Taart" class="w-12 h-12 transition-transform group-hover:scale-105" />
         <div class="hidden sm:block">
-          <span class="font-heading text-xl font-semibold text-[var(--color-primary)]">Sweetheart</span>
-          <span class="block text-xs text-[var(--color-text-muted)] -mt-1">Koekjes, Cake & Taart</span>
+          <span class="font-heading text-xl font-semibold header-logo-text">Sweetheart</span>
+          <span class="block text-xs opacity-70 -mt-1 header-logo-text" style="font-size:0.625rem">Koekjes, Cake & Taart</span>
         </div>
       </a>
 
@@ -182,27 +182,37 @@ const navLinks = [
 </script>
 
 <style>
+  /* ── Transparent header over hero video ─────────────────────────────── */
   #main-header {
-    background-color: transparent;
-    transition: background-color 300ms ease, box-shadow 300ms ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background-color: transparent !important;
+    box-shadow: none !important;
   }
 
+  /* Scrolled → white frosted glass */
   #main-header.scrolled {
-    background-color: rgba(253, 248, 245, 0.95);
-    backdrop-filter: blur(10px);
-    box-shadow: var(--shadow-sm);
+    position: absolute;
+    background-color: rgba(253, 248, 245, 0.92) !important;
+    backdrop-filter: blur(12px);
+    box-shadow: none !important;
   }
 
+  /* ── Nav links — white on dark hero, dark when scrolled ────────────── */
   :global(.desktop-nav-link) {
-    color: var(--color-text);
+    color: rgba(255, 255, 255, 0.9);
+    transition: color 300ms ease;
   }
 
   :global(.desktop-nav-link:hover) {
-    color: var(--color-primary);
+    color: #ffffff;
   }
 
   :global(.desktop-nav-link.active) {
-    color: var(--color-primary);
+    color: #ffffff;
   }
 
   :global(.desktop-nav-link.active::after) {
@@ -212,7 +222,49 @@ const navLinks = [
     left: 0;
     right: 0;
     height: 2px;
-    background-color: var(--color-primary);
+    background-color: #ffffff;
     border-radius: 1px;
+  }
+
+  /* ── Scrolled state nav links ─────────────────────────────────────── */
+  #main-header.scrolled :global(.desktop-nav-link),
+  #main-header.scrolled :global(.desktop-nav-link:hover),
+  #main-header.scrolled :global(.desktop-nav-link.active) {
+    color: var(--color-text);
+  }
+
+  #main-header.scrolled :global(.desktop-nav-link.active::after) {
+    background-color: var(--color-primary);
+  }
+
+  /* ── Logo text over dark hero ──────────────────────────────────────── */
+  :global(.header-logo-text) {
+    color: rgba(255, 255, 255, 0.95);
+    transition: color 300ms ease;
+  }
+
+  #main-header.scrolled :global(.header-logo-text) {
+    color: var(--color-primary);
+  }
+
+  /* ── CTA button over hero ──────────────────────────────────────────── */
+  #main-header .btn.btn-primary {
+    background: rgba(232, 120, 138, 0.85);
+    backdrop-filter: blur(4px);
+    transition: background 300ms ease, transform 150ms ease, box-shadow 150ms ease;
+  }
+
+  #main-header .btn.btn-primary:hover {
+    background: #E8788A;
+    box-shadow: 0 4px 16px rgba(232, 120, 138, 0.5);
+  }
+
+  #main-header.scrolled .btn.btn-primary {
+    background: var(--color-primary);
+  }
+
+  /* ── Mobile menu stays readable ────────────────────────────────────── */
+  #mobile-menu {
+    background-color: var(--color-surface);
   }
 </style>

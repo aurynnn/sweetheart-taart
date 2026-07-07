@@ -10,20 +10,23 @@ const {
   subtitle = "fijnste koekjes en heerlijkste cake, met liefde gebakken in Oostende",
   showCTA = true
 } = Astro.props;
-
-const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
 ---
 
 <section class="relative min-h-screen flex items-center justify-center overflow-hidden">
-  <!-- Background image -->
+  <!-- Background video -->
   <div class="absolute inset-0 z-0">
-    <img 
-      src={`${R2_BASE}/feestcollectie/images/trouwtaargeknipt-e1668952116982.png`}
-      alt="Prachtige taart" 
-      class="w-full h-full object-cover object-center"
-    />
-    <!-- Dark overlay -->
-    <div class="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/80 via-[var(--color-bg)]/60 to-[var(--color-bg)]/90"></div>
+    <video
+      class="w-full h-full object-cover"
+      autoplay
+      muted
+      loop
+      playsinline
+      poster="/videos/hero-pie-poster.jpg"
+    >
+      <source src="/videos/hero-pie.mp4" type="video/mp4" />
+    </video>
+    <!-- Dark overlay so text remains readable -->
+    <div class="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/70 via-[var(--color-bg)]/50 to-[var(--color-bg)]/85"></div>
   </div>
 
   <!-- Content -->
