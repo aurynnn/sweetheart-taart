@@ -71,6 +71,11 @@ export const GET: APIRoute = async ({ url }) => {
 
   const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
 
+  // Build YYYY-MM-DD in local time (not UTC) to match frontend date strings and avoid off-by-one
+  function toLocalDateStr(d: Date) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
   if (startDate && endDate) {
     const start = new Date(startDate + 'T00:00:00');
     const end = new Date(endDate + 'T00:00:00');
@@ -79,7 +84,7 @@ export const GET: APIRoute = async ({ url }) => {
     const current = new Date(start);
 
     while (current <= end) {
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr = toLocalDateStr(current);
       const dayOfWeek = current.getDay();
       const ordersCount = orderCounts[dateStr] || 0;
       const isPast = current < today;
@@ -135,10 +140,20 @@ export const GET: APIRoute = async ({ url }) => {
     }
   }
 
+  // Extract blocked dates from overrides (mode = 'geblokkeerd')
+  const blockedDates = Object.entries(overrides)
+    .filter(([, v]) => v.mode === 'geblokkeerd')
+    .map(([date, v]) => ({
+      date,
+      reason: v.reason || 'Geblokkeerd',
+      max_orders: v.max_orders,
+    }));
+
   const settings = {
     recurringUnavailableDays: recurringUnavailable,
     availableDays: recurringAvailable,
     maxOrdersPerDay: defaultMaxOrders,
+    blockedDates,
   };
 
   return new Response(JSON.stringify({ settings, availability }), {
@@ -150,7 +165,7 @@ export const GET: APIRoute = async ({ url }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { maxOrdersPerDay, availableDays, recurringUnavailableDays, blockedDates, slotOverrides } = body;
+    const { maxOrdersPerDay, availableDays, recurringUnavailableDays, blockedDates, newBlockedDates, removedBlockedDates, slotOverrides } = body;
 
     const allDays = [0, 1, 2, 3, 4, 5, 6];
     const available = availableDays ?? [1, 2, 3, 4, 5, 6];
@@ -177,13 +192,34 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Clear and re-insert blocked dates
-    await d1Query("DELETE FROM availability_days WHERE mode = 'geblokkeerd'");
+    // Clear removed blocked dates from D1
+    for (const date of removedBlockedDates ?? []) {
+      await d1Query("DELETE FROM availability_days WHERE date = ? AND mode = 'geblokkeerd'", [date]);
+    }
+
+    // Upsert new blocked dates (skip those already in DB)
+    const existingBlocked = await d1Query(
+      "SELECT date FROM availability_days WHERE mode = 'geblokkeerd'"
+    );
+    const existingBlockedSet = new Set((existingBlocked.results ?? []).map((r: any) => r.date as string));
+
     for (const blocked of blockedDates ?? []) {
-      await d1Query(
-        "INSERT INTO availability_days (date, mode, max_orders, reason) VALUES (?, 'geblokkeerd', ?, ?)",
-        [blocked.date, maxOrdersPerDay ?? 3, blocked.reason ?? null]
-      );
+      if (!existingBlockedSet.has(blocked.date)) {
+        await d1Query(
+          "INSERT INTO availability_days (date, mode, max_orders, reason) VALUES (?, 'geblokkeerd', ?, ?)",
+          [blocked.date, maxOrdersPerDay ?? 3, blocked.reason ?? null]
+        );
+      }
+    }
+
+    // Also handle legacy newBlockedDates format (array of date strings)
+    for (const date of newBlockedDates ?? []) {
+      if (typeof date === 'string' && !existingBlockedSet.has(date)) {
+        await d1Query(
+          "INSERT INTO availability_days (date, mode, max_orders, reason) VALUES (?, 'geblokkeerd', ?, ?)",
+          [date, maxOrdersPerDay ?? 3, null]
+        );
+      }
     }
 
     // Sync slot overrides

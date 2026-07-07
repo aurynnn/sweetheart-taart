@@ -1,0 +1,38 @@
+---
+// CalendarHoursView.astro — Tab 3: Werkuren (composes WorkDays + MaxOrders)
+import CalendarWorkDaysView from './CalendarWorkDaysView.astro';
+import CalendarMaxOrdersView from './CalendarMaxOrdersView.astro';
+
+const { maxOrdersPerDay = 3, availableDays = [1, 2, 3, 4, 5, 6] } = Astro.props;
+---
+
+<div class="tab-content" id="tab-uren">
+  <div class="hours-section">
+    <div class="hours-layout">
+      <CalendarWorkDaysView availableDays={availableDays} />
+      <CalendarMaxOrdersView maxOrdersPerDay={maxOrdersPerDay} />
+    </div>
+  </div>
+</div>
+
+<style>
+  .hours-section {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+  }
+
+  .hours-layout {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 700px) {
+    .hours-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

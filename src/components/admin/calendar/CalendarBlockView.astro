@@ -1,0 +1,208 @@
+---
+import CalendarPicker from '../../CalendarPicker.astro';
+
+// CalendarBlockView.astro — Tab 2: block dates (multi-select via CalendarPicker)
+---
+
+<div class="tab-content" id="tab-blockeren">
+  <div class="block-section">
+    <div class="section-header">
+      <h3>Datum Blokkeren</h3>
+      <p>Selecteer één of meerdere datums in de kalender hieronder. Druk daarna op <strong>Opslaan</strong> om ze te blokkeren.</p>
+    </div>
+
+    <div class="block-calendar">
+      <CalendarPicker id="block-date" name="blockDate" />
+    </div>
+
+    <div class="blocked-list">
+      <h4>Geblokkeerde datums</h4>
+      <div class="blocked-items" id="blocked-dates-list">
+        <!-- Filled by JS from settings -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  // Format date string in local time (not UTC) to avoid timezone off-by-one
+  function toLocalDateStr(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function parseLocalDate(ds) {
+    var parts = ds.split('-').map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+
+  function renderBlockedDates(blockedDates) {
+    var list = document.getElementById('blocked-dates-list');
+    if (!list) return;
+    list.innerHTML = '';
+    var dayNames = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+    var monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+    blockedDates.forEach(function(item) {
+      var d = parseLocalDate(item.date);
+      var dayName = dayNames[d.getDay()];
+      var dayNum = d.getDate();
+      var month = monthNames[d.getMonth()];
+      var itemEl = document.createElement('div');
+      itemEl.className = 'blocked-item';
+      itemEl.innerHTML =
+        '<div class="blocked-date">' +
+          '<span class="blocked-day">' + dayName + '</span>' +
+          '<span>' + dayNum + ' ' + month + '</span>' +
+        '</div>' +
+        '<div class="blocked-reason">' + (item.reason || 'Geblokkeerd') + '</div>' +
+        '<button class="btn btn-sm btn-secondary" data-remove-date="' + item.date + '">Verwijder</button>';
+      list.appendChild(itemEl);
+    });
+    if (blockedDates.length === 0) {
+      list.innerHTML = '<p class="empty-state">Nog geen geblokkeerde datums.</p>';
+    }
+  }
+
+  // Delegated click handler for remove buttons — avoids inline handler scope issues
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-remove-date]');
+    if (!btn) return;
+    var date = btn.getAttribute('data-remove-date');
+    var item = btn.closest('.blocked-item');
+    if (item) item.remove();
+    window._removedBlockedDates.add(date);
+  });
+
+  async function loadBlockedDates() {
+    try {
+      var today = new Date();
+      var end = new Date();
+      end.setMonth(end.getMonth() + 3);
+      var todayStr = toLocalDateStr(today);
+      var endStr = toLocalDateStr(end);
+      var resp = await fetch('/api/availability?startDate=' + todayStr + '&endDate=' + endStr + '&_=' + Date.now());
+      var data = await resp.json();
+      if (data.settings && data.settings.blockedDates) {
+        renderBlockedDates(data.settings.blockedDates);
+      }
+    } catch(e) { console.log('Could not load blocked dates:', e); }
+  }
+
+  // Track removed dates locally (not yet committed to DB until Opslaan)
+  window._removedBlockedDates = new Set();
+
+  window.loadBlockedDates = loadBlockedDates;
+  window.loadBlockedDates = loadBlockedDates;
+  loadBlockedDates();
+</script>
+
+<style>
+  .block-section {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+  }
+
+  .section-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .section-header h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .section-header p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+
+  .block-calendar {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  .blocked-list h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .blocked-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .blocked-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fef2f2;
+    border-radius: 0.5rem;
+  }
+
+  .blocked-date {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 120px;
+  }
+
+  .blocked-day {
+    width: 2rem;
+    height: 2rem;
+    background: #fee2e2;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #dc2626;
+  }
+
+  .blocked-reason {
+    flex: 1;
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+
+  .empty-state {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    text-align: center;
+    padding: 1rem;
+    margin: 0;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .btn-secondary {
+    background: #f1f5f9;
+    color: #334155;
+  }
+
+  .btn-secondary:hover {
+    background: #e2e8f0;
+  }
+</style>

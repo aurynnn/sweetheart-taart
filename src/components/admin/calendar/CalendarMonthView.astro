@@ -1,0 +1,221 @@
+---
+// CalendarMonthView.astro — Tab 1: month overview calendar grid
+
+const today = new Date();
+const currentYear = today.getFullYear();
+const currentMonth = today.getMonth();
+const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+
+function getMonthWeeks(year: number, month: number) {
+  // Use LOCAL dates throughout — consistent with the rest of the app (API, picker, etc.)
+  // Avoids UTC timezone off-by-one where UTC date differs from local date
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  // Monday-first: Sunday (0) becomes 6, Monday (1) becomes 0, etc.
+  let startDay = firstDay.getDay() - 1;
+  if (startDay < 0) startDay = 6;
+
+  const weeks: { day: number | null; dateStr: string | null }[][] = [];
+  let currentWeek: { day: number | null; dateStr: string | null }[] = [];
+
+  for (let i = 0; i < startDay; i++) {
+    currentWeek.push({ day: null, dateStr: null });
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    // Format as local YYYY-MM-DD to avoid UTC off-by-one
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    currentWeek.push({ day, dateStr });
+    if (currentWeek.length === 7) {
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+  }
+
+  if (currentWeek.length > 0) {
+    while (currentWeek.length < 7) currentWeek.push({ day: null, dateStr: null });
+    weeks.push(currentWeek);
+  }
+
+  return weeks;
+}
+
+const weeks = getMonthWeeks(currentYear, currentMonth);
+---
+
+<div class="tab-content active" id="tab-maand">
+  <div class="month-overview">
+    <div class="month-header">
+      <h3>{monthNames[currentMonth]} {currentYear}</h3>
+      <div class="month-nav">
+        <button class="nav-btn" id="prev-month">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button class="nav-btn" id="next-month">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="calendar-grid">
+      <div class="day-headers">
+        <span>Ma</span><span>Di</span><span>Wo</span><span>Do</span><span>Vr</span><span>Za</span><span>Zo</span>
+      </div>
+      <div class="days-grid" id="availability-calendar">
+        {weeks.map((week) => (
+          <div class="week-row">
+            {week.map((cell) => (
+              <div class={`day-cell ${cell.day === null ? 'empty' : ''}`}>
+                {cell.day !== null && (
+                  <div class="day-content" data-date={cell.dateStr}>
+                    <span class="day-number">{cell.day}</span>
+                    <div class="day-status">
+                      <div class="status-bar">
+                        <div class="status-fill" style="width: 0%"></div>
+                      </div>
+                      <span class="status-text">0/3</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="month-legend">
+      <div class="legend-item">
+        <span class="dot green"></span>
+        <span>Beschikbaar</span>
+      </div>
+      <div class="legend-item">
+        <span class="dot yellow"></span>
+        <span>Beperkt</span>
+      </div>
+      <div class="legend-item">
+        <span class="dot red"></span>
+        <span>Vol</span>
+      </div>
+    </div>
+  </div>
+
+<script is:inline>
+(function() {
+  var monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+  var now = new Date();
+  var calYear = now.getFullYear();
+  var calMonth = now.getMonth();
+  var titleEl = document.querySelector('.month-header h3');
+  var prevBtn = document.getElementById('prev-month');
+  var nextBtn = document.getElementById('next-month');
+  var gridEl = document.getElementById('availability-calendar');
+  function toLocalDateStr(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function getMonthWeeks(year, month) {
+    var firstDay = new Date(year, month, 1);
+    var lastDay = new Date(year, month + 1, 0);
+    var daysInMonth = lastDay.getDate();
+    var startDay = firstDay.getDay() - 1;
+    if (startDay < 0) startDay = 6;
+    var weeks = [];
+    var currentWeek = [];
+    for (var i = 0; i < startDay; i++) currentWeek.push({ day: null, dateStr: null });
+    for (var day = 1; day <= daysInMonth; day++) {
+      var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      currentWeek.push({ day: day, dateStr: dateStr });
+      if (currentWeek.length === 7) { weeks.push(currentWeek); currentWeek = []; }
+    }
+    if (currentWeek.length > 0) {
+      while (currentWeek.length < 7) currentWeek.push({ day: null, dateStr: null });
+      weeks.push(currentWeek);
+    }
+    return weeks;
+  }
+  function renderCalendarGrid() {
+    var weeks = getMonthWeeks(calYear, calMonth);
+    var html = '';
+    for (var w = 0; w < weeks.length; w++) {
+      var week = weeks[w];
+      html += '<div class="week-row">';
+      for (var d = 0; d < week.length; d++) {
+        var cell = week[d];
+        if (cell.day === null) {
+          html += '<div class="day-cell empty"></div>';
+        } else {
+          html += '<div class="day-cell">' +
+            '<div class="day-content" data-date="' + cell.dateStr + '">' +
+            '<span class="day-number">' + cell.day + '</span>' +
+            '<div class="day-status">' +
+            '<div class="status-bar"><div class="status-fill" style="width:0%"></div></div>' +
+            '<span class="status-text">0/3</span>' +
+            '</div></div></div>';
+        }
+      }
+      html += '</div>';
+    }
+    var headers = gridEl.querySelector('.day-headers');
+    gridEl.innerHTML = headers ? headers.outerHTML + html : html;
+  }
+  function updateTitle() { if (titleEl) titleEl.textContent = monthNames[calMonth] + ' ' + calYear; }
+  function updatePrevButton() {
+    if (!prevBtn) return;
+    var now = new Date();
+    prevBtn.disabled = (calYear === now.getFullYear() && calMonth === now.getMonth());
+  }
+  function loadMonthAvailability() {
+    var startDate = new Date(calYear, calMonth, 1);
+    var endDate = new Date(calYear, calMonth + 1, 0);
+    var startStr = toLocalDateStr(startDate);
+    var endStr = toLocalDateStr(endDate);
+    fetch('/api/availability?startDate=' + startStr + '&endDate=' + endStr + '&_=' + Date.now())
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        if (!data.availability) return;
+        data.availability.forEach(function(slot) {
+          var dayContent = gridEl.querySelector('[data-date="' + slot.date + '"]');
+          if (!dayContent) return;
+          var bar = dayContent.querySelector('.status-fill');
+          var text = dayContent.querySelector('.status-text');
+          var cell = dayContent.closest('.day-cell');
+          if (!bar || !text || !cell) return;
+          var pct = (slot.orders / slot.maxOrders) * 100;
+          bar.style.width = pct + '%';
+          text.textContent = slot.orders + '/' + slot.maxOrders;
+          cell.classList.remove('available', 'limited', 'full');
+          if (!slot.available) cell.classList.add('full');
+          else if (slot.remaining <= 1) cell.classList.add('limited');
+          else cell.classList.add('available');
+        });
+      })
+      .catch(function(e) { console.log('Could not load availability:', e); });
+  }
+  prevBtn && prevBtn.addEventListener('click', function() {
+    var now = new Date();
+    if (calYear === now.getFullYear() && calMonth === now.getMonth()) return;
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    updateTitle();
+    updatePrevButton();
+    renderCalendarGrid();
+    loadMonthAvailability();
+  });
+  nextBtn && nextBtn.addEventListener('click', function() {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    updateTitle();
+    updatePrevButton();
+    renderCalendarGrid();
+    loadMonthAvailability();
+  });
+  updatePrevButton();
+})();
+</script>
+
+</div>

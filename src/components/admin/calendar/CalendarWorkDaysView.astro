@@ -1,0 +1,251 @@
+---
+// CalendarWorkDaysView.astro — Werkuren tab, part 1: clickable day cards
+const { availableDays = [1, 2, 3, 4, 5, 6] } = Astro.props;
+
+const days = [
+  { key: 1, short: 'Ma', label: 'Maandag' },
+  { key: 2, short: 'Di', label: 'Dinsdag' },
+  { key: 3, short: 'Wo', label: 'Woensdag' },
+  { key: 4, short: 'Do', label: 'Donderdag' },
+  { key: 5, short: 'Vr', label: 'Vrijdag' },
+  { key: 6, short: 'Za', label: 'Zaterdag' },
+  { key: 0, short: 'Zo', label: 'Zondag' },
+];
+---
+
+<div class="work-days-section">
+  <div class="section-header">
+    <h3>Beschikbare dagen</h3>
+    <p>Klik op een dag om beschikbaarheid te togglen.</p>
+  </div>
+
+  <div class="days-grid">
+    {days.map((day) => {
+      const isActive = availableDays.includes(day.key);
+      return (
+        <button
+          class={`day-card ${isActive ? 'active' : 'inactive'}`}
+          data-day={day.key}
+          onclick={`toggleWorkDay(${day.key}, this)`}
+          title={day.label}
+        >
+          <span class="day-short">{day.short}</span>
+          <span class="day-label">{day.label}</span>
+          {isActive && (
+            <span class="day-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </span>
+          )}
+        </button>
+      );
+    })}
+  </div>
+
+  <div class="quick-presets">
+    <span class="presets-label">Snel kiezen:</span>
+    <button class="preset-btn" onclick="setWorkDays([1,2,3,4,5])">Werkdagen</button>
+    <button class="preset-btn" onclick="setWorkDays([1,2,3,4,5,6])">Ma–Za</button>
+    <button class="preset-btn" onclick="setWorkDays([0,1,2,3,4,5,6])">Alle dagen</button>
+    <button class="preset-btn" onclick="setWorkDays([])">Geen</button>
+  </div>
+</div>
+
+<script is:inline>
+  // Track selected days client-side
+  window._selectedWorkDays = window._selectedWorkDays || [1,2,3,4,5,6];
+
+  function toggleWorkDay(dayKey, btn) {
+    var idx = window._selectedWorkDays.indexOf(dayKey);
+    var card = document.querySelector('.day-card[data-day="' + dayKey + '"]');
+    if (idx === -1) {
+      // Activate: add to list, show active styles, add badge
+      window._selectedWorkDays.push(dayKey);
+      if (card) {
+        card.classList.add('active');
+        card.classList.remove('inactive');
+        if (!card.querySelector('.day-badge')) {
+          var badge = document.createElement('span');
+          badge.className = 'day-badge';
+          badge.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+          card.appendChild(badge);
+        }
+      }
+    } else {
+      // Deactivate: remove from list, show inactive styles, remove badge
+      window._selectedWorkDays.splice(idx, 1);
+      if (card) {
+        card.classList.remove('active');
+        card.classList.add('inactive');
+        var badge = card.querySelector('.day-badge');
+        if (badge) badge.remove();
+      }
+    }
+    updateHiddenWorkDaysInput();
+  }
+
+  function setWorkDays(days) {
+    window._selectedWorkDays = days;
+    document.querySelectorAll('.day-card').forEach(function(card) {
+      var key = parseInt(card.dataset.day);
+      var badge = card.querySelector('.day-badge');
+      if (days.includes(key)) {
+        card.classList.add('active');
+        card.classList.remove('inactive');
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'day-badge';
+          badge.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+          card.appendChild(badge);
+        }
+      } else {
+        card.classList.remove('active');
+        card.classList.add('inactive');
+        if (badge) badge.remove();
+      }
+    });
+    updateHiddenWorkDaysInput();
+  }
+
+  function updateHiddenWorkDaysInput() {
+    var existing = document.getElementById('work-days-input');
+    if (existing) existing.remove();
+    var inp = document.createElement('input');
+    inp.type = 'hidden';
+    inp.id = 'work-days-input';
+    inp.value = JSON.stringify(window._selectedWorkDays);
+    document.querySelector('.work-days-section')?.appendChild(inp);
+  }
+  updateHiddenWorkDaysInput();
+</script>
+
+<style>
+  .work-days-section {
+    margin-bottom: 2rem;
+  }
+
+  .section-header {
+    margin-bottom: 1rem;
+  }
+
+  .section-header h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .section-header p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .day-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.875rem 0.25rem;
+    border: 2px solid transparent;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: #f8fafc;
+    min-height: 72px;
+  }
+
+  .day-card .day-short {
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .day-card .day-label {
+    font-size: 0.625rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .day-card.active {
+    background: #fce7ef;
+    border-color: #E8788A;
+  }
+
+  .day-card.active .day-short {
+    color: #E8788A;
+  }
+
+  .day-card.active .day-label {
+    color: #be5a6e;
+  }
+
+  .day-card.inactive {
+    background: #f1f5f9;
+    border-color: transparent;
+    opacity: 0.55;
+  }
+
+  .day-card.inactive .day-short {
+    color: #94a3b8;
+  }
+
+  .day-card:hover {
+    border-color: #E8788A;
+    opacity: 1;
+  }
+
+  .day-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    background: #E8788A;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .quick-presets {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .presets-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .preset-btn {
+    padding: 0.3rem 0.75rem;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .preset-btn:hover {
+    background: #E8788A;
+    border-color: #E8788A;
+    color: white;
+  }
+</style>

@@ -7,7 +7,10 @@ interface Props {
 }
 
 const { id, name, minDate } = Astro.props;
-const today = new Date().toISOString().split('T')[0];
+function toLocalDateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+const today = toLocalDateStr(new Date());
 const min = minDate || today;
 ---
 
@@ -44,6 +47,10 @@ const min = minDate || today;
 </div>
 
 <script define:vars={{ id, minDate: min }}>
+  function toLocalDateStr(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
   const grid = document.getElementById(`${id}-grid`);
   const title = document.getElementById(`${id}-title`);
   const prevBtn = document.getElementById(`${id}-prev`);
@@ -53,16 +60,17 @@ const min = minDate || today;
   
   let currentDate = new Date();
   let availabilityData = {};
+  let selectedDates = new Set();
   
   const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
   const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
   
   async function fetchAvailability() {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateStr(new Date());
       const future = new Date();
       future.setDate(future.getDate() + 90);
-      const endDate = future.toISOString().split('T')[0];
+      const endDate = toLocalDateStr(future);
       
       const response = await fetch(`/api/availability?startDate=${today}&endDate=${endDate}`);
       const data = await response.json();
@@ -83,9 +91,8 @@ const min = minDate || today;
     const month = currentDate.getMonth();
     title.textContent = `${monthNames[month]} ${year}`;
     
-    const headers = grid.querySelectorAll('.day-header');
-    grid.innerHTML = '';
-    headers.forEach(h => grid.appendChild(h));
+    // Remove old day cells (keep day-header elements in place)
+    grid.querySelectorAll('.date-cell').forEach(el => el.remove());
     
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -100,11 +107,11 @@ const min = minDate || today;
       grid.appendChild(empty);
     }
     
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = toLocalDateStr(new Date());
     
     for (let day = 1; day <= daysInMonth; day++) {
       const dateObj = new Date(year, month, day);
-      const dateStr = dateObj.toISOString().split('T')[0];
+      const dateStr = dateObj.getFullYear() + '-' + String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + String(dateObj.getDate()).padStart(2, '0');
       const dayOfWeek = dateObj.getDay();
       
       const cell = document.createElement('button');
@@ -140,21 +147,38 @@ const min = minDate || today;
   }
   
   function selectDate(dateStr, cell) {
-    document.querySelectorAll('.date-cell.selected').forEach(el => el.classList.remove('selected'));
-    cell.classList.add('selected');
-    hiddenInput.value = dateStr;
-    
-    const slot = availabilityData[dateStr];
-    const date = new Date(dateStr + 'T00:00:00');
-    const formatted = `${dayNames[date.getDay()]} ${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-    
-    selectedInfo.innerHTML = `
-      <span class="date-text">${formatted}</span>
-      <span class="slots-text ${slot?.available ? 'available' : 'unavailable'}">
-        ${slot?.available ? `${slot.remaining} plaats over` : (slot?.reason || 'Niet beschikbaar')}
-      </span>
-    `;
-    
+    if (selectedDates.has(dateStr)) {
+      selectedDates.delete(dateStr);
+      cell.classList.remove('selected');
+    } else {
+      selectedDates.add(dateStr);
+      cell.classList.add('selected');
+    }
+    hiddenInput.value = JSON.stringify([...selectedDates]);
+
+    if (selectedDates.size === 0) {
+      selectedInfo.innerHTML = '<span class="no-date">Selecteer een beschikbare datum</span>';
+    } else if (selectedDates.size === 1) {
+      const slot = availabilityData[[...selectedDates][0]];
+      const d = new Date([...selectedDates][0] + 'T00:00:00');
+      const formatted = `${dayNames[d.getDay()]} ${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      selectedInfo.innerHTML = `
+        <span class="date-text">${formatted}</span>
+        <span class="slots-text ${slot?.available ? 'available' : 'unavailable'}">
+          ${slot?.available ? `${slot.remaining} plaats over` : (slot?.reason || 'Niet beschikbaar')}
+        </span>
+      `;
+    } else {
+      const dates = [...selectedDates].sort().map(ds => {
+        const d = new Date(ds + 'T00:00:00');
+        return `${d.getDate()} ${monthNames[d.getMonth()]}`;
+      });
+      selectedInfo.innerHTML = `
+        <span class="date-text">${dates.join(', ')}</span>
+        <span class="slots-text">${selectedDates.size} datums geselecteerd</span>
+      `;
+    }
+
     hiddenInput.dispatchEvent(new Event('change'));
   }
   
