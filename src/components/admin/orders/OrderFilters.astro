@@ -1,0 +1,174 @@
+---
+// OrderFilters.astro — Search + filter bar for orders page
+---
+
+<div class="filters-bar">
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+      </svg>
+    </span>
+    <input
+      type="text"
+      id="searchInput"
+      class="search-input"
+      placeholder="Zoek op naam, e-mail of order ID..."
+      autocomplete="off"
+    />
+    <button class="search-clear" id="searchClearBtn" type="button" style="display:none" aria-label="Wissen">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Status Filter -->
+  <div class="filter-wrap">
+    <select id="statusFilter" class="filter-select">
+      <option value="">Alle statussen</option>
+      <option value="pending">In afwachting</option>
+      <option value="approved">Goedgekeurd</option>
+      <option value="completed">Voltooid</option>
+      <option value="cancelled">Geannuleerd</option>
+    </select>
+    <span class="select-arrow">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </span>
+  </div>
+
+  <!-- Date Filter -->
+  <div class="filter-wrap">
+    <select id="dateFilter" class="filter-select">
+      <option value="">Alle data</option>
+      <option value="today">Vandaag</option>
+      <option value="week">Deze week</option>
+      <option value="month">Deze maand</option>
+    </select>
+    <span class="select-arrow">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </span>
+  </div>
+
+  <!-- Results count -->
+  <span class="results-count" id="resultsCount"></span>
+</div>
+
+<style>
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+/* Search */
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  display: flex;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.5625rem 2.25rem 0.5625rem 2.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: white;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #E8788A;
+  box-shadow: 0 0 0 3px rgba(232, 120, 138, 0.12);
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.125rem;
+  display: flex;
+  align-items: center;
+  border-radius: 0.25rem;
+  transition: color 0.15s;
+}
+
+.search-clear:hover {
+  color: #1e293b;
+}
+
+/* Filter selects */
+.filter-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-select {
+  appearance: none;
+  padding: 0.5625rem 2rem 0.5625rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #334155;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-width: 130px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #E8788A;
+  box-shadow: 0 0 0 3px rgba(232, 120, 138, 0.12);
+}
+
+.select-arrow {
+  position: absolute;
+  right: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #94a3b8;
+  display: flex;
+}
+
+/* Results count */
+.results-count {
+  margin-left: auto;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+</style>

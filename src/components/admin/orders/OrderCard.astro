@@ -1,0 +1,415 @@
+---
+export interface OrderItem {
+  product: string;
+  event?: string;
+  miniType?: string;
+  quantity?: number;
+  persons?: number;
+  flavor?: string;
+  allergies?: string;
+  message?: string;
+  price?: number;
+}
+
+export interface OrderCustomer {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface Order {
+  id: string;
+  date?: string;
+  status: string;
+  customer?: OrderCustomer;
+  items?: OrderItem[];
+  total?: string;
+  message?: string;
+}
+
+interface Props {
+  order: Order;
+}
+
+const { order } = Astro.props;
+
+const customerName = order.customer?.name || 'Onbekend';
+const customerEmail = order.customer?.email || '';
+const customerPhone = order.customer?.phone || '';
+
+const firstItem = order.items?.[0];
+const productLabel = firstItem?.product || '—';
+const eventLabel = firstItem?.event || '';
+const itemsCount = order.items?.length || 0;
+
+const statusConfig: Record<string, { label: string; bg: string; color: string; dot: string }> = {
+  pending:   { label: 'In afwachting',  bg: '#fffbeb', color: '#92400e', dot: '#f59e0b' },
+  approved:  { label: 'Goedgekeurd',    bg: '#eff6ff', color: '#1e40af', dot: '#3b82f6' },
+  completed: { label: 'Voltooid',       bg: '#f0fdf4', color: '#166534', dot: '#22c55e' },
+  cancelled: { label: 'Geannuleerd',    bg: '#fef2f2', color: '#991b1b', dot: '#ef4444' },
+};
+
+const sc = statusConfig[order.status] || statusConfig.pending;
+---
+
+<div
+  class="order-card"
+  data-order-id={order.id}
+  data-status={order.status}
+>
+  <!-- Card Header -->
+  <div class="card-header">
+    <div class="card-meta">
+      <span class="order-id">#{order.id}</span>
+      <span class="order-date">{order.date || '—'}</span>
+    </div>
+    <span class="status-badge" style={`background:${sc.bg}; color:${sc.color}`}>
+      <span class="status-dot" style={`background:${sc.dot}`}></span>
+      {sc.label}
+    </span>
+  </div>
+
+  <!-- Card Body -->
+  <div class="card-body">
+    <!-- Customer -->
+    <div class="customer-block">
+      <div class="customer-avatar">
+        {customerName.charAt(0).toUpperCase()}
+      </div>
+      <div class="customer-info">
+        <span class="customer-name">{customerName}</span>
+        <span class="customer-contact">{customerEmail}</span>
+      </div>
+    </div>
+
+    <!-- Product -->
+    <div class="product-block">
+      <span class="product-name">{productLabel}</span>
+      {eventLabel && <span class="product-event">{eventLabel}</span>}
+      {itemsCount > 1 && (
+        <span class="product-more">+ {itemsCount - 1} meer item{itemsCount > 2 ? 's' : ''}</span>
+      )}
+    </div>
+
+    <!-- Quick info chips -->
+    <div class="info-chips">
+      {firstItem?.persons && (
+        <span class="chip">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          {firstItem.persons} personen
+        </span>
+      )}
+      {firstItem?.flavor && (
+        <span class="chip">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+          </svg>
+          {firstItem.flavor}
+        </span>
+      )}
+    </div>
+  </div>
+
+  <!-- Card Footer -->
+  <div class="card-footer">
+    <span class="order-total">{order.total || '—'}</span>
+    <div class="card-actions">
+      <button
+        class="btn-icon"
+        data-action="view"
+        data-order-id={order.id}
+        title="Bekijk details"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      {order.status === 'pending' && (
+        <>
+          <button
+            class="btn-icon btn-approve"
+            data-action="approve"
+            data-order-id={order.id}
+            title="Goedkeur"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </button>
+          <button
+            class="btn-icon btn-cancel"
+            data-action="cancel"
+            data-order-id={order.id}
+            title="Annuleer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </>
+      )}
+      {order.status === 'approved' && (
+        <button
+          class="btn-icon btn-complete"
+          data-action="complete"
+          data-order-id={order.id}
+          title="Markeer als voltooid"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      )}
+    </div>
+  </div>
+</div>
+
+<style>
+.order-card {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+}
+
+.order-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  border-color: #fda4af;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 0.5rem;
+}
+
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.order-id {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.02em;
+}
+
+.order-date {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.card-body {
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.customer-block {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.customer-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E8788A, #fda4af);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  min-width: 0;
+}
+
+.customer-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.customer-contact {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.625rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border-left: 3px solid #E8788A;
+}
+
+.product-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.product-event {
+  font-size: 0.6875rem;
+  color: #db2777;
+  font-weight: 500;
+}
+
+.product-more {
+  font-size: 0.6875rem;
+  color: #64748b;
+  margin-top: 0.0625rem;
+}
+
+.info-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.6875rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.chip svg {
+  opacity: 0.6;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.order-total {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.btn-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.btn-icon:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+.btn-icon.btn-approve {
+  color: #16a34a;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.btn-icon.btn-approve:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.btn-icon.btn-cancel {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.btn-icon.btn-cancel:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.btn-icon.btn-complete {
+  color: #16a34a;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.btn-icon.btn-complete:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+</style>

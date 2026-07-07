@@ -1,1303 +1,715 @@
 ---
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
-
-// Orders are loaded client-side from /api/orders
-const orders: any[] = [];
-
-// Stats
-const stats = {
-  total: orders.length,
-  pending: orders.filter(o => o.status === 'pending').length,
-  approved: orders.filter(o => o.status === 'approved').length,
-  completed: orders.filter(o => o.status === 'completed').length,
-  cancelled: orders.filter(o => o.status === 'cancelled').length
-};
+import StatsBar from '../../components/admin/orders/StatsBar.astro';
+import OrderFilters from '../../components/admin/orders/OrderFilters.astro';
+import OrderModal from '../../components/admin/orders/OrderModal.astro';
+import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
 ---
 
 <AdminLayout title="Bestellingen">
+
+  <!-- Page Header -->
   <div class="page-header">
     <div class="header-left">
-      <p class="header-subtitle">Beheer alle bestellingen</p>
+      <h1 class="page-title">Bestellingen</h1>
+      <p class="page-subtitle">Beheer alle bestellingen</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
+      <button class="btn btn-secondary" id="exportBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
         Exporteren
       </button>
-      <button class="btn btn-primary" onclick="openNewOrderModal()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
+      <button class="btn btn-primary" id="newOrderBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
         Nieuwe Bestelling
       </button>
     </div>
   </div>
 
-  <!-- Stats Row -->
-  <div class="stats-row">
-    <div class="stat-item">
-      <span class="stat-value">{stats.total}</span>
-      <span class="stat-label">Totaal</span>
-    </div>
-    <div class="stat-item pending">
-      <span class="stat-value">{stats.pending}</span>
-      <span class="stat-label">In afwachting</span>
-    </div>
-    <div class="stat-item approved">
-      <span class="stat-value">{stats.approved}</span>
-      <span class="stat-label">Goedgekeurd</span>
-    </div>
-    <div class="stat-item completed">
-      <span class="stat-value">{stats.completed}</span>
-      <span class="stat-label">Voltooid</span>
-    </div>
-    <div class="stat-item cancelled">
-      <span class="stat-value">{stats.cancelled}</span>
-      <span class="stat-label">Geannuleerd</span>
-    </div>
+  <!-- Stats -->
+  <div class="stats-section">
+    <StatsBar total={0} pending={0} approved={0} completed={0} cancelled={0} />
   </div>
 
   <!-- Filters -->
-  <div class="filters-row">
-    <div class="filter-group">
-      <input type="text" placeholder="Zoek op klant of order ID..." class="search-input" id="searchInput">
-    </div>
-    <div class="filter-group">
-      <select class="filter-select" id="statusFilter">
-        <option value="">Alle statussen</option>
-        <option value="pending">In afwachting</option>
-        <option value="completed">Voltooid</option>
-        <option value="cancelled">Geannuleerd</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <select class="filter-select" id="dateFilter">
-        <option value="">Alle data</option>
-        <option value="today">Vandaag</option>
-        <option value="week">Deze week</option>
-        <option value="month">Deze maand</option>
-      </select>
-    </div>
+  <div class="filters-section">
+    <OrderFilters />
   </div>
 
   <!-- Orders Grid -->
   <div class="orders-grid" id="ordersGrid">
-    <!-- Orders loaded dynamically via /api/orders -->
-  </div>
-
-  <!-- Order Detail Modal -->
-  <div class="modal-overlay" id="orderModal">
-    <div class="modal modal-wide">
-      <div class="modal-header">
-        <h3 class="modal-title">Bestelling Details</h3>
-        <button class="modal-close" data-action="close">&times;</button>
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+        </svg>
       </div>
-      <div class="modal-body" id="orderModalBody">
-        <!-- Filled dynamically -->
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-action="close">Sluiten</button>
-        <select class="action-select" id="orderStatusAction">
-          <option value="">Status wijzigen...</option>
-          <option value="approved">Goedkeur</option>
-          <option value="completed">Markeer als voltooid</option>
-          <option value="cancelled">Markeer als geannuleerd</option>
-          <option value="pending">Zet terug naar in afwachting</option>
-        </select>
-        <button class="btn btn-primary" id="updateStatusBtn">Opslaan</button>
-      </div>
+      <p class="empty-title">Geen bestellingen</p>
+      <p class="empty-sub">Bestellingen verschijnen hier wanneer klanten bestellen.</p>
     </div>
   </div>
+
+  <!-- Modals -->
+  <OrderModal />
+  <NewOrderModal />
+
 </AdminLayout>
 
-<script is:inline>
-  // Orders loaded from /api/orders
-  let orders = [];
-  let currentOrderId = null;
+<script>
+  import { getOrders, setOrders, setCurrentOrderId, STATUS_CONFIG } from '../../lib/orders';
+  import { renderOrderDetail } from '../../lib/orders';
 
-  const statusBadge = (status) => {
-    const styles = {
-      pending: 'background: #fef3c7; color: #92400e;',
-      approved: 'background: #dbeafe; color: #1e40af;',
-      completed: 'background: #dcfce7; color: #166534;',
-      cancelled: 'background: #fee2e2; color: #991b1b;'
-    };
-    const labels = {
-      pending: 'In afwachting',
-      approved: 'Goedgekeurd',
-      completed: 'Voltooid',
-      cancelled: 'Geannuleerd'
-    };
-    return `<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; ${styles[status] || styles.pending}">${labels[status] || status}</span>`;
-  };
+  // ── DOM refs ───────────────────────────────────────────────────────────────
 
-  const actionButtons = (status, orderId) => {
-    let btns = `<button class="btn btn-sm btn-secondary" data-action="view" data-order-id="${orderId}">Bekijk</button>`;
-    if (status === 'pending') {
-      btns += `
-        <button class="btn btn-sm btn-approve" data-action="approve" data-order-id="${orderId}">Goedkeur</button>
-        <button class="btn btn-sm btn-cancel" data-action="cancel" data-order-id="${orderId}">Annuleer</button>
-      `;
-    }
-    if (status === 'approved') {
-      btns += `
-        <button class="btn btn-sm btn-primary" data-action="complete" data-order-id="${orderId}">Voltooid</button>
-      `;
-    }
-    return btns;
-  };
+  const grid       = document.getElementById('ordersGrid')!;
+  const emptyState = document.getElementById('emptyState')!;
+  const statsEl    = document.querySelector('.stats-bar') as HTMLElement | null;
 
-  async function initOrders() {
+  // ── Fetch ─────────────────────────────────────────────────────────────────
+
+  async function loadOrders() {
     try {
       const res = await fetch('/api/orders');
-      if (!res.ok) throw new Error('Failed to load orders');
-      orders = await res.json();
-      renderOrdersGrid();
+      if (!res.ok) throw new Error('Failed to load');
+      const data = await res.json();
+      setOrders(Array.isArray(data) ? data : []);
+      renderGrid();
       updateStats();
-    } catch (err) {
-      console.error('Error loading orders:', err);
+    } catch (e) {
+      console.error('Load orders failed:', e);
     }
   }
 
-  function renderOrdersGrid() {
-    const grid = document.getElementById('ordersGrid');
-    if (!grid) return;
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  function renderGrid() {
+    const orders = getOrders();
     if (orders.length === 0) {
-      grid.innerHTML = '<div class="empty-state"><p>Geen bestellingen gevonden.</p></div>';
+      grid.innerHTML = '';
+      grid.appendChild(emptyState);
+      emptyState.style.display = '';
       return;
     }
-    grid.innerHTML = orders.map(order => {
-      const customerName = order.customer?.name || 'Onbekend';
-      const customerEmail = order.customer?.email || '';
-      const customerPhone = order.customer?.phone || '';
-      const firstItem = order.items?.[0];
-      const productLabel = firstItem ? firstItem.product : '—';
-      const eventLabel = firstItem?.event || '';
-      const itemsCount = order.items?.length || 0;
-      const statusColors = {
-        pending: { bg: '#fef3c7', color: '#92400e', label: 'In afwachting' },
-        approved: { bg: '#dbeafe', color: '#1e40af', label: 'Goedgekeurd' },
-        completed: { bg: '#dcfce7', color: '#166534', label: 'Voltooid' },
-        cancelled: { bg: '#fee2e2', color: '#991b1b', label: 'Geannuleerd' }
-      };
-      const sc = statusColors[order.status] || statusColors.pending;
-      const actionBtns = actionButtons(order.status, order.id);
-      return `
-        <div class="order-card" data-order-id="${order.id}" data-status="${order.status}">
-          <div class="order-card-header">
-            <div class="order-id-date">
-              <span class="order-id">${order.id}</span>
-              <span class="order-date">${order.date || '—'}</span>
-            </div>
-            <span class="order-status-badge" style="background:${sc.bg};color:${sc.color}">${sc.label}</span>
+    emptyState.style.display = 'none';
+    grid.innerHTML = orders.map(renderCard).join('');
+  }
+
+  function renderCard(order: any): string {
+    const c = order.customer || {};
+    const name = c.name || 'Onbekend';
+    const first = order.items?.[0];
+    const itemsCount = order.items?.length || 0;
+    const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+
+    return `
+      <div class="order-card" data-order-id="${order.id}" data-status="${order.status}">
+        <div class="card-header">
+          <div class="card-meta">
+            <span class="order-id">#${order.id}</span>
+            <span class="order-date">${order.date || '—'}</span>
           </div>
-          <div class="order-card-body">
-            <div class="order-customer">
-              <strong>${customerName}</strong>
-              <span>${customerEmail}</span>
-              ${customerPhone ? `<span>${customerPhone}</span>` : ''}
-            </div>
-            <div class="order-products">
-              <div class="product-main">${productLabel}</div>
-              ${eventLabel ? `<div class="product-event">${eventLabel}</div>` : ''}
-              ${itemsCount > 1 ? `<div class="product-more">+ ${itemsCount - 1} meer item${itemsCount > 2 ? 's' : ''}</div>` : ''}
-            </div>
-            <div class="order-meta">
-              ${order.items?.[0]?.persons ? `<span>👥 ${order.items[0].persons} personen</span>` : ''}
-              ${order.items?.[0]?.flavor ? `<span>🍰 ${order.items[0].flavor}</span>` : ''}
+          <span class="status-badge" style="background:${sc.bg};color:${sc.color}">
+            <span class="status-dot" style="background:${sc.dot}"></span>
+            ${sc.label}
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="customer-block">
+            <div class="customer-avatar">${name.charAt(0).toUpperCase()}</div>
+            <div class="customer-info">
+              <span class="customer-name">${name}</span>
+              <span class="customer-contact">${c.email || '—'}</span>
             </div>
           </div>
-          <div class="order-card-footer">
-            <div class="order-total">${order.total || '—'}</div>
-            <div class="order-actions">
-              ${actionBtns}
-            </div>
+          <div class="product-block">
+            <span class="product-name">${first?.product || '—'}</span>
+            ${first?.event ? `<span class="product-event">${first.event}</span>` : ''}
+            ${itemsCount > 1 ? `<span class="product-more">+ ${itemsCount - 1} meer item${itemsCount > 2 ? 's' : ''}</span>` : ''}
+          </div>
+          <div class="info-chips">
+            ${first?.persons ? `<span class="chip">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              ${first.persons} personen</span>` : ''}
+            ${first?.flavor ? `<span class="chip">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/></svg>
+              ${first.flavor}</span>` : ''}
           </div>
         </div>
-      `;
-    }).join('');
+        <div class="card-footer">
+          <span class="order-total">${order.total || '—'}</span>
+          <div class="card-actions">
+            <button class="btn-icon" data-action="view" data-order-id="${order.id}" title="Bekijk">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            ${order.status === 'pending' ? `
+              <button class="btn-icon btn-approve" data-action="approve" data-order-id="${order.id}" title="Goedkeur">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+              <button class="btn-icon btn-cancel" data-action="cancel" data-order-id="${order.id}" title="Annuleer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>` : ''}
+            ${order.status === 'approved' ? `
+              <button class="btn-icon btn-complete" data-action="complete" data-order-id="${order.id}" title="Voltooid">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>` : ''}
+          </div>
+        </div>
+      </div>`;
   }
 
-  function getStats() {
-    let total = orders.length;
-    let pending = 0, approved = 0, completed = 0, cancelled = 0;
+  // ── Stats ─────────────────────────────────────────────────────────────────
+
+  function updateStats() {
+    const orders = getOrders();
+    const counts = { total: 0, pending: 0, approved: 0, completed: 0, cancelled: 0 };
     orders.forEach(o => {
-      if (o.status === 'pending') pending++;
-      else if (o.status === 'approved') approved++;
-      else if (o.status === 'completed') completed++;
-      else if (o.status === 'cancelled') cancelled++;
+      if (o.status === 'pending') counts.pending++;
+      else if (o.status === 'approved') counts.approved++;
+      else if (o.status === 'completed') counts.completed++;
+      else if (o.status === 'cancelled') counts.cancelled++;
     });
-    return { total, pending, approved, completed, cancelled };
+    counts.total = orders.length;
+
+    if (statsEl) {
+      const vals = statsEl.querySelectorAll('.pill-value');
+      if (vals[0]) vals[0].textContent = String(counts.total);
+      if (vals[1]) vals[1].textContent = String(counts.pending);
+      if (vals[2]) vals[2].textContent = String(counts.approved);
+      if (vals[3]) vals[3].textContent = String(counts.completed);
+      if (vals[4]) vals[4].textContent = String(counts.cancelled);
+    }
   }
 
-  // Init on page load
-  initOrders();
+  // ── Modal helpers ─────────────────────────────────────────────────────────
 
-  // Event delegation for action buttons
-  document.addEventListener('click', (e) => {
-    const btn = (e.target ).closest('[data-action]')  ;
+  function openModal(orderId: string) {
+    const order = getOrders().find((o: any) => o.id === orderId);
+    if (!order) return;
+    setCurrentOrderId(orderId);
+
+    const subtitle = document.getElementById('modalOrderId');
+    if (subtitle) subtitle.textContent = `#${order.id} · ${order.date || '—'}`;
+
+    const body = document.getElementById('orderModalBody');
+    if (body) body.innerHTML = renderOrderDetail(order);
+
+    document.getElementById('orderModal')?.classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('orderModal')?.classList.remove('active');
+    setCurrentOrderId(null);
+  }
+
+  // ── Status update ──────────────────────────────────────────────────────────
+
+  async function patchStatus(orderId: string, status: string) {
+    try {
+      await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status }),
+      });
+      const orders = getOrders();
+      const o = orders.find((x: any) => x.id === orderId);
+      if (o) (o as any).status = status;
+      renderGrid();
+      updateStats();
+    } catch (e) {
+      console.error('Status update failed:', e);
+    }
+  }
+
+  // ── Search & Filter ───────────────────────────────────────────────────────
+
+  function applyFilters() {
+    const query = (document.getElementById('searchInput') as HTMLInputElement)?.value.toLowerCase() || '';
+    const status = (document.getElementById('statusFilter') as HTMLSelectElement)?.value || '';
+    const dateVal = (document.getElementById('dateFilter') as HTMLSelectElement)?.value || '';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - today.getDay());
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const cards = grid.querySelectorAll('.order-card');
+    let visible = 0;
+    cards.forEach(card => {
+      const el = card as HTMLElement;
+      const text = el.textContent?.toLowerCase() || '';
+      const cardStatus = el.dataset.status || '';
+      const cardDate = el.querySelector('.order-date')?.textContent || '';
+
+      let dateMatch = !dateVal;
+      if (dateVal) {
+        const d = new Date(cardDate + 'T00:00:00');
+        if (dateVal === 'today') dateMatch = d >= today;
+        else if (dateVal === 'week') dateMatch = d >= startOfWeek;
+        else if (dateVal === 'month') dateMatch = d >= startOfMonth;
+      }
+
+      const show = text.includes(query) && (!status || cardStatus === status) && dateMatch;
+      el.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    const countEl = document.getElementById('resultsCount');
+    if (countEl) {
+      countEl.textContent = visible > 0 ? `${visible} van ${cards.length} bestellingen` : '';
+    }
+
+    // Toggle clear button
+    const clearBtn = document.getElementById('searchClearBtn') as HTMLButtonElement | null;
+    if (clearBtn) clearBtn.style.display = query ? '' : 'none';
+  }
+
+  // ── Event delegation ───────────────────────────────────────────────────────
+
+  document.addEventListener('click', e => {
+    const btn = (e.target as Element).closest('[data-action]') as HTMLElement | null;
     if (!btn) return;
     const action = btn.dataset.action;
     const orderId = btn.dataset.orderId;
-    if (!action || !orderId) return;
 
-    if (action === 'view') viewOrder(orderId);
-    else if (action === 'approve') updateOrderRow(orderId, 'approved');
-    else if (action === 'cancel') {
-      if (confirm('Weet je zeker dat je deze bestelling wilt annuleren?')) {
-        updateOrderRow(orderId, 'cancelled');
-      }
+    if (action === 'view' && orderId) openModal(orderId);
+    else if (action === 'approve' && orderId) patchStatus(orderId, 'approved');
+    else if (action === 'cancel' && orderId) {
+      if (confirm('Deze bestelling annuleren?')) patchStatus(orderId, 'cancelled');
     }
-    else if (action === 'complete') updateOrderRow(orderId, 'completed');
-    else if (action === 'close') closeOrderModal();
+    else if (action === 'complete' && orderId) patchStatus(orderId, 'completed');
+    else if (action === 'close') closeModal();
   });
 
-  
-  // Search functionality
-  document.getElementById('searchInput')?.addEventListener('input', (e) => {
-    const query = (e.target ).value.toLowerCase();
-    const rows = document.querySelectorAll('.order-card');
-    rows.forEach(row => {
-      const text = row.textContent?.toLowerCase() || '';
-      (row ).style.display = text.includes(query) ? '' : 'none';
-    });
+  // Filter inputs
+  document.getElementById('searchInput')?.addEventListener('input', applyFilters);
+  document.getElementById('statusFilter')?.addEventListener('change', applyFilters);
+  document.getElementById('dateFilter')?.addEventListener('change', applyFilters);
+
+  // Clear search
+  document.getElementById('searchClearBtn')?.addEventListener('click', () => {
+    const inp = document.getElementById('searchInput') as HTMLInputElement;
+    if (inp) { inp.value = ''; applyFilters(); }
   });
-  
-  // Status filter
-  document.getElementById('statusFilter')?.addEventListener('change', (e) => {
-    const status = (e.target ).value;
-    const rows = document.querySelectorAll('.order-card');
-    rows.forEach(row => {
-      const rowStatus = (row ).dataset.status;
-      (row ).style.display = !status || rowStatus === status ? '' : 'none';
-    });
-  });
-  
-  // View order
-  window['viewOrder'] = function(orderId) {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-    
-    const itemsList = order.items.map((item) => `
-      <div class="order-item-detail">
-        <div class="item-header">
-          <strong>${item.product}</strong>
-          ${item.event ? `<span class="event-badge">${item.event}</span>` : ''}
-        </div>
-        <div class="item-grid">
-          ${item.miniType ? `<div class="item-field"><label>Type</label><span>${item.miniType === 'cupcakes' ? 'Cupcakes' : 'Mini-cupcakes'}</span></div>` : ''}
-          ${item.quantity ? `<div class="item-field"><label>Aantal</label><span>${item.quantity} stuks</span></div>` : ''}
-          ${item.event ? `<div class="item-field"><label>Gelegenheid</label><span>${item.event}</span></div>` : ''}
-          ${item.persons ? `<div class="item-field"><label>Personen</label><span>${item.persons}</span></div>` : ''}
-          ${item.flavor ? `<div class="item-field"><label>Smaak</label><span>${item.flavor}</span></div>` : ''}
-          ${item.allergies ? `<div class="item-field allergy"><label>Allergieën</label><span>⚠️ ${item.allergies}</span></div>` : ''}
-          ${item.message ? `<div class="item-field full-width"><label>Opmerkingen</label><span>${item.message}</span></div>` : ''}
-        </div>
-      </div>
-    `).join('');
-    
-    const statusLabels = {
-      pending: 'In afwachting',
-      approved: 'Goedgekeurd',
-      completed: 'Voltooid',
-      cancelled: 'Geannuleerd'
-    };
-    
-    const el = document.getElementById('orderModalBody'); if (el) el.innerHTML = `
-      <div class="order-detail-section">
-        <h4>📋 Contactgegevens</h4>
-        <div class="order-detail-grid">
-          <div class="detail-row">
-            <span class="detail-label">Naam</span>
-            <span class="detail-value">${order.customer?.name || 'Onbekend'}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">E-mail</span>
-            <span class="detail-value">${order.customer?.email || '—'}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Telefoon</span>
-            <span class="detail-value">${order.customer?.phone || '—'}</span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="order-detail-section">
-        <h4>📦 Bestelling</h4>
-        <div class="order-detail-grid">
-          <div class="detail-row">
-            <span class="detail-label">Order ID</span>
-            <span class="detail-value font-mono">${order.id}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Datum</span>
-            <span class="detail-value">${order.date}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Status</span>
-            <span class="detail-value status-${order.status}">${statusLabels[order.status] || order.status}</span>
-          </div>
-          ${order.message ? `
-          <div class="detail-row full-width">
-            <span class="detail-label">Notities</span>
-            <span class="detail-value notes">${order.message}</span>
-          </div>
-          ` : ''}
-        </div>
-      </div>
-      
-      <div class="order-detail-section">
-        <h4>🎂 Producten</h4>
-        ${itemsList}
-      </div>
-      
-      <div class="order-total-row">
-        <span>Totaal</span>
-        <span class="total-price">${order.total || '—'}</span>
-      </div>
-    `;
-    
-    currentOrderId = orderId;
-    document.getElementById('orderModal')?.classList.add('active');
-  };
-  
-  function closeOrderModal() {
-    document.getElementById('orderModal')?.classList.remove('active');
-    currentOrderId = null;
-  }
-  
-  async function updateOrderRow(orderId, newStatus) {
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status: newStatus }),
-      });
-      if (!res.ok) throw new Error('API error');
-    } catch (err) {
-      console.error('Failed to update order status:', err);
-      return;
-    }
 
-    // Re-render the whole grid to reflect status changes
-    renderOrdersGrid();
-
-    // Sync local state
-    const order = orders.find(o => o.id === orderId);
-    if (order) order.status = newStatus;
-    updateStats();
-  }
-
-  function updateStats() {
-    const { total, pending, approved, completed, cancelled } = getStats();
-    const statValues = document.querySelectorAll('.stat-value');
-    if (statValues[0]) statValues[0].textContent = String(total);
-    if (statValues[1]) statValues[1].textContent = String(pending);
-    if (statValues[2]) statValues[2].textContent = String(approved + completed);
-    if (statValues[3]) statValues[3].textContent = String(cancelled);
-  }
-
+  // Update status from modal
   document.getElementById('updateStatusBtn')?.addEventListener('click', async () => {
-    const select = document.getElementById('orderStatusAction') ;
-    const newStatus = select.value;
-    if (!newStatus || !currentOrderId) return;
-    await updateOrderRow(currentOrderId, newStatus);
-    closeOrderModal();
+    const sel = document.getElementById('orderStatusAction') as HTMLSelectElement;
+    const id = sel?.value;
+    const { getCurrentOrderId } = await import('../../lib/orders');
+    const orderId = getCurrentOrderId();
+    if (id && orderId) {
+      await patchStatus(orderId, id);
+      closeModal();
+    }
   });
 
-  // --- New Order Modal ---
-  window.openNewOrderModal = function() {
+  // Modal close buttons
+  document.getElementById('closeOrderModalBtn')?.addEventListener('click', closeModal);
+  document.getElementById('closeOrderModalBtn2')?.addEventListener('click', closeModal);
+
+  // Overlay click closes modal
+  document.getElementById('orderModal')?.addEventListener('click', e => {
+    if ((e.target as Element).classList.contains('modal-overlay')) closeModal();
+  });
+
+  // ── New order modal ────────────────────────────────────────────────────────
+
+  document.getElementById('newOrderBtn')?.addEventListener('click', () => {
     document.getElementById('new-order-form')?.reset();
-    const m = document.getElementById('new-order-modal');
-    if (m) m.classList.add('active');
-  };
+    document.getElementById('new-order-modal')?.classList.add('active');
+  });
 
-  window.closeNewOrderModal = function() {
-    const m = document.getElementById('new-order-modal');
-    if (m) m.classList.remove('active');
-  };
+  document.getElementById('closeNewOrderModalBtn')?.addEventListener('click', () =>
+    document.getElementById('new-order-modal')?.classList.remove('active'));
+  document.getElementById('closeNewOrderModalBtn2')?.addEventListener('click', () =>
+    document.getElementById('new-order-modal')?.classList.remove('active'));
 
-  window.submitNewOrder = async function() {
-    const form = document.getElementById('new-order-form');
-    if (!form) return;
-    const fd = new FormData(form);
+  document.getElementById('new-order-modal')?.addEventListener('click', e => {
+    if ((e.target as Element).classList.contains('modal-overlay'))
+      document.getElementById('new-order-modal')?.classList.remove('active');
+  });
 
-    const name = String(fd.get('name') || '').trim();
-    const email = String(fd.get('email') || '').trim();
-    const phone = String(fd.get('phone') || '').trim();
-    const product = String(fd.get('product') || '').trim();
-    const event = String(fd.get('event') || '').trim();
-    const persons = String(fd.get('persons') || '').trim();
-    const flavor = String(fd.get('flavor') || '').trim();
-    const priceVal = String(fd.get('price') || '').trim();
-    const allergies = String(fd.get('allergies') || '').trim();
+  document.getElementById('submitNewOrderBtn')?.addEventListener('click', async () => {
+    const fd = new FormData(document.getElementById('new-order-form') as HTMLFormElement);
+    const get = (n: string) => String(fd.get(n) || '').trim();
 
-    if (!name && !email && !phone && !product) {
-      alert('Vul minstens één veld in.');
+    const name = get('name'), email = get('email'), phone = get('phone');
+    const product = get('product'), event = get('event');
+    const persons = get('persons'), flavor = get('flavor');
+    const priceStr = get('price'), allergies = get('allergies');
+
+    if (!name && !email && !phone) {
+      alert('Vul minstens naam, e-mail of telefoon in.');
       return;
     }
 
-    // Build customer object (API handles find-or-create)
-    const customer = (name || email || phone) ? { name, email, phone } : null;
-
-    // Build items
-    const items = [];
-    if (product) {
-      items.push({ product, event, persons, flavor, allergies, price: priceVal ? parseFloat(priceVal) : 0 });
-    }
-
-    // Format total as euro string
-    const total = priceVal ? `€${parseFloat(priceVal).toFixed(2)}` : '€0.00';
+    const items = product ? [{ product, event, persons, flavor, allergies, price: priceStr ? parseFloat(priceStr) : 0 }] : [];
+    const total = priceStr ? `€${parseFloat(priceStr).toFixed(2)}` : '€0,00';
 
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customer, items, total, isAdmin: true })
+        body: JSON.stringify({ customer: { name, email, phone }, items, total, isAdmin: true }),
       });
       if (!res.ok) {
         const err = await res.json();
-        alert(err.error || 'Kon bestelling niet aanmaken.');
+        alert(err.error || 'Aanmaak mislukt.');
         return;
       }
-      closeNewOrderModal();
-      await initOrders();
+      document.getElementById('new-order-modal')?.classList.remove('active');
+      await loadOrders();
     } catch {
-      alert('Kon bestelling niet aanmaken.');
+      alert('Aanmaak mislukt.');
     }
-  };
+  });
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  loadOrders();
 </script>
 
 <style>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.header-subtitle {
-  margin: 0;
-  color: #64748b;
-  font-size: 0.875rem;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.stats-row {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.stat-item {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  padding: 1rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 100px;
-}
-
-.stat-item.pending {
-  border-left: 4px solid #f59e0b;
-}
-
-.stat-item.approved {
-  border-left: 4px solid #3b82f6;
-}
-
-.stat-item.completed {
-  border-left: 4px solid #22c55e;
-}
-
-.stat-item.cancelled {
-  border-left: 4px solid #ef4444;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-.filters-row {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.filter-group {
-  flex: 1;
-}
-
-.search-input,
-.filter-select {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  background: white;
-}
-
-.search-input:focus,
-.filter-select:focus {
-  outline: none;
-  border-color: #e11d48;
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
-}
-
-.table-container {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  overflow: hidden;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th {
-  text-align: left;
-  padding: 1rem 1.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.data-table td {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.875rem;
-  color: #334155;
-}
-
-.data-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.data-table tbody tr:hover {
-  background: #f8fafc;
-}
-
-.order-id {
-  font-family: monospace;
-  color: #64748b;
-}
-
-.customer-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.customer-cell strong {
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.customer-cell span {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-.order-total {
-  font-weight: 600;
-  color: #0f172a;
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s;
-  padding: 2rem;
-}
-
-.modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
-.modal {
-  background: white;
-  border-radius: 1.25rem;
-  width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-  transform: scale(0.95) translateY(20px);
-  transition: transform 0.3s;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-.modal-overlay.active .modal {
-  transform: scale(1) translateY(0);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid #e2e8f0;
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 10;
-}
-
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin: 0;
-  color: #0f172a;
-}
-
-.modal-close {
-  background: #f1f5f9;
-  border: none;
-  font-size: 1.5rem;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.modal-close:hover {
-  background: #e2e8f0;
-  color: #1e293b;
-}
-
-.modal-body {
-  padding: 2rem;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1.5rem 2rem;
-  border-top: 1px solid #e2e8f0;
-  position: sticky;
-  bottom: 0;
-  background: white;
-  z-index: 10;
-}
-
-.order-detail-grid {
-  display: grid;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.detail-row.total {
-  border-bottom: none;
-  padding-top: 1rem;
-  margin-top: 0.5rem;
-  border-top: 2px solid #e2e8f0;
-}
-
-.detail-row.total .detail-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.detail-label {
-  color: #64748b;
-  font-size: 0.875rem;
-}
-
-.detail-value {
-  font-weight: 500;
-  color: #1e293b;
-}
-
-.order-item-detail {
-  background: #f8fafc;
-  padding: 1.25rem;
-  border-radius: 1rem;
-  margin-bottom: 1rem;
-  border: 1px solid #e2e8f0;
-}
-
-.item-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.item-header strong {
-  font-size: 1.125rem;
-  color: #0f172a;
-}
-
-.event-badge {
-  background: #E8788A;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.item-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 1rem;
-}
-
-.item-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.item-field label {
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #94a3b8;
-  font-weight: 600;
-}
-
-.item-field span {
-  font-size: 0.9375rem;
-  color: #1e293b;
-  font-weight: 500;
-}
-
-.item-field.allergy {
-  background: #fef2f2;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  margin: -0.25rem;
-}
-
-.item-field.allergy span {
-  color: #dc2626;
-  font-weight: 600;
-}
-
-.order-detail-section {
-  margin-bottom: 2rem;
-}
-
-.order-detail-section:last-child {
-  margin-bottom: 0;
-}
-
-.order-detail-section h4 {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #0f172a;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f1f5f9;
-}
-
-.order-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem 2rem;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #f8fafc;
-}
-
-.detail-row.full-width {
-  grid-column: 1 / -1;
-  flex-direction: column;
-  gap: 0.25rem;
-  background: #fef9c3;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.detail-label {
-  color: #64748b;
-  font-size: 0.875rem;
-}
-
-.detail-value {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 0.875rem;
-  text-align: right;
-}
-
-.detail-value.notes {
-  text-align: left;
-  font-style: italic;
-  background: none;
-  padding: 0;
-  font-weight: 400;
-}
-
-.status-pending { color: #92400e; }
-.status-approved { color: #1e40af; }
-.status-completed { color: #166534; }
-.status-cancelled { color: #991b1b; }
-
-.order-total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.5rem;
-  background: linear-gradient(135deg, #E8788A, #d66b7a);
-  color: white;
-  border-radius: 1rem;
-  margin-top: 1.5rem;
-  box-shadow: 0 4px 12px rgba(232, 120, 138, 0.3);
-}
-
-.order-total-row span:first-child {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.total-price {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.modal-body h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.action-select {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  background: white;
-}
-
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.2s;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.75rem;
-}
-
-.btn-primary {
-  background: #e11d48;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #be123c;
-}
-
-.btn-secondary {
-  background: #f1f5f9;
-  color: #334155;
-}
-
-.btn-secondary:hover {
-  background: #e2e8f0;
-}
-
-.btn-approve {
-  background: #22c55e;
-  color: white;
-}
-
-.btn-approve:hover {
-  background: #16a34a;
-}
-
-.btn-cancel {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.btn-cancel:hover {
-  background: #fecaca;
-}
-
-.actions-cell {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-/* Order Cards Grid */
-.orders-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-}
-
-.order-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.875rem;
-  padding: 0;
-  overflow: hidden;
-  transition: box-shadow 0.15s, transform 0.15s;
-  display: flex;
-  flex-direction: column;
-}
-
-.order-card:hover {
-  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-  transform: translateY(-1px);
-}
-
-.order-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.625rem 0.875rem;
-  gap: 0.5rem;
-}
-
-.order-id-date {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.625rem;
-}
-
-.order-card .order-id {
-  font-family: monospace;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.order-card .order-date {
-  font-size: 0.6875rem;
-  color: #94a3b8;
-}
-
-.order-status-badge {
-  display: inline-block;
-  padding: 0.2rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.order-card-body {
-  padding: 0.5rem 0.875rem 0.625rem;
-  border-top: 1px solid #f1f5f9;
-  flex: 1;
-}
-
-.order-customer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.0625rem;
-  margin-bottom: 0.5rem;
-}
-
-.order-customer strong {
-  font-size: 0.875rem;
-  color: #1e293b;
-}
-
-.order-customer span {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-.order-products {
-  margin-bottom: 0.375rem;
-}
-
-.product-main {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 0.0625rem;
-}
-
-.product-event {
-  font-size: 0.75rem;
-  color: #db2777;
-  font-weight: 500;
-}
-
-.product-more {
-  font-size: 0.6875rem;
-  color: #64748b;
-  margin-top: 0.0625rem;
-}
-
-.order-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
-
-.order-meta span {
-  font-size: 0.6875rem;
-  color: #475569;
-  background: #f8fafc;
-  padding: 0.125rem 0.4375rem;
-  border-radius: 0.25rem;
-}
-
-.order-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.875rem;
-  border-top: 1px solid #f1f5f9;
-  background: #f8fafc;
-}
-
-.order-total {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.order-actions {
-  display: flex;
-  gap: 0.375rem;
-  align-items: center;
-}
-
-.order-actions .btn {
-  padding: 0.3125rem 0.625rem;
-  font-size: 0.75rem;
-}
-
-/* Wide Modal */
-.modal-wide {
-  max-width: 680px;
-}
-
-/* Empty state */
-.empty-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 4rem 2rem;
-  color: #64748b;
-}
-
-.empty-state p {
-  font-size: 1rem;
-  margin: 0;
-}
-
-@media (max-width: 768px) {
-  .orders-grid {
-    grid-template-columns: 1fr;
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
-}
-</style>
 
-<!-- New Order Modal -->
-<div id="new-order-modal" class="modal-overlay">
-  <div class="modal-card" style="max-width:560px">
-    <div class="modal-header">
-      <h3>Nieuwe Bestelling</h3>
-      <button class="modal-close" onclick="closeNewOrderModal()" type="button">✕</button>
-    </div>
-    <div class="modal-body">
-      <form id="new-order-form" class="new-order-form">
-        <div class="form-section">
-          <h4>Contactgegevens</h4>
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Naam</label>
-              <input type="text" name="name" placeholder="Klant naam" />
-            </div>
-            <div class="form-field">
-              <label>E-mail</label>
-              <input type="email" name="email" placeholder="klant@email.be" />
-            </div>
-            <div class="form-field">
-              <label>Telefoon</label>
-              <input type="tel" name="phone" placeholder="+32 xxx xx xx xx" />
-            </div>
-          </div>
-        </div>
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
 
-        <div class="form-section">
-          <h4>Bestelling</h4>
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Product</label>
-              <select name="product" id="modal-product-select">
-                <option value="">— selecteer —</option>
-                <option value="feesttaart">Feesttaart</option>
-                <option value="koekjes">Koekjes</option>
-                <option value="mini-gebak">Mini-gebak</option>
-              </select>
-            </div>
-            <div class="form-field">
-              <label>Gelegelheid</label>
-              <input type="text" name="event" placeholder="Bijv. Verjaardag, Bruiloft" />
-            </div>
-            <div class="form-field">
-              <label>Aantal personen</label>
-              <input type="text" name="persons" placeholder="Bijv. 15-25" />
-            </div>
-            <div class="form-field">
-              <label>Smaak</label>
-              <input type="text" name="flavor" placeholder="Bijv. Aardbei, Choco" />
-            </div>
-            <div class="form-field">
-              <label>Prijs</label>
-              <input type="text" name="price" placeholder="Bijv. 45.00" />
-            </div>
-            <div class="form-field form-field--full">
-              <label>Allergieën / Opmerkingen</label>
-              <textarea name="allergies" rows="2" placeholder="Allergieën of opmerkingen (optioneel)"></textarea>
-            </div>
-          </div>
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeNewOrderModal()" type="button">Annuleer</button>
-      <button class="btn btn-primary" onclick="submitNewOrder()" type="button">Bestelling Aanmaken</button>
-    </div>
-  </div>
-</div>
+  .page-title {
+    margin: 0;
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+  }
 
-<style>
-.new-order-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+  .page-subtitle {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+  }
 
-.form-section h4 {
-  margin: 0 0 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
+  .header-actions {
+    display: flex;
+    gap: 0.625rem;
+    align-items: center;
+    flex-shrink: 0;
+  }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
+  .stats-section {
+    margin-bottom: 1rem;
+  }
 
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
+  .filters-section {
+    margin-bottom: 1.25rem;
+  }
 
-.form-field--full {
-  grid-column: 1 / -1;
-}
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
 
-.form-field label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #475569;
-}
+  .btn-primary {
+    background: #E8788A;
+    color: white;
+  }
+  .btn-primary:hover {
+    background: #d66b7a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(232, 120, 138, 0.35);
+  }
 
-.form-field input,
-.form-field select,
-.form-field textarea {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-family: inherit;
-  background: white;
-  color: #1e293b;
-  transition: border-color 0.15s;
-}
+  .btn-secondary {
+    background: white;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+  }
+  .btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
 
-.form-field input:focus,
-.form-field select:focus,
-.form-field textarea:focus {
-  outline: none;
-  border-color: #E8788A;
-  box-shadow: 0 0 0 3px rgba(232,120,138,0.1);
-}
+  /* Orders grid */
+  .orders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    align-content: start;
+    min-height: 200px;
+  }
 
-.form-field textarea {
-  resize: none;
-}
+  /* Empty state */
+  .empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+
+  .empty-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 1rem;
+    background: #fdf2f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #E8788A;
+    margin-bottom: 1rem;
+  }
+
+  .empty-title {
+    margin: 0 0 0.375rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .empty-sub {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #94a3b8;
+  }
+
+  /* Order card styles (inlined for now, shared via OrderCard component would be ideal) */
+  .order-card {
+    background: white;
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+  }
+
+  .order-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #fda4af;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 0.5rem;
+  }
+
+  .card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .order-id {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.02em;
+  }
+
+  .order-date {
+    font-size: 0.6875rem;
+    color: #94a3b8;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .card-body {
+    padding: 0.875rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+  }
+
+  .customer-block {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  .customer-avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #E8788A, #fda4af);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .customer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.0625rem;
+    min-width: 0;
+  }
+
+  .customer-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .customer-contact {
+    font-size: 0.6875rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .product-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.625rem 0.75rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    border-left: 3px solid #E8788A;
+  }
+
+  .product-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .product-event {
+    font-size: 0.6875rem;
+    color: #db2777;
+    font-weight: 500;
+  }
+
+  .product-more {
+    font-size: 0.6875rem;
+    color: #64748b;
+    margin-top: 0.0625rem;
+  }
+
+  .info-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    font-size: 0.6875rem;
+    color: #475569;
+    font-weight: 500;
+  }
+
+  .chip svg { opacity: 0.6; }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.625rem 1rem;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+  }
+
+  .order-total {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .btn-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+  }
+
+  .btn-icon:hover { background: #f1f5f9; color: #1e293b; }
+  .btn-icon.btn-approve { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+  .btn-icon.btn-approve:hover { background: #dcfce7; }
+  .btn-icon.btn-cancel { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+  .btn-icon.btn-cancel:hover { background: #fee2e2; }
+  .btn-icon.btn-complete { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+  .btn-icon.btn-complete:hover { background: #dcfce7; }
+
+  @media (max-width: 768px) {
+    .orders-grid { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; }
+  }
 </style>
