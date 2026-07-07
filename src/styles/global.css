@@ -185,8 +185,9 @@
     text-shadow: none !important;
   }
 
-  /* Subtitle glow variant */
+  /* Subtitle glow variant — Caveat handwriting font */
   .glow-subtitle {
+    font-family: var(--font-heading);
     color: rgba(255, 255, 255, 0.92);
     text-shadow:
       0.75px 0.75px 0px #ffcce0,
