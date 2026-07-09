@@ -39,12 +39,14 @@ try {
 }
 ---
 
-<Layout title="Mini-collectie" description="Klein maar fijn! Cupcakes, tartelettes en kleine pavlova's. Op maat te maken met heerlijke smaken zoals lavendel, rozentoets of koffielikeur.">
+<Layout title="Mini-collectie" description="Klein maar fijn! Cupcakes, tartelettes en kleine pavlova's. Op maat te maken met heerlijke smaken zoals lavendel, rozentoets of koffielikeur." bodyClass="collection-page">
   <Header />
 
   <main id="mini-main">
     <!-- Hero Section -->
-          </span>
+    <section id="mini-hero" class="pb-16" style="background-color: #f0c0c0;">
+      <div class="container">
+        <div class="max-w-3xl mx-auto text-center">
           <h1 id="mini-title" class="font-heading text-4xl md:text-5xl lg:text-6xl font-semibold text-[var(--color-text)] mb-6 animate-on-scroll">
             Klein maar fijn
           </h1>
@@ -111,43 +113,43 @@ try {
           <div id="mini-gallery-flavors">
             <!-- Gallery Section -->
             <div id="mini-gallery-wrapper">
-              <GalleryModal 
-                client:load 
+              <GalleryModal
+                client:load
                 images={galleryImages}
                 triggerText="Bekijk foto's"
               />
             </div>
 
             <!-- Flavors Card -->
-            <div id="mini-flavors-card" class="card p-8 bg-[var(--color-surface)]">
+            <div id="mini-flavors-card" class="card p-8 mt-8">
               <h3 id="mini-flavors-title" class="font-heading text-xl font-semibold text-[var(--color-text)] mb-6 flex items-center gap-3">
                 <span id="mini-flavors-icon">✨</span>
                 Smaakopties
               </h3>
 
               <p id="mini-flavors-intro" class="text-[var(--color-text-muted)] mb-6">
-                Denk voor smaken aanopties opties. Alles is op maat te maken!
+                Denk voor smaken aan opties. Alles is op maat te maken!
               </p>
 
               <div id="mini-flavors-list" class="space-y-4">
                 <div id="mini-flavors-sweet">
                   <h4 id="mini-flavors-sweet-title" class="font-semibold text-[var(--color-text)] mb-2">Zoet</h4>
                   <div id="mini-flavors-sweet-tags" class="flex flex-wrap gap-2">
-                    <span id="mini-flavor-chocolate" class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Chocolade</span>
-                    <span id="mini-flavor-nuts" class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Noten</span>
-                    <span id="mini-flavor-caramel" class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Karamel</span>
-                    <span id="mini-flavor-fruit" class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Fruit</span>
-                    <span id="mini-flavor-vanilla" class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Vanille</span>
+                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Chocolade</span>
+                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Noten</span>
+                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Karamel</span>
+                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Fruit</span>
+                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Vanille</span>
                   </div>
                 </div>
 
                 <div id="mini-flavors-special">
                   <h4 id="mini-flavors-special-title" class="font-semibold text-[var(--color-text)] mb-2">Speciaal</h4>
                   <div id="mini-flavors-special-tags" class="flex flex-wrap gap-2">
-                    <span id="mini-flavor-lavender" class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Lavendel</span>
-                    <span id="mini-flavor-rose" class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Rozentoets</span>
-                    <span id="mini-flavor-coffee" class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Koffielikeur</span>
-                    <span id="mini-flavor-almond" class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Amandellikeur</span>
+                    <span class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Lavendel</span>
+                    <span class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Rozentoets</span>
+                    <span class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Koffielikeur</span>
+                    <span class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Amandellikeur</span>
                   </div>
                 </div>
               </div>

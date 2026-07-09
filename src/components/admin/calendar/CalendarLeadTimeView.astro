@@ -1,16 +1,16 @@
 ---
-// CalendarMaxOrdersView.astro — Werkuren tab, part 2: max orders per day stepper
-const { maxOrdersPerDay = 3 } = Astro.props;
+// CalendarLeadTimeView.astro — Werkuren tab: lead-time buffer stepper
+const { leadTimeDays = 0 } = Astro.props;
 ---
 
-<div class="max-orders-section">
+<div class="lead-time-section">
   <div class="section-header">
-    <h3>Maximale bestellingen per dag</h3>
-    <p>Hoeveel bestellingen kun je per dag verwerken?</p>
+    <h3>Minimale doorlooptijd</h3>
+    <p>Klanten kunnen pas bestellen vanaf dit aantal dagen vantevoren.</p>
   </div>
 
   <div class="stepper-row">
-    <button class="stepper-btn minus" onclick="changeMaxOrders(-1)" aria-label="Verlagen">
+    <button class="stepper-btn minus" onclick="changeLeadTime(-1)" aria-label="Verlagen">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="5" y1="12" x2="19" y2="12"></line>
       </svg>
@@ -19,16 +19,16 @@ const { maxOrdersPerDay = 3 } = Astro.props;
     <div class="stepper-display">
       <input
         type="number"
-        id="maxOrders"
-        value={maxOrdersPerDay}
-        min="1"
-        max="20"
-        onchange="syncMaxOrdersDisplay()"
+        id="leadTimeDays"
+        value={leadTimeDays}
+        min="0"
+        max="60"
+        onchange="syncLeadTimeDisplay()"
       />
-      <span class="stepper-label">per dag</span>
+      <span class="stepper-label">dagen</span>
     </div>
 
-    <button class="stepper-btn plus" onclick="changeMaxOrders(1)" aria-label="Verhogen">
+    <button class="stepper-btn plus" onclick="changeLeadTime(1)" aria-label="Verhogen">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="12" y1="5" x2="12" y2="19"></line>
         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -36,50 +36,70 @@ const { maxOrdersPerDay = 3 } = Astro.props;
     </button>
   </div>
 
-  <div class="order-indicators" id="order-indicators">
-    <!-- filled dynamically -->
-  </div>
+  <p class="lead-time-hint" id="leadTimeHint">
+    {leadTimeDays === 0
+      ? 'Uitgeschakeld — klanten kunnen voor elke datum bestellen.'
+      : `De eerstvolgende beschikbare datum is over ${leadTimeDays} dag${leadTimeDays === 1 ? '' : 'en'}.`}
+  </p>
 </div>
 
 <script is:inline>
-  function changeMaxOrders(delta) {
-    var input = document.getElementById('maxOrders');
+  function changeLeadTime(delta) {
+    var input = document.getElementById('leadTimeDays');
     if (!input) return;
-    var val = parseInt(input.value);
-    var newVal = Math.min(20, Math.max(1, val + delta));
+    var val = parseInt(input.value) || 0;
+    var newVal = Math.min(60, Math.max(0, val + delta));
     input.value = String(newVal);
-    syncMaxOrdersDisplay();
+    syncLeadTimeDisplay();
   }
 
-  function syncMaxOrdersDisplay() {
-    var input = document.getElementById('maxOrders');
+  function syncLeadTimeDisplay() {
+    var input = document.getElementById('leadTimeDays');
     if (!input) return;
-    var val = parseInt(input.value);
-    var indicators = document.getElementById('order-indicators');
-    if (!indicators) return;
-    indicators.innerHTML = '';
-    for (var i = 0; i < 20; i++) {
-      var dot = document.createElement('div');
-      dot.className = 'order-dot' + (i < val ? ' filled' : '');
-      indicators.appendChild(dot);
+    var val = parseInt(input.value) || 0;
+    var hint = document.getElementById('leadTimeHint');
+    if (!hint) return;
+    if (val === 0) {
+      hint.textContent = 'Uitgeschakeld — klanten kunnen voor elke datum bestellen.';
+    } else {
+      hint.textContent = 'De eerstvolgende beschikbare datum is over ' + val + ' dag' + (val === 1 ? '' : 'en') + '.';
     }
   }
-  syncMaxOrdersDisplay();
+
+  // Sync display on page load
+  syncLeadTimeDisplay();
 </script>
 
 <style>
-  .max-orders-section {
+  .lead-time-section {
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 1rem;
     padding: 1.25rem;
   }
 
+  .section-header {
+    margin-bottom: 0.25rem;
+  }
+
+  .section-header h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .section-header p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
   .stepper-row {
     display: flex;
     align-items: center;
     gap: 1.25rem;
-    margin: 1.25rem 0;
+    margin: 1rem 0 0.75rem;
   }
 
   .stepper-btn {
@@ -150,23 +170,14 @@ const { maxOrdersPerDay = 3 } = Astro.props;
     font-weight: 500;
   }
 
-  .order-indicators {
-    display: flex;
-    gap: 0.35rem;
-    flex-wrap: wrap;
-    max-width: 340px;
-  }
-
-  .order-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #e2e8f0;
-    transition: background 0.2s, transform 0.15s;
-  }
-
-  .order-dot.filled {
-    background: #E8788A;
-    transform: scale(1.1);
+  .lead-time-hint {
+    font-size: 0.8125rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.5;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #e2e8f0;
   }
 </style>

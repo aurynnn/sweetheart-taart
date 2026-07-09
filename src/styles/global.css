@@ -185,6 +185,67 @@
     text-shadow: none !important;
   }
 
+  /* Footer headings: dark text, no glow */
+  footer h4,
+  footer h3 {
+    color: var(--color-text) !important;
+    text-shadow: none !important;
+  }
+
+  /* h3 inside sections: dark, no glow */
+  section h3 {
+    color: var(--color-text) !important;
+    text-shadow: none !important;
+  }
+
+  /* Collection page hero headings: dark text, no glow */
+  #feestcollectie-hero h1,
+  #feestcollectie-hero h2,
+  #koekjes-hero h1,
+  #koekjes-hero h2,
+  #mini-hero h1,
+  #mini-hero h2,
+  .tips-page h1,
+  .tips-page h2 {
+    color: var(--color-text) !important;
+    text-shadow: none !important;
+  }
+
+  /* Collection & tips pages: lighter pink background */
+  #feestcollectie-main,
+  #mini-main,
+  #koekjes-main,
+  .tips-page {
+    background-color: #f0c0c0;
+  }
+
+  /* Collection pages: header is transparent like home, nav links keep glow + white text */
+  body.collection-page #main-header {
+    position: absolute;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.collection-page #main-header.scrolled {
+    background-color: rgba(253, 248, 245, 0.92) !important;
+    backdrop-filter: blur(12px);
+  }
+
+  /* Collection pages: push content below the absolute header */
+  #mini-main,
+  .tips-page {
+    padding-top: 5rem; /* h-20 = 5rem = header height */
+  }
+
+  /* Footer body text: normal font, no glow */
+  footer p,
+  footer li,
+  footer span,
+  footer address,
+  footer a {
+    text-shadow: none !important;
+  }
+
   /* Subtitle glow variant — Caveat handwriting font */
   .glow-subtitle {
     font-family: var(--font-heading);

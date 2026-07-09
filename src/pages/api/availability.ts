@@ -5,6 +5,15 @@ export const GET: APIRoute = async ({ url }) => {
   const startDate = url.searchParams.get('startDate');
   const endDate = url.searchParams.get('endDate');
 
+  // Fetch lead time setting
+  let leadTimeDays = 0;
+  try {
+    const leadResult = await d1Query("SELECT value FROM app_settings WHERE key = 'lead_time_days'");
+    if (leadResult.results?.[0]?.value) {
+      leadTimeDays = parseInt(leadResult.results[0].value as string, 10) || 0;
+    }
+  } catch { /* table may not exist yet */ }
+
   // Fetch recurring schedule
   const recurringResult = await d1Query(
     'SELECT day_of_week, enabled, max_orders FROM recurring_schedule'
@@ -81,6 +90,8 @@ export const GET: APIRoute = async ({ url }) => {
     const end = new Date(endDate + 'T00:00:00');
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const leadTimeCutoff = new Date(today);
+    leadTimeCutoff.setDate(leadTimeCutoff.getDate() + leadTimeDays);
     const current = new Date(start);
 
     while (current <= end) {
@@ -113,6 +124,11 @@ export const GET: APIRoute = async ({ url }) => {
           isAvailable = true;
           maxOrders = override.max_orders;
         }
+      } else if (current < leadTimeCutoff) {
+        isAvailable = false;
+        reason = leadTimeDays > 0
+          ? `Bestel minstens ${leadTimeDays} dag${leadTimeDays === 1 ? '' : 'en'} van tevoren`
+          : 'Datum is voorbij';
       } else if (isPast) {
         isAvailable = false;
         reason = 'Datum is voorbij';
@@ -153,6 +169,7 @@ export const GET: APIRoute = async ({ url }) => {
     recurringUnavailableDays: recurringUnavailable,
     availableDays: recurringAvailable,
     maxOrdersPerDay: defaultMaxOrders,
+    leadTimeDays,
     blockedDates,
   };
 
@@ -165,7 +182,15 @@ export const GET: APIRoute = async ({ url }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { maxOrdersPerDay, availableDays, recurringUnavailableDays, blockedDates, newBlockedDates, removedBlockedDates, slotOverrides } = body;
+    const { maxOrdersPerDay, availableDays, recurringUnavailableDays, blockedDates, newBlockedDates, removedBlockedDates, slotOverrides, leadTimeDays } = body;
+
+    // Save lead_time_days
+    try {
+      await d1Query(
+        "INSERT OR REPLACE INTO app_settings (key, value) VALUES ('lead_time_days', ?)",
+        [String(leadTimeDays ?? 0)]
+      );
+    } catch { /* table may not exist */ }
 
     const allDays = [0, 1, 2, 3, 4, 5, 6];
     const available = availableDays ?? [1, 2, 3, 4, 5, 6];

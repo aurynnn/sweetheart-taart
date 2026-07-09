@@ -6,6 +6,7 @@ import CalendarTabs from '../../components/admin/calendar/CalendarTabs.astro';
 import CalendarMonthView from '../../components/admin/calendar/CalendarMonthView.astro';
 import CalendarBlockView from '../../components/admin/calendar/CalendarBlockView.astro';
 import CalendarHoursView from '../../components/admin/calendar/CalendarHoursView.astro';
+import { d1Query } from '../../lib/d1';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
@@ -35,7 +36,20 @@ function loadSettings() {
   }
 }
 
-const settings = loadSettings();
+// Load leadTimeDays from D1
+async function loadLeadTimeDays() {
+  try {
+    const res = await d1Query("SELECT value FROM app_settings WHERE key = 'lead_time_days'");
+    if (res.results?.[0]?.value) {
+      return parseInt(res.results[0].value as string, 10) || 0;
+    }
+  } catch { /* D1 may not have the table yet */ }
+  return 0;
+}
+
+const baseSettings = loadSettings();
+const leadTimeDays = await loadLeadTimeDays();
+const settings = { ...baseSettings, leadTimeDays };
 ---
 
 <AdminLayout title="Beschikbaarheid">
@@ -44,7 +58,7 @@ const settings = loadSettings();
   <CalendarTabs />
   <CalendarMonthView />
   <CalendarBlockView />
-  <CalendarHoursView maxOrdersPerDay={settings.maxOrdersPerDay} availableDays={settings.availableDays} />
+  <CalendarHoursView maxOrdersPerDay={settings.maxOrdersPerDay} availableDays={settings.availableDays} leadTimeDays={settings.leadTimeDays ?? 0} />
 </AdminLayout>
 
 <style is:global>
@@ -657,6 +671,8 @@ const settings = loadSettings();
   function saveSettings() {
     var maxOrdersEl = document.getElementById('maxOrders');
     var maxOrders = maxOrdersEl ? parseInt(maxOrdersEl.value) : 3;
+    var leadTimeEl = document.getElementById('leadTimeDays');
+    var leadTimeDays = leadTimeEl ? parseInt(leadTimeEl.value) || 0 : 0;
     var workDaysInput = document.getElementById('work-days-input');
     var availableDays = workDaysInput ? JSON.parse(workDaysInput.value) : (window._selectedWorkDays || [1,2,3,4,5,6]);
     if (!workDaysInput) {
@@ -678,6 +694,7 @@ const settings = loadSettings();
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         maxOrdersPerDay: maxOrders,
+        leadTimeDays: leadTimeDays,
         availableDays: availableDays,
         newBlockedDates: newBlockedDates,
         removedBlockedDates: removedBlockedDates

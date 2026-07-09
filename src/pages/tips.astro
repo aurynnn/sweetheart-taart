@@ -4,7 +4,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 ---
 
-<Layout title="Tips - Ophaalinfo & Tips">
+<Layout title="Tips - Ophaalinfo & Tips" bodyClass="collection-page">
   <Header />
 
   <main id="tips-main" class="tips-page">
@@ -212,12 +212,13 @@ import Footer from '../components/Footer.astro';
   .tips-page {
     min-height: 100vh;
     padding: 2rem 1rem 4rem;
-    background: linear-gradient(135deg, #FDEEF0 0%, #fff 100%);
+    background: linear-gradient(135deg, #f0c0c0 0%, #fff 100%);
   }
 
   .tips-header {
     text-align: center;
     margin-bottom: 2rem;
+    margin-top: 3rem;
   }
 
   .tips-header h1 {

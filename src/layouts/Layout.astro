@@ -4,9 +4,10 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  bodyClass?: string;
 }
 
-const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelijke Belgische bakkerij in Oostende. Feesttaarten, koekjes, mini-gebak en meer." } = Astro.props;
+const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelijke Belgische bakkerij in Oostende. Feesttaarten, koekjes, mini-gebak en meer.", bodyClass = "" } = Astro.props;
 ---
 
 <!doctype html>
@@ -22,7 +23,7 @@ const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelij
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700;900&display=swap" rel="stylesheet" />
     <title>{title} | Sweetheart Taart</title>
   </head>
-  <body class="min-h-screen flex flex-col">
+  <body class={`min-h-screen flex flex-col ${bodyClass}`}>
     <div id="toast-container"></div>
     <slot />
     <footer class="bg-white border-t border-gray-200 py-6 px-4 mt-auto">

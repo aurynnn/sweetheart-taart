@@ -41,7 +41,7 @@ const navLinks = [
         {navLinks.map((link) => (
           <a
             href={link.href}
-            class="relative text-sm font-medium transition-colors hover:text-[var(--color-primary)] desktop-nav-link"
+            class="relative text-base font-semibold transition-colors hover:text-[var(--color-primary)] desktop-nav-link"
           >
             {link.label}
           </a>
@@ -103,7 +103,7 @@ const navLinks = [
         {navLinks.map((link) => (
           <a
             href={link.href}
-            class="block px-4 py-3 rounded-lg text-lg font-medium transition-colors hover:bg-[var(--color-secondary)] mobile-nav-link"
+            class="block px-4 py-3 rounded-lg text-xl font-semibold transition-colors hover:bg-[var(--color-secondary)] mobile-nav-link"
           >
             {link.label}
           </a>
@@ -174,19 +174,18 @@ const navLinks = [
     link.addEventListener('click', closeMenu);
   });
 
-  // Header scroll effect
-  const handleScroll = () => {
-    if (header) {
-      if (window.scrollY > 20) {
-        header.classList.add('scrolled');
-      } else {
-        header.classList.remove('scrolled');
-      }
-    }
-  };
-
-  window.addEventListener('scroll', handleScroll, { passive: true });
-  handleScroll();
+  // Header scroll effect — disabled, header stays transparent
+  // const handleScroll = () => {
+  //   if (header) {
+  //     if (window.scrollY > 20) {
+  //       header.classList.add('scrolled');
+  //     } else {
+  //       header.classList.remove('scrolled');
+  //     }
+  //   }
+  // };
+  // window.addEventListener('scroll', handleScroll, { passive: true });
+  // handleScroll();
 
   // Set active nav link
   const currentPath = window.location.pathname;
@@ -209,13 +208,13 @@ const navLinks = [
     box-shadow: none !important;
   }
 
-  /* Scrolled → white frosted glass */
-  #main-header.scrolled {
+  /* Scrolled → white frosted glass — disabled, header stays transparent */
+  /* #main-header.scrolled {
     position: absolute;
     background-color: rgba(253, 248, 245, 0.92) !important;
     backdrop-filter: blur(12px);
     box-shadow: none !important;
-  }
+  } */
 
   /* ── Nav links: normal font + white glow on dark hero ───────────── */
   :global(.desktop-nav-link) {

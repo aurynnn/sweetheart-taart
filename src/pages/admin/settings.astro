@@ -4,6 +4,7 @@ import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 // Settings loaded from database (mock for now)
 const settings = {
   maxOrdersPerDay: 3,
+  leadTimeDays: 0,
   googleConnected: false,
   recurringUnavailableDays: [0],
   availableDays: [1, 2, 3, 4, 5, 6]
@@ -150,6 +151,16 @@ const dayNames = [
           <button type="button" onclick="adjustMaxOrders(1)">+</button>
         </div>
       </div>
+
+      <div class="form-group" style="margin-top: 1.5rem;">
+        <label for="leadTimeDays">Minimale doorlooptijd (dagen)</label>
+        <p class="field-hint">Klanten kunnen pas bestellen vanaf dit aantal dagen vantevoren.<br/>Zet op 0 om uit te schakelen.</p>
+        <div class="number-input">
+          <button type="button" onclick="adjustLeadTime(-1)">−</button>
+          <input type="number" id="leadTimeDays" value={settings.leadTimeDays ?? 0} min="0" max="60" />
+          <button type="button" onclick="adjustLeadTime(1)">+</button>
+        </div>
+      </div>
       
       <div class="card-actions">
         <button class="btn btn-primary" id="saveSettingsBtn">Opslaan</button>
@@ -176,6 +187,12 @@ const dayNames = [
         maxOrdersInput.value = String(settings.maxOrdersPerDay);
       }
 
+      // Update leadTimeDays
+      const leadTimeInput = document.getElementById('leadTimeDays') as HTMLInputElement;
+      if (leadTimeInput && settings.leadTimeDays !== undefined) {
+        leadTimeInput.value = String(settings.leadTimeDays);
+      }
+
       // Update day availability toggles (the buttons have data-day attributes)
       const availableDays: number[] = settings.availableDays || [];
       document.querySelectorAll<HTMLElement>('.day-toggle-btn').forEach(btn => {
@@ -198,6 +215,12 @@ const dayNames = [
     input.value = String(newValue);
   }
 
+  function adjustLeadTime(delta: number) {
+    const input = document.getElementById('leadTimeDays') as HTMLInputElement;
+    const newValue = Math.min(60, Math.max(0, parseInt(input.value) + delta));
+    input.value = String(newValue);
+  }
+
   function disconnectCalendar() {
     if (confirm('Weet je zeker dat je de Google Agenda wilt ontkoppelen?')) {
       fetch('/admin/api/calendar/disconnect', { method: 'POST' })
@@ -212,6 +235,7 @@ const dayNames = [
 
     try {
       const maxOrders = parseInt((document.getElementById('maxOrders') as HTMLInputElement).value) || 3;
+      const leadTimeDays = parseInt((document.getElementById('leadTimeDays') as HTMLInputElement).value) || 0;
 
       // Collect available days from toggle buttons
       const availableDays: number[] = [];
@@ -228,6 +252,7 @@ const dayNames = [
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           maxOrdersPerDay: maxOrders,
+          leadTimeDays,
           availableDays,
           recurringUnavailableDays,
           blockedDates: [],
@@ -507,6 +532,13 @@ input:checked + .slider:before {
   border-radius: 0.5rem;
   font-size: 1rem;
   font-weight: 600;
+}
+
+.field-hint {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0.25rem 0 0.75rem;
+  line-height: 1.5;
 }
 
 .card-actions {

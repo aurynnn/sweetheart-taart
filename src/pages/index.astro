@@ -10,7 +10,7 @@ import ContactCTA from '../components/ContactCTA.astro';
 import collectionsData from '../data/collections.json';
 import testimonialsData from '../data/testimonials.json';
 
-const collections = collectionsData.collections.filter(c => c.id !== 'vaste-collectie');
+const collections = collectionsData.collections.filter(c => c.id !== 'vaste-collectie' && c.id !== 'afternoon-tea');
 const testimonials = testimonialsData.testimonials;
 
 const customerPhotos: Record<string, string> = {
@@ -76,14 +76,13 @@ const customerPhotos: Record<string, string> = {
           </p>
         </div>
 
-        <div id="home-collections-grid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-          {collections.slice(0, 4).map((collection, index) => (
+        <div id="home-collections-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          {collections.slice(0, 3).map((collection, index) => (
             <div id={`home-collection-card-${collection.id}`} class={`animate-on-scroll stagger-${index + 1} flex`}>
               <CollectionCard
                 title={collection.title}
                 description={collection.description}
                 href={collection.href}
-                badge={collection.badge}
               />
             </div>
           ))}
