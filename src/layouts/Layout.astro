@@ -5,9 +5,10 @@ interface Props {
   title: string;
   description?: string;
   bodyClass?: string;
+  noFooter?: boolean;
 }
 
-const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelijke Belgische bakkerij in Oostende. Feesttaarten, koekjes, mini-gebak en meer.", bodyClass = "" } = Astro.props;
+const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelijke Belgische bakkerij in Oostende. Feesttaarten, koekjes, mini-gebak en meer.", bodyClass = "", noFooter = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -26,6 +27,7 @@ const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelij
   <body class={`min-h-screen flex flex-col ${bodyClass}`}>
     <div id="toast-container"></div>
     <slot />
+    {noFooter ? null : (
     <footer class="bg-white border-t border-gray-200 py-6 px-4 mt-auto">
       <div class="max-w-4xl mx-auto text-center">
         <a href="/tips" class="text-[#E8788A] hover:text-[#d66b7a] font-medium">
@@ -33,6 +35,7 @@ const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelij
         </a>
       </div>
     </footer>
+    )}
     <script>
       // Intersection Observer for scroll animations
       const observer = new IntersectionObserver(

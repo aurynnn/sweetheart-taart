@@ -10,16 +10,16 @@ import CalendarPicker from '../components/CalendarPicker.astro';
 
   <main id="bestellen-main">
     <!-- Hero Section -->
-    <section id="bestellen-hero" class="pt-32 pb-16 bg-gradient-to-b from-[var(--color-secondary)] to-[var(--color-background)]">
+    <section id="bestellen-hero" class="pt-32 pb-16" style="background-color: #f0c0c0;">
       <div id="bestellen-hero-content" class="container">
         <div id="bestellen-hero-inner" class="max-w-3xl mx-auto text-center">
-          <span id="bestellen-badge" class="inline-block px-4 py-1 text-sm font-semibold bg-[var(--color-primary)] text-white rounded-full mb-4">
+          <span id="bestellen-badge" class="inline-block px-4 py-1 text-sm font-semibold bg-white text-[var(--color-primary)] rounded-full mb-4">
             Bestellen
           </span>
-          <h1 id="bestellen-title" class="font-heading text-4xl md:text-5xl lg:text-6xl font-semibold text-[var(--color-text)] mb-6 animate-on-scroll">
+          <h1 id="bestellen-title" class="font-heading text-4xl md:text-5xl lg:text-6xl font-semibold text-white mb-6 animate-on-scroll">
             Bestel uw taart
           </h1>
-          <p id="bestellen-subtitle" class="text-lg text-[var(--color-text-muted)] animate-on-scroll stagger-1">
+          <p id="bestellen-subtitle" class="text-lg text-white/80 animate-on-scroll stagger-1">
             Na de aanvraag nemen we contact op
           </p>
         </div>
@@ -27,14 +27,14 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     </section>
 
     <!-- Order Form Section -->
-    <section id="bestellen-form-section" class="section">
+    <section id="bestellen-form-section" class="section bg-[var(--color-surface)]">
       <div id="bestellen-form-container" class="container">
         <div id="bestellen-form-wrapper" class="max-w-2xl mx-auto">
           <div id="bestellen-form-card" class="card p-8 md:p-12 animate-on-scroll">
-            
-            <form id="order-form" class="space-y-6">
-              
-              <!-- Product Type Cards -->
+
+            <form id="order-form">
+
+              <!-- ─── PRODUCT SELECTOR (always visible) ─── -->
               <div id="product-selection" class="product-type-cards grid grid-cols-3 gap-4 mb-6">
                 <button type="button" class="product-card" data-product="feesttaart">
                   <span class="product-icon">
@@ -50,214 +50,236 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                 </button>
                 <button type="button" class="product-card" data-product="mini-gebak">
                   <span class="product-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="m10.09 22.5-.95-7.64a2.87 2.87 0 0 0-5.73 0l2.86 7.64h11.46l2.86-7.64a2.87 2.87 0 0 0-5.73 0l-.95 7.64"/>
-                      <path d="M10.09 4.36h.26"/>
-                      <path d="M13.91 4.36h-.26a3.82 3.82 0 0 1 3.82 3.82"/>
-                      <path d="M14.81 15.46a4 4 0 0 0 0-.59 1 1 0 0 0-5.72 0 4 4 0 0 0 0 .59h0"/>
-                      <path d="M17.73 8.18v.17a2.86 2.86 0 0 1 1.91 2.7V13"/>
-                      <path d="M4.36 13v-1.9a2.86 2.86 0 0 1 1.91-2.7A3.82 3.82 0 0 1 10 4.18"/>
-                      <circle cx="12" cy="3.41" r="1.91"/>
-                    </svg>
+                    <i class="fa-solid fa-cookie"></i>
                   </span>
                   <span class="product-name">Mini-gebak</span>
                 </button>
               </div>
 
-              <!-- Order Info Section (filled once) -->
+              <!-- ─── ORDER INFO (hidden once ≥1 product in cart) ─── -->
               <div id="order-info-section">
-                <!-- Name -->
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                <h2 class="font-heading text-xl font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                  <span class="w-8 h-8 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] text-sm">
                     <i class="fa-solid fa-user"></i>
-                  </div>
-                  <input type="text" name="name" required placeholder="Uw naam" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
-                </div>
-                <!-- Email -->
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                    <i class="fa-solid fa-envelope"></i>
-                  </div>
-                  <input type="email" name="email" required placeholder="uw@email.be" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
-                </div>
-                <!-- Phone -->
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                    <i class="fa-solid fa-phone"></i>
-                  </div>
-                  <input type="tel" name="phone" required placeholder="+32 xxx xx xx xx" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
-                </div>
-                <!-- Date -->
-                <div>
-                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    <i class="fa-solid fa-calendar mr-2"></i>Selecteer een datum
-                  </label>
-                  <CalendarPicker id="date-input" name="date" />
-                </div>
-                  <span id="date-availability-message" class="date-availability-message" style="display: none;"></span>
-              </div>
+                  </span>
+                  Uw gegevens
+                </h2>
 
-              <!-- Item Details Section (per item) -->
-              <div id="item-details-section">
-                <!-- Event Type (feesttaart only) -->
-                <div id="feesttaart-fields" class="feesttaart-only">
-                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type gelegenheid</label>
+                <div class="space-y-3 mb-4">
+                  <!-- Name -->
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                      <i class="fa-solid fa-star"></i>
+                      <i class="fa-solid fa-user"></i>
                     </div>
-                    <select id="event-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                      <option value="">Selecteer een optie</option>
-                      <option value="verjaardag">Verjaardag</option>
-                      <option value="jubileum">Jubileum</option>
-                      <option value="huwelijk">Huwelijk</option>
-                      <option value="communie">Communie</option>
-                      <option value="doopsel">Doopsel</option>
-                      <option value="babyshower">Baby shower</option>
-                      <option value="anders">Anders</option>
-                    </select>
+                    <input type="text" name="name" required placeholder="Uw naam" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                   </div>
-                </div>
-
-                <!-- Persons (feesttaart only) -->
-                <div id="feesttaart-persons" class="feesttaart-only">
-                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal personen</label>
+                  <!-- Email -->
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                      <i class="fa-solid fa-users"></i>
+                      <i class="fa-solid fa-envelope"></i>
                     </div>
-                    <select id="persons-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                      <option value="">Selecteer aantal</option>
-                      <option value="8-14">8-14 personen (1 laag)</option>
-                      <option value="15-25">15-25 personen (2 lagen)</option>
-                      <option value="25-40">25-40 personen (3 lagen)</option>
-                      <option value="40+">40+ personen (meerlagen)</option>
-                    </select>
+                    <input type="email" name="email" required placeholder="uw@email.be" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                   </div>
-                </div>
-
-                <!-- Flavor -->
-                <div>
-                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak voorkeur (vulling)</label>
+                  <!-- Phone -->
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                      <i class="fa-solid fa-wine-glass"></i>
+                      <i class="fa-solid fa-phone"></i>
                     </div>
-                    <select id="flavor-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                      <option value="">Geen voorkeur (ik adviseer)</option>
-                      <option value="aardbei">Aardbei</option>
-                      <option value="framboos">Framboos</option>
-                      <option value="banaan">Banaan</option>
-                      <option value="bosvruchten">Bosvruchten</option>
-                      <option value="chocolade">Chocolade</option>
-                      <option value="anders">Anders (specificeer hieronder)</option>
-                    </select>
+                    <input type="tel" name="phone" required placeholder="+32 xxx xx xx xx" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
                   </div>
-                </div>
-
-                <!-- Quantity Stepper (koekjes) -->
-                <div id="koekjes-stepper" class="quantity-only" style="display:none;">
-                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal koekjes</label>
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                      <i class="fa-solid fa-cookie-bite"></i>
+                  <!-- Date -->
+                  <div>
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                        <i class="fa-solid fa-calendar"></i>
+                      </div>
+                      <div class="flex-1">
+                        <CalendarPicker id="date-input" name="date" />
+                      </div>
                     </div>
-                    <div class="stepper-wrapper">
-                      <button type="button" class="stepper-btn" id="koekjes-minus">−</button>
-                      <input type="number" id="koekjes-input" class="stepper-input" value="24" min="24" step="12" readonly />
-                      <button type="button" class="stepper-btn" id="koekjes-plus">+</button>
-                    </div>
-                    <span class="qty-label">koekjes</span>
+                    <span id="date-availability-message" class="date-availability-message ml-14" style="display:none;"></span>
                   </div>
-                </div>
-
-                <!-- Mini-gebak Type Selection -->
-                <div id="mini-type-section" class="quantity-only" style="display:none;">
-                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type mini-gebak</label>
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                      <i class="fa-solid fa-birthday-cake"></i>
-                    </div>
-                    <div class="flex gap-6">
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="mini-type" value="cupcakes" checked class="w-4 h-4 accent-[#E8788A]" onchange="updateMiniStepper()" />
-                        <span class="text-sm text-[var(--color-text)]">Cupcakes</span>
-                      </label>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="mini-type" value="mini-cupcakes" class="w-4 h-4 accent-[#E8788A]" onchange="updateMiniStepper()" />
-                        <span class="text-sm text-[var(--color-text)]">Mini Cupcakes</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Mini-gebak Amount Stepper -->
-                <div id="mini-amount-section" class="quantity-only" style="display:none;">
-                  <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal</label>
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                      <i class="fa-solid fa-cookie-bite"></i>
-                    </div>
-                    <div class="stepper-wrapper">
-                      <button type="button" class="stepper-btn" id="mini-amount-minus">−</button>
-                      <input type="number" id="mini-amount-input" class="stepper-input" value="12" min="12" step="6" readonly />
-                      <button type="button" class="stepper-btn" id="mini-amount-plus">+</button>
-                    </div>
-                    <span id="mini-amount-label" class="qty-label">cupcakes</span>
-                  </div>
-                </div>
-
-                <!-- Image Upload -->
-                <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
-                    <i class="fa-solid fa-image"></i>
-                  </div>
-                  <div id="image-upload-area" class="image-upload-area flex-1">
-                    <input type="file" id="image-input" accept="image/*" class="hidden" />
-                    <div id="upload-placeholder" class="upload-placeholder">
-                      <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--color-text-muted)] mb-1"></i>
-                      <p class="text-xs text-[var(--color-text-muted)]">Voeg een voorbeeld toe</p>
-                    </div>
-                    <img id="preview-image" class="preview-image hidden" alt="Upload preview" />
-                  </div>
-                </div>
-
-                <!-- Allergies -->
-                <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
-                    <i class="fa-solid fa-exclamation-circle"></i>
-                  </div>
-                  <textarea id="allergies-input" rows="2" placeholder="Allergieën (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
-                </div>
-
-                <!-- Opmerkingen -->
-                <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
-                    <i class="fa-solid fa-comment"></i>
-                  </div>
-                  <textarea id="message-input" rows="2" placeholder="Opmerkingen (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
                 </div>
               </div>
 
-              <!-- Added Items Summary -->
-              <div id="items-summary" class="hidden mb-4 p-4 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)]">
-                <h4 class="text-sm font-medium text-[var(--color-text-muted)] mb-3">Uw items:</h4>
-                <div id="items-summary-list" class="space-y-2">
-                  <!-- Filled items will appear here -->
-                </div>
-              </div>
+              <!-- ─── ADDED ITEMS (collapsible cards) ─── -->
+              <div id="items-list" class="space-y-3 mb-4"></div>
 
-              <!-- Add Item Button -->
-              <button type="button" id="add-item-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 hidden">
+              <!-- ─── ADD PRODUCT BUTTON ─── -->
+              <button type="button" id="add-product-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 mb-4">
                 <i class="fa-solid fa-plus"></i>
-                Voeg nog een item toe
+                Nog een product toevoegen
               </button>
+              <p id="max-items-hint" class="text-center text-sm text-[var(--color-text-muted)] mb-4" style="display:none;">
+                Maximum van 6 producten bereikt.
+              </p>
 
-              <!-- Submit -->
+              <!-- ─── ITEM DETAILS FORM (shown when adding/editing) ─── -->
+              <div id="item-form-section" class="item-form-section mb-4" style="display:none;">
+                <div class="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-6">
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 id="item-form-title" class="font-heading text-lg font-semibold text-[var(--color-text)]">
+                      Product toevoegen
+                    </h2>
+                    <button type="button" id="cancel-item-btn" class="text-sm text-[var(--color-text-muted)] hover:text-[#E8788A] transition">
+                      Annuleren
+                    </button>
+                  </div>
+
+                  <!-- Item Details -->
+                  <div id="item-details-section">
+
+                    <!-- Event Type (feesttaart only) -->
+                    <div id="feesttaart-fields" class="feesttaart-only" style="display:none;">
+                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type gelegenheid</label>
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                          <i class="fa-solid fa-star"></i>
+                        </div>
+                        <select id="event-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                          <option value="">Selecteer een optie</option>
+                          <option value="verjaardag">Verjaardag</option>
+                          <option value="jubileum">Jubileum</option>
+                          <option value="huwelijk">Huwelijk</option>
+                          <option value="communie">Communie</option>
+                          <option value="doopsel">Doopsel</option>
+                          <option value="babyshower">Baby shower</option>
+                          <option value="anders">Anders</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Persons (feesttaart only) -->
+                    <div id="feesttaart-persons" class="feesttaart-only" style="display:none;">
+                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal personen</label>
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                          <i class="fa-solid fa-users"></i>
+                        </div>
+                        <select id="persons-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                          <option value="">Selecteer aantal</option>
+                          <option value="8-14">8-14 personen (1 laag)</option>
+                          <option value="15-25">15-25 personen (2 lagen)</option>
+                          <option value="25-40">25-40 personen (3 lagen)</option>
+                          <option value="40+">40+ personen (meerlagen)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Flavor -->
+                    <div>
+                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak voorkeur (vulling)</label>
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                          <i class="fa-solid fa-wine-glass"></i>
+                        </div>
+                        <select id="flavor-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                          <option value="">Geen voorkeur (ik adviseer)</option>
+                          <option value="aardbei">Aardbei</option>
+                          <option value="framboos">Framboos</option>
+                          <option value="banaan">Banaan</option>
+                          <option value="bosvruchten">Bosvruchten</option>
+                          <option value="chocolade">Chocolade</option>
+                          <option value="anders">Anders (specificeer hieronder)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Quantity Stepper (koekjes) -->
+                    <div id="koekjes-stepper" class="quantity-only" style="display:none;">
+                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal koekjes</label>
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                          <i class="fa-solid fa-cookie-bite"></i>
+                        </div>
+                        <div class="stepper-wrapper">
+                          <button type="button" class="stepper-btn" id="koekjes-minus">−</button>
+                          <input type="number" id="koekjes-input" class="stepper-input" value="24" min="24" step="12" readonly />
+                          <button type="button" class="stepper-btn" id="koekjes-plus">+</button>
+                        </div>
+                        <span class="qty-label">koekjes</span>
+                      </div>
+                    </div>
+
+                    <!-- Mini-gebak Type Selection -->
+                    <div id="mini-type-section" class="quantity-only" style="display:none;">
+                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type mini-gebak</label>
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                          <i class="fa-solid fa-birthday-cake"></i>
+                        </div>
+                        <div class="flex gap-6">
+                          <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="mini-type" value="cupcakes" checked class="w-4 h-4 accent-[#E8788A]" onchange="updateMiniStepper()" />
+                            <span class="text-sm text-[var(--color-text)]">Cupcakes</span>
+                          </label>
+                          <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="mini-type" value="mini-cupcakes" class="w-4 h-4 accent-[#E8788A]" onchange="updateMiniStepper()" />
+                            <span class="text-sm text-[var(--color-text)]">Mini Cupcakes</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Mini-gebak Amount Stepper -->
+                    <div id="mini-amount-section" class="quantity-only" style="display:none;">
+                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal</label>
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                          <i class="fa-solid fa-cookie-bite"></i>
+                        </div>
+                        <div class="stepper-wrapper">
+                          <button type="button" class="stepper-btn" id="mini-amount-minus">−</button>
+                          <input type="number" id="mini-amount-input" class="stepper-input" value="12" min="12" step="6" readonly />
+                          <button type="button" class="stepper-btn" id="mini-amount-plus">+</button>
+                        </div>
+                        <span id="mini-amount-label" class="qty-label">cupcakes</span>
+                      </div>
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div class="flex items-start gap-3">
+                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
+                        <i class="fa-solid fa-image"></i>
+                      </div>
+                      <div id="image-upload-area" class="image-upload-area flex-1">
+                        <input type="file" id="image-input" accept="image/*" class="hidden" />
+                        <div id="upload-placeholder" class="upload-placeholder">
+                          <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--color-text-muted)] mb-1"></i>
+                          <p class="text-xs text-[var(--color-text-muted)]">Voeg een voorbeeld toe</p>
+                        </div>
+                        <img id="preview-image" class="preview-image hidden" alt="Upload preview" />
+                      </div>
+                    </div>
+
+                    <!-- Allergies -->
+                    <div class="flex items-start gap-3">
+                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
+                        <i class="fa-solid fa-exclamation-circle"></i>
+                      </div>
+                      <textarea id="allergies-input" rows="2" placeholder="Allergieën (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
+                    </div>
+
+                    <!-- Opmerkingen -->
+                    <div class="flex items-start gap-3">
+                      <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
+                        <i class="fa-solid fa-comment"></i>
+                      </div>
+                      <textarea id="message-input" rows="2" placeholder="Opmerkingen (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- ─── SUBMIT ITEM BUTTON (appears after item form) ─── -->
+              <button type="button" id="submit-item-btn" class="btn btn-primary w-full justify-center text-lg py-4 flex items-center gap-2 mb-4" style="display:none;">
+                <i class="fa-solid fa-check mr-2"></i>Nog een product toevoegen
+              </button>
               <button type="button" id="review-btn" class="btn btn-primary w-full justify-center text-lg py-4">
                 Bestelling controleren
               </button>
-              <p class="text-center text-sm text-[var(--color-text-muted)]">
+              <p class="text-center text-sm text-[var(--color-text-muted)] mt-3">
                 U ontvangt een bevestigingsmail na verzending. We nemen spoedig contact op.
               </p>
             </form>
@@ -282,7 +304,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
               <h3 class="font-heading text-2xl font-semibold text-[var(--color-text)] mb-6 text-center">
                 Uw bestelling
               </h3>
-              
+
               <div class="bg-[var(--color-surface)] rounded-xl p-6 mb-6">
                 <h4 class="font-semibold text-[var(--color-text)] mb-3 flex items-center gap-2">
                   <i class="fa-solid fa-user text-[#E8788A]"></i> Contactgegevens
@@ -314,11 +336,11 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                 <span id="review-total-amount" class="text-xl font-bold text-[var(--color-primary)]">€0.00</span>
               </div>
 
-              <div class="flex gap-3">
+              <div class="flex gap-3 mt-4">
                 <button type="button" id="back-btn" class="btn btn-secondary flex-1 justify-center text-lg py-4">
                   <i class="fa-solid fa-arrow-left mr-2"></i> Terug
                 </button>
-                <button type="submit" id="submit-btn-final" class="btn btn-primary flex-1 justify-center text-lg py-4">
+                <button type="button" id="submit-btn-final" class="btn btn-primary flex-1 justify-center text-lg py-4">
                   <i class="fa-solid fa-paper-plane mr-2"></i> Verstuur bestelling
                 </button>
               </div>
@@ -352,120 +374,136 @@ import CalendarPicker from '../components/CalendarPicker.astro';
   <Footer />
 
   <script>
-    // State
-    const addedItems = [];
-    let currentProduct = null;
-    let editingIndex = null;
-    let orderInfoFilled = false; // Track if order-info has been filled with valid data
-    let readyToAddNewItem = false; // Track if we're in "add new item" mode
+    // ─── STATE ───────────────────────────────────────────────────────────
+    const cart = [];           // Array of item objects
+    let editingIndex = null;  // Which cart index is being edited (null = adding new)
+    const MAX_ITEMS = 6;
 
-    // Elements
-    const productSelection = document.getElementById('product-selection');
-    const orderInfoSection = document.getElementById('order-info-section');
-    const itemDetailsSection = document.getElementById('item-details-section');
-    const addItemBtn = document.getElementById('add-item-btn');
-    const itemsSummary = document.getElementById('items-summary');
-    const productCards = productSelection.querySelectorAll('.product-card');
-    const feesttaartFields = document.querySelectorAll('.feesttaart-only');
+    // ─── DOM REFS ─────────────────────────────────────────────────────────
+    const itemsList        = document.getElementById('items-list');
+    const addProductBtn    = document.getElementById('add-product-btn');
+    const maxItemsHint      = document.getElementById('max-items-hint');
+    const itemFormSection   = document.getElementById('item-form-section');
+    const itemFormTitle     = document.getElementById('item-form-title');
+    const cancelItemBtn     = document.getElementById('cancel-item-btn');
+    const submitItemBtn     = document.getElementById('submit-item-btn');
+    const productCards      = document.querySelectorAll('.product-card');
+    const feesttaartFields  = document.querySelectorAll('.feesttaart-only');
+    const orderInfoSection  = document.getElementById('order-info-section');
+    const form              = document.getElementById('order-form');
+    const successMessage    = document.getElementById('success-message');
+    const reviewSection     = document.getElementById('order-review');
+    const reviewBtn         = document.getElementById('review-btn');
+    const backBtn           = document.getElementById('back-btn');
+    const submitBtnFinal    = document.getElementById('submit-btn-final');
 
-    // Product icons mapping
+    // ─── PRODUCT ICONS / NAMES ────────────────────────────────────────────
     const productIcons = {
       'feesttaart': '<i class="fa-solid fa-cake-candles"></i>',
-      'koekjes': '<i class="fa-solid fa-cookie-bite"></i>',
-      'mini-gebak': '<i class="fa-solid fa-cookie"></i>'
+      'koekjes':    '<i class="fa-solid fa-cookie-bite"></i>',
+      'mini-gebak': '<i class="fa-solid fa-cookie"></i>',
     };
-
     const productNames = {
       'feesttaart': 'Feesttaart',
-      'koekjes': 'Koekjes',
-      'mini-gebak': 'Mini-gebak'
+      'koekjes':    'Koekjes',
+      'mini-gebak': 'Mini-gebak',
     };
 
-    // Product card selection - selects product and adds it to summary immediately
-    productCards.forEach(card => {
-      card.addEventListener('click', () => {
-        var product = card.getAttribute('data-product');
-        
-        // Can't add same product twice in "add new item" mode
-        if (readyToAddNewItem && addedItems.some(i => i.product === product)) {
-          return;
-        }
-        
-        // If in "ready to add" mode, clicking a product shows the form (don't add yet)
-        if (readyToAddNewItem) {
-          productCards.forEach(function(c) { c.classList.remove('selected'); });
-          card.classList.add('selected');
-          currentProduct = product;
-          updateFeesttaartFields();
-          // Clear previous item details from form before showing
-          document.getElementById('event-select').selectedIndex = 0;
-          document.getElementById('persons-select').selectedIndex = 0;
-          document.getElementById('flavor-select').selectedIndex = 0;
-          document.getElementById('allergies-input').value = '';
-          document.getElementById('message-input').value = '';
-          document.getElementById('koekjes-input').value = '24';
-          document.getElementById('mini-amount-input').value = '12';
-          document.getElementById('preview-image').classList.add('hidden');
-          document.getElementById('upload-placeholder').classList.remove('hidden');
-          itemDetailsSection.classList.remove('hidden');
-          editingIndex = null;
-          // Don't push item yet — wait for "Voeg toe" button to capture all fields
-          readyToAddNewItem = false;
-          orderInfoSection.style.display = 'none';
-          addItemBtn.innerHTML = '<i class="fa-solid fa-check"></i> Bevestig';
-          addItemBtn.classList.remove('hidden');
-          return;
-        }
-        
-        // Not in add mode - can switch product on existing item
-        if (addedItems.length > 0) {
-          // Update the first item's product to this selection
-          addedItems[0].product = product;
-          productCards.forEach(function(c) { c.classList.remove('selected'); });
-          card.classList.add('selected');
-          currentProduct = product;
-          updateFeesttaartFields();
-          itemDetailsSection.classList.remove('hidden');
-          editingIndex = null;
-          renderItemsSummary();
-          return;
-        }
-        
-        productCards.forEach(function(c) { c.classList.remove('selected'); });
-        card.classList.add('selected');
-        currentProduct = product;
-        updateFeesttaartFields();
-        itemDetailsSection.classList.remove('hidden');
-        editingIndex = null;
-        // First item - show form, add when "Voeg toe" is clicked
-        if (addedItems.length === 0) {
-          orderInfoSection.style.display = '';
-          addItemBtn.innerHTML = '<i class="fa-solid fa-check"></i> Bevestig';
-          addItemBtn.classList.remove('hidden');
-        } else {
-          // Update first item's product instantly
-          addedItems[0].product = product;
-        }
-        renderItemsSummary();
-      });
-    });
+    // ─── HELPERS ──────────────────────────────────────────────────────────
+    function getItemData() {
+      const product = document.querySelector('.product-card.selected')?.getAttribute('data-product');
+      if (!product) return null;
+      return {
+        product,
+        event:    document.getElementById('event-select')?.value || '',
+        persons:  document.getElementById('persons-select')?.value || '',
+        flavor:   document.getElementById('flavor-select')?.value || '',
+        allergies:document.getElementById('allergies-input')?.value || '',
+        message:  document.getElementById('message-input')?.value || '',
+        miniType: product === 'mini-gebak'
+          ? (document.querySelector('input[name="mini-type"]:checked')?.value || '') : '',
+        quantity: product === 'koekjes'
+          ? parseInt((document.getElementById('koekjes-input') as HTMLInputElement)?.value) || 0
+          : product === 'mini-gebak'
+            ? parseInt((document.getElementById('mini-amount-input') as HTMLInputElement)?.value) || 0
+            : 0,
+      };
+    }
 
-    // Update feesttaart fields visibility
-    function updateFeesttaartFields() {
-      feesttaartFields.forEach(field => {
-        field.style.display = currentProduct === 'feesttaart' ? 'block' : 'none';
-      });
-      // Show koekjes stepper
-      var koekjesStepper = document.getElementById('koekjes-stepper');
-      if (currentProduct === 'koekjes') {
-        koekjesStepper.style.display = 'block';
-      } else {
-        koekjesStepper.style.display = 'none';
+    function itemPrice(item) {
+      if (item.product === 'feesttaart') return 45;
+      if (item.product === 'koekjes')    return item.quantity ? Math.ceil(item.quantity / 24) * 12 : 12;
+      if (item.product === 'mini-gebak') return item.quantity ? Math.ceil(item.quantity / 12) * 9 : 9;
+      return 0;
+    }
+
+    function itemLabel(item) {
+      const parts = [];
+      if (item.event)   parts.push(item.event);
+      if (item.persons) parts.push(item.persons);
+      if (item.flavor)  parts.push(item.flavor);
+      if (item.quantity) parts.push(item.quantity + ' stuks');
+      if (item.miniType) parts.push(item.miniType === 'mini-cupcakes' ? 'Mini cupcakes' : 'Cupcakes');
+      return parts.join(' · ') || '—';
+    }
+
+    function clearItemForm() {
+      productCards.forEach(c => c.classList.remove('selected'));
+      feesttaartFields.forEach(f => (f as HTMLElement).style.display = 'none');
+      document.getElementById('koekjes-stepper')!.style.display = 'none';
+      document.getElementById('mini-type-section')!.style.display = 'none';
+      document.getElementById('mini-amount-section')!.style.display = 'none';
+      document.getElementById('event-select')!.selectedIndex = 0;
+      document.getElementById('persons-select')!.selectedIndex = 0;
+      document.getElementById('flavor-select')!.selectedIndex = 0;
+      document.getElementById('allergies-input')!.value = '';
+      document.getElementById('message-input')!.value = '';
+      document.getElementById('koekjes-input')!.value = '24';
+      document.getElementById('mini-amount-input')!.value = '12';
+      (document.querySelector('input[name="mini-type"][value="cupcakes"]') as HTMLInputElement).checked = true;
+      document.getElementById('preview-image')!.classList.add('hidden');
+      document.getElementById('upload-placeholder')!.classList.remove('hidden');
+    }
+
+    function loadItemIntoForm(index) {
+      const item = cart[index];
+      if (!item) return;
+      editingIndex = index;
+      productCards.forEach(c => c.classList.remove('selected'));
+      document.querySelector(`#product-selection [data-product="${item.product}"]`)!.classList.add('selected');
+      updateProductFields(item.product);
+      document.getElementById('event-select')!.value = item.event || '';
+      document.getElementById('persons-select')!.value = item.persons || '';
+      document.getElementById('flavor-select')!.value = item.flavor || '';
+      document.getElementById('allergies-input')!.value = item.allergies || '';
+      document.getElementById('message-input')!.value = item.message || '';
+      if (item.product === 'koekjes') {
+        document.getElementById('koekjes-input')!.value = String(item.quantity || 24);
       }
-      // Show mini-type selection (first step)
-      var miniTypeSection = document.getElementById('mini-type-section');
-      var miniAmountSection = document.getElementById('mini-amount-section');
-      if (currentProduct === 'mini-gebak') {
+      if (item.product === 'mini-gebak') {
+        const radio = document.querySelector(`input[name="mini-type"][value="${item.miniType || 'cupcakes'}"]`) as HTMLInputElement;
+        if (radio) radio.checked = true;
+        document.getElementById('mini-amount-input')!.value = String(item.quantity || 12);
+        updateMiniStepper();
+      }
+      itemFormTitle.textContent = 'Product bewerken';
+      submitItemBtn.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Opslaan';
+      itemFormSection.style.display = 'block';
+      submitItemBtn.style.display = 'flex';
+      addProductBtn.style.display = 'none';
+      setCardsDisabled(true);
+    }
+
+    // ─── PRODUCT FIELD VISIBILITY ─────────────────────────────────────────
+    function updateProductFields(product) {
+      feesttaartFields.forEach(f => {
+        (f as HTMLElement).style.display = product === 'feesttaart' ? 'block' : 'none';
+      });
+      const koekjesStepper = document.getElementById('koekjes-stepper') as HTMLElement;
+      const miniTypeSection = document.getElementById('mini-type-section') as HTMLElement;
+      const miniAmountSection = document.getElementById('mini-amount-section') as HTMLElement;
+      koekjesStepper.style.display = product === 'koekjes' ? 'block' : 'none';
+      if (product === 'mini-gebak') {
         miniTypeSection.style.display = 'block';
         miniAmountSection.style.display = 'block';
       } else {
@@ -474,430 +512,374 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       }
     }
 
-    // Update mini-gebak amount stepper based on type selection
-    function updateMiniStepper() {
-      var miniType = document.querySelector('input[name="mini-type"]:checked').value;
-      var miniAmountSection = document.getElementById('mini-amount-section');
-      var miniAmountInput = document.getElementById('mini-amount-input');
-      var miniAmountLabel = document.getElementById('mini-amount-label');
+    // ─── RENDER CART ─────────────────────────────────────────────────────
+    function renderCart() {
+      itemsList.innerHTML = '';
+      cart.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className = 'cart-item flex items-center justify-between p-4 bg-white rounded-xl border border-[var(--color-border)]';
+        div.innerHTML = `
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <span class="text-2xl flex-shrink-0">${productIcons[item.product]}</span>
+            <div class="min-w-0">
+              <div class="font-semibold text-[var(--color-text)]">${productNames[item.product]}</div>
+              <div class="text-xs text-[var(--color-text-muted)] truncate">${itemLabel(item)}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+            <span class="font-bold text-[var(--color-primary)]">€${itemPrice(item).toFixed(2)}</span>
+            <button type="button" class="edit-btn p-2 text-[#E8788A] hover:bg-[#FDEEF0] rounded-lg transition" data-index="${i}">
+              <i class="fa-solid fa-pen text-sm"></i>
+            </button>
+            <button type="button" class="delete-btn p-2 text-red-400 hover:bg-red-50 rounded-lg transition" data-index="${i}">
+              <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+          </div>`;
+        itemsList.appendChild(div);
+      });
 
-      miniAmountSection.style.display = 'block';
-
-      if (miniType === 'mini-cupcakes') {
-        miniAmountInput.min = 24;
-        miniAmountInput.step = 12;
-        miniAmountInput.value = 24;
-        miniAmountLabel.textContent = 'mini cupcakes';
-      } else {
-        miniAmountInput.min = 12;
-        miniAmountInput.step = 6;
-        miniAmountInput.value = 12;
-        miniAmountLabel.textContent = 'cupcakes';
-      }
-    }
-
-    // Mini-gebak amount stepper
-    document.getElementById('mini-amount-minus').addEventListener('click', function() {
-      var input = document.getElementById('mini-amount-input');
-      var newVal = parseInt(input.value) - parseInt(input.step);
-      if (newVal >= parseInt(input.min)) input.value = newVal;
-    });
-    document.getElementById('mini-amount-plus').addEventListener('click', function() {
-      var input = document.getElementById('mini-amount-input');
-      input.value = parseInt(input.value) + parseInt(input.step);
-    });
-
-    // Koekjes stepper
-    // Koekjes stepper
-    document.getElementById('koekjes-minus').addEventListener('click', function() {
-      var input = document.getElementById('koekjes-input');
-      var newVal = parseInt(input.value) - 12;
-      if (newVal >= 24) input.value = newVal;
-    });
-    document.getElementById('koekjes-plus').addEventListener('click', function() {
-      var input = document.getElementById('koekjes-input');
-      input.value = parseInt(input.value) + 12;
-    });
-
-    // Mini-gebak amount stepper
-    document.getElementById('mini-amount-minus').addEventListener('click', function() {
-      var input = document.getElementById('mini-amount-input');
-      var newVal = parseInt(input.value) - parseInt(input.step);
-      if (newVal >= parseInt(input.min)) input.value = newVal;
-    });
-    document.getElementById('mini-amount-plus').addEventListener('click', function() {
-      var input = document.getElementById('mini-amount-input');
-      input.value = parseInt(input.value) + parseInt(input.step);
-    });
-
-    // Initialize - no product selected, item details hidden
-    updateFeesttaartFields();
-    itemDetailsSection.classList.add('hidden');
-    addItemBtn.classList.add('hidden');
-
-    // CalendarPicker component handles its own availability fetching
-
-    // Add item button - only for adding extra items (first item added on product click)
-    addItemBtn.addEventListener('click', () => {
-      // If editing an existing item, save the edits first
-      if (editingIndex !== null) {
-        addedItems[editingIndex] = {
-          product: currentProduct,
-          event: document.getElementById('event-select').value,
-          persons: document.getElementById('persons-select').value,
-          flavor: document.getElementById('flavor-select').value,
-          allergies: document.getElementById('allergies-input').value,
-          message: document.getElementById('message-input').value
-        };
-        editingIndex = null;
-        renderItemsSummary();
-        productCards.forEach(c => c.classList.remove('selected'));
-        currentProduct = null;
-        itemDetailsSection.classList.add('hidden');
-        resetItemDetails();
-      }
-      
-      // Check if order-info is filled before allowing more items
-      var nameInput = document.querySelector('[name="name"]');
-      var emailInput = document.querySelector('[name="email"]');
-      var phoneInput = document.querySelector('[name="phone"]');
-      var dateInput = document.getElementById('date-input');
-      
-      var name = nameInput.value.trim();
-      var email = emailInput.value.trim();
-      var phone = phoneInput.value.trim();
-      var date = dateInput.value;
-      
-      var emptyFields = [];
-      if (!name) emptyFields.push(nameInput);
-      if (!email) emptyFields.push(emailInput);
-      if (!phone) emptyFields.push(phoneInput);
-      if (!date) emptyFields.push(dateInput);
-      
-      if (emptyFields.length > 0) {
-        // Remove any existing error styling
-        document.querySelectorAll('.order-info-error').forEach(el => el.classList.remove('order-info-error'));
-        // Show order-info section if hidden
-        orderInfoSection.style.display = '';
-        orderInfoFilled = false;
-        // Scroll to and highlight first empty field
-        emptyFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        emptyFields[0].classList.add('order-info-error');
-        emptyFields[0].focus();
-        return;
-      }
-      
-      // Remove error styling
-      document.querySelectorAll('.order-info-error').forEach(el => el.classList.remove('order-info-error'));
-      
-      if (!orderInfoFilled) {
-        orderInfoFilled = true;
-        orderInfoSection.style.display = 'none';
-      }
-      
-      // If button says "Bevestig", add the current item then enter "add another" mode
-      if (addItemBtn.innerHTML.includes('Bevestig')) {
-        // Collect all item fields
-        var newItem = {
-          product: currentProduct,
-          event: document.getElementById('event-select').value,
-          persons: document.getElementById('persons-select').value,
-          flavor: document.getElementById('flavor-select').value,
-          allergies: document.getElementById('allergies-input').value,
-          message: document.getElementById('message-input').value,
-          miniType: currentProduct === 'mini-gebak' ? (document.querySelector('input[name="mini-type"]:checked')?.value || '') : '',
-          quantity: currentProduct === 'koekjes' ? parseInt((document.getElementById('koekjes-input') as HTMLInputElement).value) : (currentProduct === 'mini-gebak' ? parseInt((document.getElementById('mini-amount-input') as HTMLInputElement).value) : 0)
-        };
-        addedItems.push(newItem);
-        renderItemsSummary();
-        // Reset for next round - enter "add another" mode
-        readyToAddNewItem = false;
-        productCards.forEach(c => c.classList.remove('selected'));
-        currentProduct = null;
-        itemDetailsSection.classList.add('hidden');
-        addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
-        resetItemDetails();
-        return;
-      }
-      
-      // Enter "ready to add new item" mode
-      readyToAddNewItem = true;
-      productCards.forEach(c => c.classList.remove('selected'));
-      currentProduct = null;
-      itemDetailsSection.classList.add('hidden');
-      addItemBtn.innerHTML = 'Selecteer een product';
-    });
-
-    // Render all items in summary
-    function renderItemsSummary() {
-      const summaryList = document.getElementById('items-summary-list');
-      if (addedItems.length > 0) {
-        itemsSummary.classList.remove('hidden');
-      } else {
-        itemsSummary.classList.add('hidden');
-      }
-      summaryList.innerHTML = '';
-      for (var i = 0; i < addedItems.length; i++) {
-        var item = addedItems[i];
-        var div = document.createElement('div');
-        div.className = 'flex items-center justify-between p-3 bg-white rounded-lg border border-[var(--color-border)]';
-        div.innerHTML = '<div class="flex items-center gap-3 flex-1"><span class="text-xl">' + productIcons[item.product] + '</span><div><div class="font-medium text-[var(--color-text)]">' + productNames[item.product] + '</div><div class="text-xs text-[var(--color-text-muted)]">' + (item.event || item.flavor || '') + '</div></div></div><div class="flex gap-2"><button type="button" class="edit-item-btn p-2 text-[#E8788A] hover:bg-[#FDEEF0] rounded-lg transition" data-index="' + i + '"><i class="fa-solid fa-pen"></i></button><button type="button" class="delete-item-btn p-2 text-red-400 hover:bg-red-50 rounded-lg transition" data-index="' + i + '"><i class="fa-solid fa-trash-can"></i></button></div>';
-        summaryList.appendChild(div);
-      }
-      // Add event listeners
-      summaryList.querySelectorAll('.edit-item-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          loadItemIntoForm(parseInt(this.getAttribute('data-index')));
+      // Attach events
+      itemsList.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => loadItemIntoForm(parseInt((btn as HTMLElement).dataset.index!)));
+      });
+      itemsList.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt((btn as HTMLElement).dataset.index!);
+          cart.splice(idx, 1);
+          renderCart();
+          updateAddButton();
+          if (cart.length === 0) orderInfoSection.style.display = 'block';
         });
       });
-      summaryList.querySelectorAll('.delete-item-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          var idx = parseInt(this.getAttribute('data-index'));
-          addedItems.splice(idx, 1);
-          renderItemsSummary();
-          if (addedItems.length === 0) {
-            itemsSummary.classList.add('hidden');
-            orderInfoSection.style.display = '';
-            orderInfoFilled = false;
-            readyToAddNewItem = false;
-          }
-          productCards.forEach(function(c) { c.classList.remove('selected'); });
-          currentProduct = null;
-          editingIndex = null;
-          itemDetailsSection.classList.add('hidden');
-          addItemBtn.innerHTML = 'Kies eerst iets lekkers';
-          addItemBtn.classList.add('hidden');
-        });
+
+      updateAddButton();
+    }
+
+    function updateAddButton() {
+      const atMax = cart.length >= MAX_ITEMS;
+      addProductBtn.style.display = atMax ? 'none' : 'flex';
+      maxItemsHint.style.display = cart.length > 0 && atMax ? 'block' : 'none';
+    }
+
+    // ─── PRODUCT CARD SELECTION ─────────────────────────────────────────────
+    productCards.forEach(card => {
+      card.addEventListener('click', () => {
+        if (editingIndex !== null) return; // locked while editing
+        productCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        const product = card.getAttribute('data-product')!;
+        updateProductFields(product);
+        // Show item details form right below the product cards
+        itemFormSection.style.display = 'block';
+        submitItemBtn.style.display = 'flex';
+        addProductBtn.style.display = 'none';
+        itemFormTitle.textContent = 'Product toevoegen';
+      });
+    });
+
+    // ─── DIM PRODUCT CARDS WHILE EDITING ──────────────────────────────────
+    function setCardsDisabled(disabled: boolean) {
+      productCards.forEach(c => {
+        if (disabled) {
+          (c as HTMLElement).style.opacity = '0.4';
+          (c as HTMLElement).style.pointerEvents = 'none';
+        } else {
+          (c as HTMLElement).style.opacity = '1';
+          (c as HTMLElement).style.pointerEvents = 'auto';
+        }
       });
     }
 
-    // Load item into form for editing
-    function loadItemIntoForm(index) {
-      var item = addedItems[index];
-      if (!item) return;
-      editingIndex = index;
-      currentProduct = item.product;
-      productCards.forEach(function(c) { c.classList.remove('selected'); });
-      productSelection.querySelector('[data-product="' + item.product + '"]').classList.add('selected');
-      updateFeesttaartFields();
-      itemDetailsSection.classList.remove('hidden');
-      addItemBtn.innerHTML = '<i class="fa-solid fa-check"></i> Bewerking Opslaan';
-      addItemBtn.classList.remove('hidden');
-      document.getElementById('event-select').value = item.event || '';
-      document.getElementById('persons-select').value = item.persons || '';
-      document.getElementById('flavor-select').value = item.flavor || '';
-      document.getElementById('allergies-input').value = item.allergies || '';
-      document.getElementById('message-input').value = item.message || '';
-      
-      // Hide order-info if it was showing
-      if (orderInfoFilled || addedItems.length > 0) {
-        orderInfoSection.style.display = 'none';
+    // ─── ADD PRODUCT BUTTON ───────────────────────────────────────────────
+    addProductBtn.addEventListener('click', () => {
+      // Clear previous red borders
+      document.querySelectorAll('.contact-input-error').forEach(el => el.classList.remove('contact-input-error'));
+      const nameInput  = document.querySelector('[name="name"]') as HTMLInputElement;
+      const emailInput = document.querySelector('[name="email"]') as HTMLInputElement;
+      const phoneInput = document.querySelector('[name="phone"]') as HTMLInputElement;
+      const missing: HTMLInputElement[] = [];
+      if (!nameInput.value.trim())  missing.push(nameInput);
+      if (!emailInput.value.trim()) missing.push(emailInput);
+      if (!phoneInput.value.trim()) missing.push(phoneInput);
+      if (missing.length > 0) {
+        missing.forEach(inp => {
+          inp.classList.add('contact-input-error');
+          inp.style.borderColor = '#ef4444';
+        });
+        showToast('Vul eerst je contactgegevens in', 'error');
+        missing[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
       }
-    }
-
-    // Reset item details section (not order info or product cards)
-    function resetItemDetails() {
-      // Clear product selection
-      productCards.forEach(c => c.classList.remove('selected'));
-      currentProduct = null;
-      updateFeesttaartFields();
-      itemDetailsSection.classList.add('hidden');
-
-      // Clear item details inputs only
-      document.getElementById('event-select').selectedIndex = 0;
-      document.getElementById('persons-select').selectedIndex = 0;
-      document.getElementById('flavor-select').selectedIndex = 0;
-      document.getElementById('allergies-input').value = '';
-      document.getElementById('message-input').value = '';
-
-      // Reset image
-      document.getElementById('preview-image').classList.add('hidden');
-      document.getElementById('upload-placeholder').classList.remove('hidden');
-
-      // Reset button and editing state
-      addItemBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Voeg nog een item toe';
-      addItemBtn.classList.add('hidden');
       editingIndex = null;
+      clearItemForm();
+      productCards.forEach(c => c.classList.remove('selected'));
+      itemFormSection.style.display = 'none';
+      submitItemBtn.style.display = 'none';
+      // Scroll back to product cards so they can pick a new one
+      document.getElementById('product-selection')!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    // ─── CLEAR ERROR BORDERS ON CONTACT INPUT ───────────────────────────────
+    document.querySelectorAll('[name="name"],[name="email"],[name="phone"]').forEach(inp => {
+      (inp as HTMLInputElement).addEventListener('input', () => {
+        inp.classList.remove('contact-input-error');
+        inp.style.borderColor = '';
+      });
+    });
+
+    // ─── CANCEL ITEM FORM ──────────────────────────────────────────────────
+    cancelItemBtn.addEventListener('click', () => {
+      itemFormSection.style.display = 'none';
+      submitItemBtn.style.display = 'none';
+      editingIndex = null;
+      productCards.forEach(c => c.classList.remove('selected'));
+      clearItemForm();
+      setCardsDisabled(false);
+      updateAddButton();
+    });
+
+    // ─── SUBMIT ITEM (add to cart, close form) ─────────────────────────────
+    submitItemBtn.addEventListener('click', () => {
+      const selectedCard = document.querySelector('.product-card.selected');
+      if (!selectedCard) {
+        showToast('Kies eerst een product', 'error');
+        return;
+      }
+      const item = getItemData();
+      if (!item) return;
+      if (editingIndex !== null) {
+        cart[editingIndex] = item;
+        showToast('Product gewijzigd', 'success');
+      } else {
+        if (cart.length >= MAX_ITEMS) { showToast('Maximum van 6 producten bereikt', 'error'); return; }
+        cart.push(item);
+        showToast('Product toegevoegd', 'success');
+        // Hide order info once first product is added
+        orderInfoSection.style.display = 'none';
+      }
+      editingIndex = null;
+      clearItemForm();
+      itemFormSection.style.display = 'none';
+      submitItemBtn.style.display = 'none';
+      productCards.forEach(c => c.classList.remove('selected'));
+      setCardsDisabled(false);
+      renderCart();
+    });
+
+    // ─── STEPPERS ──────────────────────────────────────────────────────────
+    document.getElementById('koekjes-minus')!.addEventListener('click', () => {
+      const inp = document.getElementById('koekjes-input') as HTMLInputElement;
+      const v = parseInt(inp.value) - 12;
+      if (v >= 24) inp.value = String(v);
+    });
+    document.getElementById('koekjes-plus')!.addEventListener('click', () => {
+      const inp = document.getElementById('koekjes-input') as HTMLInputElement;
+      inp.value = String(parseInt(inp.value) + 12);
+    });
+    document.getElementById('mini-amount-minus')!.addEventListener('click', () => {
+      const inp = document.getElementById('mini-amount-input') as HTMLInputElement;
+      const v = parseInt(inp.value) - parseInt(inp.step);
+      if (v >= parseInt(inp.min)) inp.value = String(v);
+    });
+    document.getElementById('mini-amount-plus')!.addEventListener('click', () => {
+      const inp = document.getElementById('mini-amount-input') as HTMLInputElement;
+      inp.value = String(parseInt(inp.value) + parseInt(inp.step));
+    });
+
+    function updateMiniStepper() {
+      const miniType = (document.querySelector('input[name="mini-type"]:checked') as HTMLInputElement)?.value;
+      const inp = document.getElementById('mini-amount-input') as HTMLInputElement;
+      const lbl = document.getElementById('mini-amount-label')!;
+      if (miniType === 'mini-cupcakes') {
+        inp.min = '24'; inp.step = '12'; inp.value = '24';
+        lbl.textContent = 'mini cupcakes';
+      } else {
+        inp.min = '12'; inp.step = '6'; inp.value = '12';
+        lbl.textContent = 'cupcakes';
+      }
     }
 
-    // Image upload
-    const imageUploadArea = document.getElementById('image-upload-area');
-    const imageInput = document.getElementById('image-input');
-    const previewImage = document.getElementById('preview-image');
-    const uploadPlaceholder = document.getElementById('upload-placeholder');
+    // ─── IMAGE UPLOAD ─────────────────────────────────────────────────────
+    const imageUploadArea = document.getElementById('image-upload-area')!;
+    const imageInput = document.getElementById('image-input') as HTMLInputElement;
+    const previewImage = document.getElementById('preview-image') as HTMLImageElement;
+    const uploadPlaceholder = document.getElementById('upload-placeholder')!;
 
     imageUploadArea.addEventListener('click', () => imageInput.click());
-    imageUploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      imageUploadArea.classList.add('dragover');
-    });
+    imageUploadArea.addEventListener('dragover', e => { e.preventDefault(); imageUploadArea.classList.add('dragover'); });
     imageUploadArea.addEventListener('dragleave', () => imageUploadArea.classList.remove('dragover'));
-    imageUploadArea.addEventListener('drop', (e) => {
+    imageUploadArea.addEventListener('drop', e => {
       e.preventDefault();
       imageUploadArea.classList.remove('dragover');
-      if (e.dataTransfer.files[0]) handleImage(e.dataTransfer.files[0]);
+      if ((e as DragEvent).dataTransfer?.files[0]) handleImage((e as DragEvent).dataTransfer!.files[0]);
     });
-    imageInput.addEventListener('change', () => {
-      if (imageInput.files[0]) handleImage(imageInput.files[0]);
-    });
+    imageInput.addEventListener('change', () => { if (imageInput.files?.[0]) handleImage(imageInput.files[0]); });
 
-    function handleImage(file) {
+    function handleImage(file: File) {
       if (!file.type.startsWith('image/')) return;
       const reader = new FileReader();
-      reader.onload = (e) => {
-        previewImage.src = e.target.result;
+      reader.onload = e => {
+        previewImage.src = e.target!.result as string;
         previewImage.classList.remove('hidden');
         uploadPlaceholder.classList.add('hidden');
       };
       reader.readAsDataURL(file);
     }
 
-    // Form submission
-    const form = document.getElementById('order-form');
-    const successMessage = document.getElementById('success-message');
-    const reviewSection = document.getElementById('order-review');
-    const reviewBtn = document.getElementById('review-btn');
-    const backBtn = document.getElementById('back-btn');
-    const submitBtnFinal = document.getElementById('submit-btn-final');
+    // ─── REVIEW ────────────────────────────────────────────────────────────
+    reviewBtn.addEventListener('click', () => {
+      // If a product card is selected but form not submitted yet, auto-add it first
+      const selectedCard = document.querySelector('.product-card.selected');
+      if (selectedCard && itemFormSection.style.display !== 'none') {
+        const item = getItemData();
+        if (item) {
+          if (cart.length >= MAX_ITEMS) { showToast('Maximum van 6 producten bereikt', 'error'); return; }
+          cart.push(item);
+        }
+        editingIndex = null;
+        clearItemForm();
+        productCards.forEach(c => c.classList.remove('selected'));
+        itemFormSection.style.display = 'none';
+        submitItemBtn.style.display = 'none';
+        addProductBtn.style.display = cart.length >= MAX_ITEMS ? 'none' : 'flex';
+        renderCart();
+      }
 
-    reviewBtn.addEventListener('click', function() {
+      // If editing, save changes first
       if (editingIndex !== null) {
-        addItemBtn.click();
+        const item = getItemData();
+        if (item) { cart[editingIndex] = item; }
+        editingIndex = null;
+        itemFormSection.style.display = 'none';
+        renderCart();
       }
-      var name = document.querySelector('[name="name"]').value;
-      var email = document.querySelector('[name="email"]').value;
-      var phone = document.querySelector('[name="phone"]').value;
-      var date = document.getElementById('date-input').value;
-      if (!name || !email || !phone) {
-        showToast('Vul alstublieft alle contactgegevens in', 'error');
+
+      const nameInput  = document.querySelector('[name="name"]') as HTMLInputElement;
+      const emailInput = document.querySelector('[name="email"]') as HTMLInputElement;
+      const phoneInput = document.querySelector('[name="phone"]') as HTMLInputElement;
+      const name  = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const date  = (document.getElementById('date-input') as HTMLInputElement).value;
+
+      // Clear previous error borders
+      [nameInput, emailInput, phoneInput].forEach(inp => {
+        inp.classList.remove('contact-input-error');
+        inp.style.borderColor = '';
+      });
+
+      // Validate
+      const errors: string[] = [];
+      if (!name || !name.includes(' ')) {
+        nameInput.classList.add('contact-input-error');
+        nameInput.style.borderColor = '#ef4444';
+        errors.push('Vul je volledige naam in (voornaam + achternaam)');
+      }
+      if (!email || !email.includes('@') || !email.includes('.')) {
+        emailInput.classList.add('contact-input-error');
+        emailInput.style.borderColor = '#ef4444';
+        errors.push('Vul een geldig e-mailadres in');
+      }
+      if (!phone || phone.replace(/\D/g, '').length < 10) {
+        phoneInput.classList.add('contact-input-error');
+        phoneInput.style.borderColor = '#ef4444';
+        errors.push('Vul een geldig telefoonnummer in (min. 10 cijfers)');
+      }
+      if (errors.length > 0) {
+        showToast(errors[0], 'error');
+        const first = document.querySelector('.contact-input-error') as HTMLElement;
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
-      if (!date) {
-        showToast('Vul alstublieft een datum in', 'error');
-        return;
-      }
-      if (addedItems.length === 0) {
-        showToast('Kies eerst iets lekkers', 'error');
-        return;
-      }
-      // Mark order-info as filled
-      orderInfoFilled = true;
-      orderInfoSection.style.display = 'none';
-      document.getElementById('review-name-input').value = name;
-      document.getElementById('review-email-input').value = email;
-      document.getElementById('review-phone-input').value = phone;
-      document.getElementById('review-date-input').value = date;
-      var reviewItems = document.getElementById('review-items');
-      var html = '';
-      var total = 0;
-      for (var i = 0; i < addedItems.length; i++) {
-        var item = addedItems[i];
-        var itemTotal = 0;
-        if (item.product === 'feesttaart') itemTotal = 45;
-        else if (item.product === 'koekjes') itemTotal = item.quantity ? Math.ceil(item.quantity / 24) * 12 : 12;
-        else if (item.product === 'mini-gebak') itemTotal = item.quantity ? Math.ceil(item.quantity / 12) * 9 : 9;
-        html = html + '<div class="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] mb-4">';
-        html = html + '<div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="text-xl">' + productIcons[item.product] + '</span><span class="font-semibold text-[var(--color-text)]">' + productNames[item.product] + '</span></div><span class="font-bold text-[var(--color-primary)]">€' + itemTotal.toFixed(2) + '</span></div>';
-        html = html + '<div class="text-sm text-[var(--color-text-muted)]">';
-        if (item.miniType) { html = html + '<div><span class="font-medium">Type:</span> ' + (item.miniType === 'cupcakes' ? 'Cupcakes' : 'Mini-cupcakes') + '</div>'; }
-        if (item.quantity) { html = html + '<div><span class="font-medium">Aantal:</span> ' + item.quantity + (item.product === 'koekjes' ? ' stuks' : ' stuks') + '</div>'; }
-        if (item.event) { html = html + '<div><span class="font-medium">Gelegenheid:</span> ' + item.event + '</div>'; }
-        if (item.persons) { html = html + '<div><span class="font-medium">Personen:</span> ' + item.persons + '</div>'; }
-        if (item.flavor) { html = html + '<div><span class="font-medium">Smaak:</span> ' + item.flavor + '</div>'; }
-        if (item.allergies) { html = html + '<div><span class="font-medium">Allergieën:</span> ' + item.allergies + '</div>'; }
-        if (item.message) { html = html + '<div><span class="font-medium">Opmerkingen:</span> ' + item.message + '</div>'; }
-        html = html + '</div></div>';
-        total = total + itemTotal;
-      }
+      if (!date) { showToast('Kies een datum', 'error'); return; }
+      if (cart.length === 0)          { showToast('Voeg minimaal één product toe', 'error'); return; }
+
+      (document.getElementById('review-name-input') as HTMLInputElement).value = name;
+      (document.getElementById('review-email-input') as HTMLInputElement).value = email;
+      (document.getElementById('review-phone-input') as HTMLInputElement).value = phone;
+      (document.getElementById('review-date-input') as HTMLInputElement).value = date;
+
+      const reviewItems = document.getElementById('review-items')!;
+      let html = '', total = 0;
+      cart.forEach(item => {
+        const p = itemPrice(item);
+        total += p;
+        html += `<div class="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2"><span class="text-xl">${productIcons[item.product]}</span>
+              <span class="font-semibold text-[var(--color-text)]">${productNames[item.product]}</span></div>
+            <span class="font-bold text-[var(--color-primary)]">€${p.toFixed(2)}</span>
+          </div>
+          <div class="text-sm text-[var(--color-text-muted)]">
+            ${item.event    ? `<div><span class="font-medium">Gelegenheid:</span> ${item.event}</div>` : ''}
+            ${item.persons  ? `<div><span class="font-medium">Personen:</span> ${item.persons}</div>` : ''}
+            ${item.quantity ? `<div><span class="font-medium">Aantal:</span> ${item.quantity} stuks</div>` : ''}
+            ${item.miniType ? `<div><span class="font-medium">Type:</span> ${item.miniType === 'mini-cupcakes' ? 'Mini cupcakes' : 'Cupcakes'}</div>` : ''}
+            ${item.flavor   ? `<div><span class="font-medium">Smaak:</span> ${item.flavor}</div>` : ''}
+            ${item.allergies ? `<div><span class="font-medium">Allergieën:</span> ${item.allergies}</div>` : ''}
+            ${item.message  ? `<div><span class="font-medium">Opmerkingen:</span> ${item.message}</div>` : ''}
+          </div>
+        </div>`;
+      });
       reviewItems.innerHTML = html;
-      document.getElementById('review-total-amount')!.textContent = '€' + total.toFixed(2);
+      (document.getElementById('review-total-amount') as HTMLElement).textContent = '€' + total.toFixed(2);
+
       form.classList.add('hidden');
       reviewSection.classList.remove('hidden');
     });
 
-    backBtn.addEventListener('click', function() {
-      // Sync review inputs back to form fields before going back
-      document.querySelector('[name="name"]').value = document.getElementById('review-name-input').value;
-      document.querySelector('[name="email"]').value = document.getElementById('review-email-input').value;
-      document.querySelector('[name="phone"]').value = document.getElementById('review-phone-input').value;
-      document.getElementById('date-input').value = document.getElementById('review-date-input').value;
+    backBtn.addEventListener('click', () => {
+      (document.querySelector('[name="name"]') as HTMLInputElement).value    = (document.getElementById('review-name-input') as HTMLInputElement).value;
+      (document.querySelector('[name="email"]') as HTMLInputElement).value   = (document.getElementById('review-email-input') as HTMLInputElement).value;
+      (document.querySelector('[name="phone"]') as HTMLInputElement).value   = (document.getElementById('review-phone-input') as HTMLInputElement).value;
+      (document.getElementById('date-input') as HTMLInputElement).value      = (document.getElementById('review-date-input') as HTMLInputElement).value;
       reviewSection.classList.add('hidden');
       form.classList.remove('hidden');
+      orderInfoSection.style.display = 'block';
     });
 
-    submitBtnFinal.addEventListener('click', async function() {
-      // Sync review inputs to form fields before submission
-      document.querySelector('[name="name"]').value = document.getElementById('review-name-input').value;
-      document.querySelector('[name="email"]').value = document.getElementById('review-email-input').value;
-      document.querySelector('[name="phone"]').value = document.getElementById('review-phone-input').value;
-      document.getElementById('date-input').value = document.getElementById('review-date-input').value;
+    submitBtnFinal.addEventListener('click', async () => {
+      const name  = (document.getElementById('review-name-input') as HTMLInputElement).value;
+      const email = (document.getElementById('review-email-input') as HTMLInputElement).value;
+      const phone = (document.getElementById('review-phone-input') as HTMLInputElement).value;
+      const date  = (document.getElementById('review-date-input') as HTMLInputElement).value;
 
-      var name = document.querySelector('[name="name"]').value;
-      var email = document.querySelector('[name="email"]').value;
-      var phone = document.querySelector('[name="phone"]').value;
-      var date = document.getElementById('date-input').value;
-
-      // Check availability before submitting
+      // Verify availability
       try {
-        const response = await fetch(`/api/availability?startDate=${date}&endDate=${date}`);
-        const data = await response.json();
+        const res = await fetch(`/api/availability?startDate=${date}&endDate=${date}`);
+        const data = await res.json();
         const slot = data.availability?.[0];
-        
         if (slot && !slot.available) {
-          showToast('Helaas is deze datum volledig bezet. Kies een andere datum.', 'error');
+          showToast('Deze datum is niet beschikbaar. Kies een andere.', 'error');
           return;
         }
-      } catch (err) {
-        console.log('Could not verify availability:', err);
+      } catch {
+        // Proceed if check fails
       }
 
-      // Calculate total (mock calculation)
-      var total = addedItems.reduce(function(sum, item) {
-        if (item.product === 'feesttaart') return sum + 45;
-        if (item.product === 'koekjes') return sum + 12;
-        if (item.product === 'mini-gebak') return sum + 9;
-        return sum;
-      }, 0);
+      const total = cart.reduce((s, item) => s + itemPrice(item), 0);
+      const orderData = { date, customer: { name, email, phone }, items: cart, total: '€' + total.toFixed(2) };
 
-      // Create order object
-      var orderData = {
-        date: date,
-        customer: { name: name, email: email, phone: phone },
-        items: addedItems,
-        total: '€' + total.toFixed(2)
-      };
-
-      // Save order to API
       try {
-        const saveResponse = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(orderData)
-        });
-        
-        if (!saveResponse.ok) {
-          showToast('Er ging iets mis bij het opslaan. Probeer opnieuw.', 'error');
-          return;
-        }
-      } catch (err) {
-        console.log('Could not save order:', err);
-      }
+        const saveRes = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData) });
+        if (!saveRes.ok) { showToast('Er ging iets mis. Probeer opnieuw.', 'error'); return; }
+      } catch { showToast('Er ging iets mis. Probeer opnieuw.', 'error'); return; }
 
       reviewSection.classList.add('hidden');
       successMessage.classList.remove('hidden');
+      cart.length = 0;
+      renderCart();
     });
 
+    // ─── TOAST ─────────────────────────────────────────────────────────────
     function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
       const container = document.getElementById('toast-container')!;
-      const icons: Record<string, string> = { success: '✓', error: '✕', info: 'ℹ' };
+      const icons: Record<string,string> = { success: '✓', error: '✕', info: 'ℹ' };
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
       toast.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${message}</span>`;
       container.appendChild(toast);
-      setTimeout(() => {
-        toast.style.animation = 'toastOut 0.2s ease forwards';
-        setTimeout(() => toast.remove(), 200);
-      }, 3500);
+      setTimeout(() => { toast.style.animation = 'toastOut 0.2s ease forwards'; setTimeout(() => toast.remove(), 200); }, 3500);
     }
   </script>
 
@@ -915,206 +897,43 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       to   { opacity: 0; transform: translateY(8px); }
     }
     .product-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1.5rem 1rem;
-      background: white;
-      border: 2px solid #F0E0E2;
-      border-radius: 1rem;
-      cursor: pointer;
-      transition: all 300ms ease;
+      display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+      padding: 1.5rem 1rem; background: white;
+      border: 2px solid #F0E0E2; border-radius: 1rem; cursor: pointer; transition: all 300ms ease;
     }
-
     .product-card:hover {
-      border-color: #E8788A;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(232, 120, 138, 0.2);
+      border-color: #E8788A; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(232,120,138,0.2);
     }
-
-    .product-card.selected {
-      border-color: #E8788A;
-      background: #FDEEF0;
-    }
-
-    .product-icon {
-      font-size: 2rem;
-      color: #E8788A;
-    }
-
-    .product-name {
-      font-size: 0.875rem;
-      text-align: center;
-    }
-
-    #order-info-section > div {
-      margin-bottom: 0.75rem;
-    }
-
-    #order-info-section > div:last-child {
-      margin-bottom: 0;
-    }
-
-    #item-details-section > div {
-      margin-bottom: 0.75rem;
-    }
-
-    #item-details-section > div:last-child {
-      margin-bottom: 0;
-    }
-
+    .product-card.selected { border-color: #E8788A; background: #FDEEF0; }
+    .product-icon { font-size: 2rem; color: #E8788A; }
+    .product-name { font-size: 0.875rem; text-align: center; }
     .image-upload-area {
-      position: relative;
-      border: 2px dashed #E0E0E0;
-      border-radius: 0.75rem;
-      overflow: hidden;
-      cursor: pointer;
-      transition: all 200ms ease;
-      background: var(--color-surface);
+      position: relative; border: 2px dashed #E0E0E0; border-radius: 0.75rem;
+      overflow: hidden; cursor: pointer; transition: all 200ms ease; background: var(--color-surface);
     }
-
-    .image-upload-area:hover,
-    .image-upload-area.dragover {
-      border-color: #E8788A;
-      background: #FDEEF0;
-    }
-
-    .upload-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem 1rem;
-      color: #888;
-    }
-
-    .preview-image {
-      width: auto;
-      max-height: 8rem;
-      max-width: 100%;
-      object-fit: contain;
-      display: block;
-      margin: 0 auto;
-    }
-
-    .btn-secondary {
-      background: white;
-      color: var(--color-primary);
-      border: 2px solid var(--color-primary);
-    }
-
-    .btn-secondary:hover {
-      background: var(--color-secondary);
-    }
-
-    .order-info-error {
-      border-color: #e53e3e !important;
-      box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.2);
-    }
-
-    .date-availability-message {
-      display: block;
-      font-size: 0.75rem;
-      margin-top: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.5rem;
-    }
-
-    .date-availability-message.available {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .date-availability-message.error {
-      background: #fef2f2;
-      color: #991b1b;
-    }
-
-    .date-unavailable {
-      border-color: #ef4444 !important;
-      background: #fef2f2 !important;
-    }
-
-    .stepper-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
+    .image-upload-area:hover, .image-upload-area.dragover { border-color: #E8788A; background: #FDEEF0; }
+    .upload-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1rem; color: #888; }
+    .preview-image { width: auto; max-height: 8rem; max-width: 100%; object-fit: contain; display: block; margin: 0 auto; }
+    .stepper-wrapper { display: flex; align-items: center; gap: 0.5rem; }
     .stepper-btn {
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: 50%;
-      border: 2px solid #E8788A;
-      background: white;
-      color: #E8788A;
-      font-size: 1.25rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+      width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 2px solid #E8788A;
+      background: white; color: #E8788A; font-size: 1.25rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
     }
-
-    .stepper-btn:hover {
-      background: #E8788A;
-      color: white;
-    }
-
+    .stepper-btn:hover { background: #E8788A; color: white; }
     .stepper-input {
-      width: 4rem;
-      height: 2.5rem;
-      text-align: center;
-      border: 2px solid #e2e8f0;
-      border-radius: 0.5rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #1e293b;
-      background: #f8fafc;
+      width: 4rem; height: 2.5rem; text-align: center;
+      border: 2px solid #e2e8f0; border-radius: 0.5rem;
+      font-size: 1.125rem; font-weight: 600; color: #1e293b; background: #f8fafc;
     }
-
-    .qty-label {
-      font-size: 0.875rem;
-      color: #64748b;
-    }
-
-    .quantity-only {
-      display: none;
-    }
-
-    .stepper-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .stepper-btn {
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: 50%;
-      border: 2px solid #E8788A;
-      background: white;
-      color: #E8788A;
-      font-size: 1.25rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .stepper-btn:hover {
-      background: #E8788A;
-      color: white;
-    }
-
-    .stepper-input {
-      width: 4rem;
-      height: 2.5rem;
-      text-align: center;
-      border: 2px solid #e2e8f0;
-      border-radius: 0.5rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #1e293b;
-      background: #f8fafc;
-    }
+    .qty-label { font-size: 0.875rem; color: #64748b; }
+    .quantity-only { display: none; }
+    .item-form-section { animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .toast { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 0.75rem; font-size: 0.875rem; animation: toastIn 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .date-availability-message { display: block; font-size: 0.75rem; margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; }
+    .date-availability-message.available { background: #dcfce7; color: #166534; }
+    .date-availability-message.error { background: #fef2f2; color: #991b1b; }
+    .contact-input-error { border-color: #ef4444 !important; }
   </style>
 </Layout>

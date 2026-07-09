@@ -135,7 +135,7 @@ export const POST: APIRoute = async ({ request }) => {
     const countAll = await d1Query('SELECT COUNT(*) as cnt FROM orders');
     const orderNum = ((countAll.results?.[0]?.cnt as number) ?? 0) + 1;
     const orderId = `ORD-${String(orderNum).padStart(3, '0')}`;
-    const orderDate = date ?? new Date().toISOString().split('T')[0];
+    const orderDate = (date && date.trim()) ? date : new Date().toISOString().split('T')[0];
 
     // Insert order
     await d1Query(

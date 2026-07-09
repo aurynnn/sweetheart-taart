@@ -12,8 +12,7 @@ try {
       (SELECT GROUP_CONCAT(product, ', ') FROM order_items WHERE order_id = o.id) as products
     FROM orders o
     JOIN customers c ON o.customer_id = c.id
-    WHERE o.date >= date('now')
-      AND o.status NOT IN ('completed', 'cancelled')
+    WHERE o.status = 'approved'
     ORDER BY o.date ASC
     LIMIT 50
   `);

@@ -1,6 +1,7 @@
 ---
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 import StatCard from '../../components/admin/StatCard.astro';
+import OrderModal from '../../components/admin/orders/OrderModal.astro';
 import { d1Query } from '../../lib/d1';
 
 // Fetch real stats from D1
@@ -62,14 +63,22 @@ try {
     ORDER BY o.created_at DESC
     LIMIT 5
   `);
-  recentOrders = (ordersRes.results || []).map((row: any) => ({
-    id: row.id,
-    customer: row.customer || 'Onbekend',
-    product: row.product || '—',
-    date: row.date,
-    total: row.total ? `€${Number(row.total).toFixed(2)}` : '€0.00',
-    status: row.status
-  }));
+  recentOrders = (ordersRes.results || []).map((row: any) => {
+    const totalRaw = row.total;
+    // row.total may already be a string like '€57.00' or a number
+    let totalFormatted = '€0.00';
+    if (totalRaw !== null && totalRaw !== undefined && totalRaw !== '') {
+      const numeric = typeof totalRaw === 'string' ? parseFloat(totalRaw.replace(/[^0-9.]/g, '')) : Number(totalRaw);
+      totalFormatted = isNaN(numeric) ? String(totalRaw) : `€${numeric.toFixed(2)}`;
+    }
+    return {
+      id: row.id,
+      customer: row.customer || 'Onbekend',
+      date: row.date || '—',
+      total: totalFormatted,
+      status: row.status
+    };
+  });
 } catch (e) {
   // D1 not available — stats stay at 0
 }
@@ -159,7 +168,6 @@ const statusBadge = (status: string) => {
         <tr>
           <th>Order ID</th>
           <th>Klant</th>
-          <th>Product</th>
           <th>Datum</th>
           <th>Totaal</th>
           <th>Status</th>
@@ -167,10 +175,9 @@ const statusBadge = (status: string) => {
       </thead>
       <tbody>
         {recentOrders.map(order => (
-          <tr>
+          <tr class="clickable-row" data-order-id={order.id}>
             <td class="order-id">{order.id}</td>
             <td>{order.customer}</td>
-            <td>{order.product}</td>
             <td>{order.date}</td>
             <td class="order-total">{order.total}</td>
             <td><Fragment set:html={statusBadge(order.status)} /></td>
@@ -206,6 +213,82 @@ const statusBadge = (status: string) => {
     </div>
   </div>
 </AdminLayout>
+
+<OrderModal />
+
+<script>
+  import { STATUS_CONFIG, renderOrderDetail } from '../../lib/orders';
+
+  (window as any).STATUS_CONFIG = STATUS_CONFIG;
+
+  let allOrders: any[] = [];
+
+  async function loadDashboardOrders() {
+    try {
+      const res = await fetch('/api/orders');
+      allOrders = await res.json();
+    } catch (e) {
+      console.error('Failed to load orders for modal');
+    }
+  }
+
+  function openModal(orderId: string) {
+    const order = allOrders.find((o: any) => o.id === orderId);
+    if (!order) return;
+    const subtitle = document.getElementById('modalOrderId');
+    if (subtitle) {
+      const d = order.date ? new Date(order.date + 'T00:00:00') : null;
+      if (d && !isNaN(d.getTime())) {
+        const formatted = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+        subtitle.textContent = `#${order.id} · Ophaaldatum: ${formatted}`;
+      } else if (order.createdAt) {
+        const created = new Date(order.createdAt);
+        const createdStr = created.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+        subtitle.textContent = `#${order.id} · Geplaatst: ${createdStr}`;
+      } else {
+        subtitle.textContent = `#${order.id}`;
+      }
+    }
+    const badge = document.getElementById('modalStatusBadge');
+    if (badge) {
+      const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+      const hexToRgba = (hex: string, alpha: number) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      };
+      badge.innerHTML = `<span class="dot" style="background:${sc.dot}"></span>${sc.label}`;
+      badge.style.background = hexToRgba(sc.bg, 0.25);
+      badge.style.color = sc.color;
+      badge.style.borderColor = hexToRgba(sc.color, 0.4);
+    }
+    const body = document.getElementById('orderModalBody');
+    if (body) body.innerHTML = renderOrderDetail(order);
+    document.getElementById('orderModal')?.classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('orderModal')?.classList.remove('active');
+    const badge = document.getElementById('modalStatusBadge');
+    if (badge) { badge.textContent = ''; badge.style.background = ''; badge.style.color = ''; badge.style.borderColor = ''; }
+  }
+
+  document.addEventListener('click', (e) => {
+    const row = (e.target as Element).closest('.clickable-row') as HTMLElement | null;
+    if (!row) return;
+    const orderId = row.dataset.orderId;
+    if (orderId) openModal(orderId);
+  });
+
+  document.getElementById('closeOrderModalBtn')?.addEventListener('click', closeModal);
+  document.getElementById('closeOrderModalBtn2')?.addEventListener('click', closeModal);
+  document.getElementById('orderModal')?.addEventListener('click', (e) => {
+    if ((e.target as Element).classList.contains('modal-overlay')) closeModal();
+  });
+
+  loadDashboardOrders();
+</script>
 
 <style>
 .stats-grid {
@@ -367,6 +450,14 @@ const statusBadge = (status: string) => {
 
 .orders-table tbody tr:hover {
   background: #f8fafc;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover td {
+  background: #fdf2f4;
 }
 
 .order-id {

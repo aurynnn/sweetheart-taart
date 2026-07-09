@@ -36,72 +36,104 @@ export function renderOrderDetail(order: Order): string {
   const c = order.customer || {};
   const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
 
-  const itemsHtml = (order.items || []).map(item => `
-    <div class="order-item-card">
+  // Customer avatar initials
+  const initials = (c.name || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+
+  const itemsHtml = (order.items || []).map((item, i) => {
+    const productIcons: Record<string, string> = {
+      'feesttaart': '<i class="fa-solid fa-cake-candles"></i>',
+      'koekjes': '<i class="fa-solid fa-cookie-bite"></i>',
+      'mini-gebak': '<i class="fa-solid fa-cookie"></i>',
+    };
+    const icon = productIcons[item.product || ''] || '<i class="fa-solid fa-box"></i>';
+    const price = item.price ? `€${item.price.toFixed(2)}` : (order.total || '—');
+    const fields: string[] = [];
+    if (item.persons)  fields.push(fieldHtml('Aantal personen', String(item.persons)));
+    if (item.flavor)   fields.push(fieldHtml('Smaak', item.flavor));
+    if (item.miniType) fields.push(fieldHtml('Type', item.miniType === 'mini-cupcakes' ? 'Mini cupcakes' : 'Cupcakes'));
+    if (item.quantity) fields.push(fieldHtml('Aantal', `${item.quantity} stuks`));
+    return `
+    <div class="order-item-card" style="margin-bottom:${i < (order.items || []).length - 1 ? '1rem' : '0'}">
       <div class="item-card-header">
-        <span class="item-product-name">${item.product || '—'}</span>
-        ${item.event ? `<span class="event-badge">${item.event}</span>` : ''}
+        <div class="item-card-left">
+          <div class="item-index">${i + 1}</div>
+          <div class="item-product-icon">${icon}</div>
+          <div>
+            <div class="item-label">Item ${i + 1}</div>
+            <div class="item-product-name">${productLabel(item.product || '')}</div>
+            ${item.event ? `<span class="item-event-badge"><i class="fa-solid fa-star" style="font-size:0.5rem"></i> ${item.event}</span>` : ''}
+          </div>
+        </div>
+        <div class="item-price-tag">${price}</div>
       </div>
       <div class="item-card-body">
-        ${fieldHtml('Aantal personen', item.persons ? `${item.persons}` : '—')}
-        ${fieldHtml('Smaak', item.flavor || '—')}
-        ${fieldHtml('Type', item.miniType || '—')}
-        ${item.quantity ? fieldHtml('Aantal', `${item.quantity}x`) : ''}
-        ${fieldHtml('Prijs', item.price ? `€${item.price.toFixed(2)}` : '—')}
+        ${fields.join('')}
+        ${item.allergies ? `
+          <div class="allergy-field">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>${item.allergies}</span>
+          </div>` : ''}
         ${item.message ? `
-          <div class="item-field" style="grid-column:1/-1">
+          <div class="message-field">
             <label>Bericht</label>
             <span>${item.message}</span>
           </div>` : ''}
-        ${item.allergies ? `
-          <div class="allergy-field" style="grid-column:1/-1">
-            <label style="display:block;font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:0.25rem">Allergieën</label>
-            <span>⚠️ ${item.allergies}</span>
-          </div>` : ''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   const customerHtml = `
+    <div class="customer-top">
+      <div class="customer-avatar">${initials}</div>
+      <div>
+        <div class="customer-name">${c.name || '—'}</div>
+        <div class="customer-contact-row">
+          ${c.email ? `<div class="contact-item"><i class="fa-solid fa-envelope"></i><a href="mailto:${c.email}">${c.email}</a></div>` : ''}
+          ${c.phone ? `<div class="contact-item"><i class="fa-solid fa-phone"></i><a href="tel:${c.phone}">${c.phone}</a></div>` : ''}
+        </div>
+      </div>
+    </div>
     <div class="info-grid">
-      ${fieldHtml('Naam', c.name || '—', 'full-width')}
-      ${c.email ? fieldHtml('E-mail', c.email) : ''}
-      ${c.phone ? fieldHtml('Telefoon', c.phone) : ''}
-      ${fieldHtml('Status', '', 'full-width', true, sc)}
       ${order.pickup_date ? fieldHtml('Ophaaldatum', order.pickup_date) : ''}
-      ${order.order_type ? fieldHtml('Type', order.order_type) : ''}
+      ${order.order_type  ? fieldHtml('Type', order.order_type) : ''}
       ${order.message ? `
         <div class="info-row notes-row">
-          <span class="info-label">Notities</span>
-          <span class="info-value">${order.message}</span>
+          <div class="info-label">Notitie</div>
+          <div class="info-value">${order.message}</div>
         </div>` : ''}
     </div>`;
 
-  const footerHtml = order.items && order.items.length > 1 ? `
+  const totalItems = order.items?.length || 1;
+  const hasMultiple = totalItems > 1;
+
+  return `
+    <!-- Status Banner -->
+    <div class="status-banner" style="background:${sc.bg}; color:${sc.color}">
+      <div class="status-banner-left">
+        <span class="status-dot" style="background:${sc.dot}"></span>
+        <span class="status-text">${sc.label}</span>
+      </div>
+      ${order.pickup_date ? `<span class="date-text"><i class="fa-solid fa-calendar" style="margin-right:0.25rem"></i>${order.pickup_date}</span>` : ''}
+    </div>
+
+    <!-- Customer -->
     <div class="detail-section">
       <div class="section-header">
         <span class="section-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
-          </svg>
+          <i class="fa-solid fa-user" style="font-size:0.75rem"></i>
         </span>
-        <h4>Alle Items (${order.items.length})</h4>
+        <h4>Klant</h4>
       </div>
-      <div class="order-items-list">${itemsHtml}</div>
-      <div class="total-row">
-        <span class="total-label">Totaal</span>
-        <span class="total-amount">${order.total || '€0,00'}</span>
-      </div>
-    </div>` : `
+      <div class="customer-card">${customerHtml}</div>
+    </div>
+
+    <!-- Items -->
     <div class="detail-section">
       <div class="section-header">
         <span class="section-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
-          </svg>
+          <i class="fa-solid fa-boxes-stacked" style="font-size:0.75rem"></i>
         </span>
-        <h4>Item</h4>
+        <h4>${hasMultiple ? `Items (${totalItems})` : 'Item'}</h4>
       </div>
       <div class="order-items-list">${itemsHtml}</div>
       ${order.total ? `
@@ -110,21 +142,13 @@ export function renderOrderDetail(order: Order): string {
           <span class="total-amount">${order.total}</span>
         </div>` : ''}
     </div>`;
+}
 
-  return `
-    <div class="detail-section">
-      <div class="section-header">
-        <span class="section-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </span>
-        <h4>Klant</h4>
-      </div>
-      ${customerHtml}
-    </div>
-    ${footerHtml}`;
+function productLabel(product: string): string {
+  const labels: Record<string, string> = {
+    'feesttaart': 'Feesttaart', 'koekjes': 'Koekjes', 'mini-gebak': 'Mini-gebak'
+  };
+  return labels[product] || product;
 }
 
 function fieldHtml(
