@@ -1,14 +1,17 @@
 ---
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 import { d1Query, d1Exec } from '../../lib/d1';
+import { customerNameSql } from '../../lib/schema';
+import { formatEuro, parseEuro } from '../../lib/catalog';
 
 let todos: any[] = [];
 
 try {
+  const name = await customerNameSql('c');
   const res = await d1Query(`
     SELECT
       o.id, o.date, o.status, o.total, o.message,
-      c.firstname, c.lastname as customer, c.email, c.phone,
+      o.time, ${name.first} as firstname, ${name.last} as lastname, c.email, c.phone,
       (SELECT GROUP_CONCAT(product, ', ') FROM order_items WHERE order_id = o.id) as products
     FROM orders o
     JOIN customers c ON o.customer_id = c.id
@@ -20,7 +23,8 @@ try {
     id: row.id,
     date: row.date,
     status: row.status,
-    total: typeof row.total === 'string' ? row.total : (row.total ? `€${Number(row.total).toFixed(2)}` : '€0.00'),
+    time: row.time || '',
+    total: formatEuro(parseEuro(row.total)),
     customer: [row.firstname, row.lastname].filter(Boolean).join(' ') || 'Onbekend',
     email: row.email || '',
     phone: row.phone || '',
@@ -28,7 +32,7 @@ try {
     message: row.message || ''
   }));
 } catch (e) {
-  // D1 unavailable
+  console.error('[admin/todo] Failed to load orders:', e);
 }
 
 const statusBadge = (status: string) => {

@@ -1,15 +1,35 @@
 import type { APIRoute } from 'astro';
-import { d1Query, d1Exec } from '../../../lib/d1';
+import { d1Query } from '../../../lib/d1';
+import { tableColumns, customerNameSql } from '../../../lib/schema';
+import { getDayAvailability } from '../../../lib/availability';
+import {
+  type AanvraagItem,
+  EMAIL_RE,
+  MAX_ITEMS,
+  PICKUP_TIMES,
+  formatEuro,
+  isValidPhone,
+  itemPrice,
+  parseEuro,
+  validateItem,
+} from '../../../lib/catalog';
+
+const json = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+
+const str = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
 export const GET: APIRoute = async ({ url }) => {
   const status = url.searchParams.get('status');
   const dateFrom = url.searchParams.get('dateFrom');
   const dateTo = url.searchParams.get('dateTo');
+  const name = await customerNameSql('c');
 
   let query = `
     SELECT
       o.id, o.date, o.time, o.status, o.total, o.message, o.created_at,
-      c.id as customer_id, c.firstname, c.lastname, c.email, c.phone, c.notes
+      c.id as customer_id, ${name.first} as firstname, ${name.last} as lastname,
+      c.email, c.phone, c.notes
     FROM orders o
     JOIN customers c ON o.customer_id = c.id
     WHERE 1=1
@@ -32,32 +52,19 @@ export const GET: APIRoute = async ({ url }) => {
   query += ' ORDER BY o.created_at DESC';
 
   const ordersResult = await d1Query(query, bindings);
-  const orders: any[] = [];
+  const rows = ordersResult.results || [];
 
-  for (const row of ordersResult.results || []) {
-    const orderId = row.id as string;
-
+  // One query for all items instead of one per order
+  const itemsByOrder = new Map<string, any[]>();
+  if (rows.length) {
+    const itemCols = await tableColumns('order_items');
     const itemsResult = await d1Query(
-      'SELECT * FROM order_items WHERE order_id = ?',
-      [orderId]
+      `SELECT * FROM order_items WHERE order_id IN (${rows.map(() => '?').join(',')}) ORDER BY id`,
+      rows.map((r: any) => r.id)
     );
-
-    orders.push({
-      id: row.id,
-      date: row.date,
-      status: row.status,
-      total: row.total,
-      message: row.message,
-      createdAt: row.created_at,
-      customer: {
-        id: row.customer_id,
-        firstname: row.firstname,
-        lastname: row.lastname,
-        email: row.email,
-        phone: row.phone,
-        notes: row.notes,
-      },
-      items: itemsResult.results?.map((item: any) => ({
+    for (const item of itemsResult.results || []) {
+      const list = itemsByOrder.get(item.order_id) ?? [];
+      list.push({
         id: item.id,
         product: item.product,
         event: item.event,
@@ -66,119 +73,178 @@ export const GET: APIRoute = async ({ url }) => {
         topper: item.topper,
         allergies: item.allergies,
         price: item.price,
-        quantity: item.quantity,
-        miniType: item.mini_type,
-      })) || [],
-      time: row.time,
-    });
+        quantity: item.product === 'feesttaart' ? undefined : item.quantity,
+        miniType: itemCols.has('mini_type') ? item.mini_type : undefined,
+        message: itemCols.has('message') ? item.message : undefined,
+      });
+      itemsByOrder.set(item.order_id, list);
+    }
   }
 
-  return new Response(JSON.stringify(orders), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const orders = rows.map((row: any) => ({
+    id: row.id,
+    date: row.date,
+    time: row.time,
+    status: row.status,
+    total: formatEuro(parseEuro(row.total)),
+    totalValue: parseEuro(row.total),
+    message: row.message,
+    createdAt: row.created_at,
+    customer: {
+      id: row.customer_id,
+      firstname: row.firstname,
+      lastname: row.lastname,
+      email: row.email,
+      phone: row.phone,
+      notes: row.notes,
+    },
+    items: itemsByOrder.get(row.id) ?? [],
+  }));
+
+  return json(orders);
 };
 
+/** Next free id like ORD-004, based on the highest existing number (safe after deletions). */
+async function nextId(table: 'orders' | 'customers', prefix: string): Promise<string> {
+  const res = await d1Query(
+    `SELECT MAX(CAST(SUBSTR(id, ${prefix.length + 2}) AS INTEGER)) as n FROM ${table} WHERE id LIKE ?`,
+    [`${prefix}-%`]
+  );
+  const n = ((res.results?.[0]?.n as number) ?? 0) + 1;
+  return `${prefix}-${String(n).padStart(3, '0')}`;
+}
+
 export const POST: APIRoute = async ({ request }) => {
+  let body: any;
   try {
-    const body = await request.json();
-    const { date, time, customer, items, total, message, isAdmin } = body;
+    body = await request.json();
+  } catch {
+    return json({ success: false, error: 'Ongeldige aanvraag' }, 400);
+  }
 
-    // Check availability (skip for admin-created orders)
-    if (!isAdmin) {
-      const dayOfWeek = new Date(date + 'T00:00:00').getDay();
-      const recRow = await d1Query(
-        'SELECT enabled, max_orders FROM recurring_schedule WHERE day_of_week = ?',
-        [dayOfWeek]
-      );
-      const maxOrders = recRow.results?.[0]?.max_orders as number ?? 3;
+  try {
+    const isAdmin = body.isAdmin === true;
+    const date = str(body.date, 10);
+    const time = str(body.time, 5);
+    const message = str(body.message, 1000);
+    const rawCustomer = body.customer ?? {};
 
-      const countResult = await d1Query(
-        "SELECT COUNT(*) as cnt FROM orders WHERE date = ? AND status != 'cancelled'",
-        [date]
-      );
-      const currentCount = countResult.results?.[0]?.cnt as number ?? 0;
+    // Admin form sends a single "name"; the public form sends first + last name.
+    let firstname = str(rawCustomer.firstname, 80);
+    let lastname = str(rawCustomer.lastname, 80);
+    if (!firstname && !lastname && rawCustomer.name) {
+      const [first, ...rest] = str(rawCustomer.name, 160).split(/\s+/);
+      firstname = first ?? '';
+      lastname = rest.join(' ');
+    }
+    const email = str(rawCustomer.email, 160).toLowerCase();
+    const phone = str(rawCustomer.phone, 40);
 
-      if (currentCount >= maxOrders) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Date is fully booked' }),
-          { status: 409, headers: { 'Content-Type': 'application/json' } }
-        );
+    const items: AanvraagItem[] = Array.isArray(body.items) ? body.items.slice(0, MAX_ITEMS) : [];
+
+    // ── Validation ────────────────────────────────────────────────────────
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ success: false, error: 'Kies een geldige ophaaldatum' }, 400);
+
+    let total: number;
+    if (isAdmin) {
+      if (!firstname && !email && !phone) return json({ success: false, error: 'Vul minstens naam, e-mail of telefoon in' }, 400);
+      total = parseEuro(body.total);
+    } else {
+      if (!firstname || !lastname) return json({ success: false, error: 'Vul uw voor- en achternaam in' }, 400);
+      if (!EMAIL_RE.test(email)) return json({ success: false, error: 'Vul een geldig e-mailadres in' }, 400);
+      if (!isValidPhone(phone)) return json({ success: false, error: 'Vul een geldig telefoonnummer in' }, 400);
+      if (!PICKUP_TIMES.includes(time)) return json({ success: false, error: 'Kies een ophaalmoment' }, 400);
+      if (items.length === 0) return json({ success: false, error: 'Voeg minstens één product toe' }, 400);
+      for (const item of items) {
+        const problems = validateItem(item);
+        if (problems.length) return json({ success: false, error: problems[0] }, 400);
       }
+
+      const day = await getDayAvailability(date);
+      if (!day || !day.available) {
+        return json({ success: false, error: day?.reason ? `Deze datum is niet beschikbaar: ${day.reason}` : 'Deze datum is niet beschikbaar', code: 'date_unavailable' }, 409);
+      }
+      // Never trust a client-side total
+      total = items.reduce((sum, item) => sum + itemPrice(item), 0);
     }
 
-    // Find or create customer
+    // ── Customer: find by email or create ─────────────────────────────────
+    const customerCols = await tableColumns('customers');
+    const hasSplitName = customerCols.has('firstname') && customerCols.has('lastname');
+    const fullName = [firstname, lastname].filter(Boolean).join(' ') || email || phone;
+
     let customerId: string | null = null;
-    if (customer && (customer.firstname || customer.lastname || customer.email || customer.phone)) {
-      if (customer.email) {
-        const existingCustomer = await d1Query(
-          'SELECT id FROM customers WHERE email = ?',
-          [customer.email]
-        );
-        if (existingCustomer.results && existingCustomer.results.length > 0) {
-          customerId = existingCustomer.results[0].id as string;
-          await d1Query(
-            'UPDATE customers SET firstname = ?, lastname = ?, phone = ? WHERE id = ?',
-            [customer.firstname ?? null, customer.lastname ?? null, customer.phone ?? null, customerId]
-          );
-        }
+    if (email) {
+      const existing = await d1Query('SELECT id FROM customers WHERE email = ?', [email]);
+      customerId = (existing.results?.[0]?.id as string) ?? null;
+    }
+    if (customerId) {
+      if (hasSplitName) {
+        await d1Query('UPDATE customers SET name = ?, firstname = ?, lastname = ?, phone = ? WHERE id = ?',
+          [fullName, firstname, lastname, phone, customerId]);
+      } else {
+        await d1Query('UPDATE customers SET name = ?, phone = ? WHERE id = ?', [fullName, phone, customerId]);
       }
-      if (!customerId) {
-        const custCount = await d1Query('SELECT COUNT(*) as cnt FROM customers');
-        const custNum = ((custCount.results?.[0]?.cnt as number) ?? 0) + 1;
-        customerId = `CUST-${String(custNum).padStart(3, '0')}`;
+    } else {
+      customerId = await nextId('customers', 'CUST');
+      // email is NOT NULL UNIQUE — admin-created orders without email get a unique placeholder
+      const storedEmail = email || `geen-email+${customerId.toLowerCase()}@sweetheart.local`;
+      if (hasSplitName) {
         await d1Query(
-          'INSERT INTO customers (id, firstname, lastname, email, phone, notes) VALUES (?, ?, ?, ?, ?, ?)',
-          [customerId, customer.firstname ?? '', customer.lastname ?? '', customer.email ?? '', customer.phone ?? '', customer.notes ?? '']
+          'INSERT INTO customers (id, name, firstname, lastname, email, phone, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [customerId, fullName, firstname, lastname, storedEmail, phone, '']
+        );
+      } else {
+        await d1Query(
+          'INSERT INTO customers (id, name, email, phone, notes) VALUES (?, ?, ?, ?, ?)',
+          [customerId, fullName, storedEmail, phone, '']
         );
       }
     }
 
-    // Get next order number
-    const countAll = await d1Query('SELECT COUNT(*) as cnt FROM orders');
-    const orderNum = ((countAll.results?.[0]?.cnt as number) ?? 0) + 1;
-    const orderId = `ORD-${String(orderNum).padStart(3, '0')}`;
-    const orderDate = (date && date.trim()) ? date : new Date().toISOString().split('T')[0];
+    // ── Order + items ─────────────────────────────────────────────────────
+    // Until migrations/0006 adds order_items.mini_type/message, keep that input in the order note
+    const itemCols = await tableColumns('order_items');
+    const notes = [message];
+    items.forEach((item, i) => {
+      const label = items.length > 1 ? `Product ${i + 1}: ` : '';
+      if (!itemCols.has('mini_type') && item.miniType) notes.push(`${label}type ${str(item.miniType, 40)}`);
+      if (!itemCols.has('message') && str(item.message)) notes.push(`${label}${str(item.message, 1000)}`);
+    });
+    const orderMessage = notes.filter(Boolean).join('\n');
 
-    // Insert order
+    const orderId = await nextId('orders', 'ORD');
     await d1Query(
       'INSERT INTO orders (id, customer_id, date, time, status, total, message) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [orderId, customerId, orderDate, time ?? null, 'pending', total ?? '', message ?? '']
+      [orderId, customerId, date, time || null, 'pending', total, orderMessage]
     );
 
-    // Insert order items
-    for (const item of items || []) {
-      const itemCount = await d1Query('SELECT COUNT(*) as cnt FROM order_items');
-      const itemNum = ((itemCount.results?.[0]?.cnt as number) ?? 0) + 1;
-      const itemId = `${orderId}-ITEM-${itemNum}`;
-
+    for (const [i, item] of items.entries()) {
+      const cols = ['id', 'order_id', 'product', 'event', 'persons', 'flavor', 'topper', 'allergies', 'price', 'quantity'];
+      const values: any[] = [
+        `${orderId}-ITEM-${i + 1}`,
+        orderId,
+        str(item.product, 40),
+        str(item.event, 60) || null,
+        str(item.persons, 20) || null,
+        str(item.flavor, 80) || null,
+        str(item.topper, 40) || null,
+        str(item.allergies, 500) || null,
+        isAdmin ? parseEuro((item as any).price) : itemPrice(item),
+        item.product === 'feesttaart' ? 1 : Number(item.quantity) || 1,
+      ];
+      if (itemCols.has('mini_type')) { cols.push('mini_type'); values.push(str(item.miniType, 40) || null); }
+      if (itemCols.has('message')) { cols.push('message'); values.push(str(item.message, 1000) || null); }
       await d1Query(
-        `INSERT INTO order_items (id, order_id, product, event, persons, flavor, topper, allergies, price, quantity)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          itemId,
-          orderId,
-          item.product,
-          item.event ?? null,
-          item.persons ?? null,
-          item.flavor ?? null,
-          item.topper ?? null,
-          item.allergies ?? null,
-          item.price ?? 0,
-          item.quantity ?? 1,
-        ]
+        `INSERT INTO order_items (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
+        values
       );
     }
 
-    return new Response(
-      JSON.stringify({ success: true, orderId }),
-      { status: 201, headers: { 'Content-Type': 'application/json' } }
-    );
+    return json({ success: true, orderId, total: formatEuro(total) }, 201);
   } catch (error: any) {
-    return new Response(
-      JSON.stringify({ success: false, error: error?.message ?? 'Failed to save order' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    console.error('[api/orders] POST failed:', error);
+    return json({ success: false, error: 'Er ging iets mis bij het opslaan. Probeer het opnieuw of bel ons even.' }, 500);
   }
 };
 
@@ -188,30 +254,18 @@ export const PATCH: APIRoute = async ({ request }) => {
     const { orderId, status } = body;
 
     if (!orderId || !status) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'orderId and status are required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return json({ success: false, error: 'orderId and status are required' }, 400);
     }
 
     const validStatuses = ['pending', 'approved', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid status' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return json({ success: false, error: 'Invalid status' }, 400);
     }
 
     await d1Query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ success: true });
   } catch (error: any) {
-    return new Response(JSON.stringify({ success: false, error: error?.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ success: false, error: error?.message }, 500);
   }
 };

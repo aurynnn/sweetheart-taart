@@ -1,12 +1,15 @@
 // src/lib/orders.ts — Shared order rendering helpers for the admin panel
 
+import { EVENTS, FLAVORS, MINI_TYPES, TOPPERS, optionLabel, productName } from './catalog';
+
 export interface OrderItem {
   product?: string;
   event?: string;
   miniType?: string;
   quantity?: number;
-  persons?: number;
+  persons?: string | number;
   flavor?: string;
+  topper?: string;
   allergies?: string;
   message?: string;
   price?: number;
@@ -22,13 +25,33 @@ export interface OrderCustomer {
 export interface Order {
   id: string;
   date?: string;
+  time?: string;
   status: string;
   customer?: OrderCustomer;
   items?: OrderItem[];
   total?: string;
+  totalValue?: number;
   message?: string;
-  pickup_date?: string;
-  order_type?: string;
+  createdAt?: string;
+}
+
+/** Escape customer-provided text before it goes into innerHTML. */
+export function esc(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function formatPickup(order: Pick<Order, 'date' | 'time'>): string {
+  if (!order.date) return '';
+  const d = new Date(order.date + 'T00:00:00');
+  const day = isNaN(d.getTime())
+    ? order.date
+    : d.toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return order.time ? `${day} · ${order.time}` : day;
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -36,9 +59,10 @@ export interface Order {
 export function renderOrderDetail(order: Order): string {
   const c = order.customer || {};
   const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+  const fullName = [c.firstname, c.lastname].filter(Boolean).join(' ');
 
   // Customer avatar initials
-  const initials = ([c.firstname, c.lastname].filter(Boolean).join(' ') || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+  const initials = (fullName || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
 
   const itemsHtml = (order.items || []).map((item, i) => {
     const productIcons: Record<string, string> = {
@@ -47,12 +71,13 @@ export function renderOrderDetail(order: Order): string {
       'mini-gebak': '<i class="fa-solid fa-cookie"></i>',
     };
     const icon = productIcons[item.product || ''] || '<i class="fa-solid fa-box"></i>';
-    const price = item.price ? `€${item.price.toFixed(2)}` : (order.total || '—');
+    const price = item.price ? `€${Number(item.price).toFixed(2)}` : '—';
     const fields: string[] = [];
-    if (item.persons)  fields.push(fieldHtml('Aantal personen', String(item.persons)));
-    if (item.flavor)   fields.push(fieldHtml('Smaak', item.flavor));
-    if (item.miniType) fields.push(fieldHtml('Type', item.miniType === 'mini-cupcakes' ? 'Mini cupcakes' : 'Cupcakes'));
-    if (item.quantity) fields.push(fieldHtml('Aantal', `${item.quantity} stuks`));
+    if (item.persons)  fields.push(fieldHtml('Aantal personen', esc(item.persons)));
+    if (item.flavor)   fields.push(fieldHtml('Smaak', esc(optionLabel(FLAVORS, item.flavor))));
+    if (item.topper)   fields.push(fieldHtml('Taarttopper', esc(optionLabel(TOPPERS, item.topper))));
+    if (item.miniType) fields.push(fieldHtml('Type', esc(optionLabel(MINI_TYPES, item.miniType))));
+    if (item.quantity && item.product !== 'feesttaart') fields.push(fieldHtml('Aantal', `${esc(item.quantity)} stuks`));
     return `
     <div class="order-item-card" style="margin-bottom:${i < (order.items || []).length - 1 ? '1rem' : '0'}">
       <div class="item-card-header">
@@ -61,8 +86,8 @@ export function renderOrderDetail(order: Order): string {
           <div class="item-product-icon">${icon}</div>
           <div>
             <div class="item-label">Item ${i + 1}</div>
-            <div class="item-product-name">${productLabel(item.product || '')}</div>
-            ${item.event ? `<span class="item-event-badge"><i class="fa-solid fa-star" style="font-size:0.5rem"></i> ${item.event}</span>` : ''}
+            <div class="item-product-name">${esc(productName(item.product || ''))}</div>
+            ${item.event ? `<span class="item-event-badge"><i class="fa-solid fa-star" style="font-size:0.5rem"></i> ${esc(optionLabel(EVENTS, item.event))}</span>` : ''}
           </div>
         </div>
         <div class="item-price-tag">${price}</div>
@@ -72,35 +97,35 @@ export function renderOrderDetail(order: Order): string {
         ${item.allergies ? `
           <div class="allergy-field">
             <i class="fa-solid fa-circle-exclamation"></i>
-            <span>${item.allergies}</span>
+            <span>${esc(item.allergies)}</span>
           </div>` : ''}
         ${item.message ? `
           <div class="message-field">
             <label>Bericht</label>
-            <span>${item.message}</span>
+            <span>${esc(item.message)}</span>
           </div>` : ''}
       </div>
     </div>`;
   }).join('');
 
+  const pickup = formatPickup(order);
   const customerHtml = `
     <div class="customer-top">
-      <div class="customer-avatar">${initials}</div>
+      <div class="customer-avatar">${esc(initials)}</div>
       <div>
-        <div class="customer-name">${[c.firstname, c.lastname].filter(Boolean).join(' ') || '—'}</div>
+        <div class="customer-name">${esc(fullName || '—')}</div>
         <div class="customer-contact-row">
-          ${c.email ? `<div class="contact-item"><i class="fa-solid fa-envelope"></i><a href="mailto:${c.email}">${c.email}</a></div>` : ''}
-          ${c.phone ? `<div class="contact-item"><i class="fa-solid fa-phone"></i><a href="tel:${c.phone}">${c.phone}</a></div>` : ''}
+          ${c.email ? `<div class="contact-item"><i class="fa-solid fa-envelope"></i><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></div>` : ''}
+          ${c.phone ? `<div class="contact-item"><i class="fa-solid fa-phone"></i><a href="tel:${esc(c.phone.replace(/[^0-9+]/g, ''))}">${esc(c.phone)}</a></div>` : ''}
         </div>
       </div>
     </div>
     <div class="info-grid">
-      ${order.pickup_date ? fieldHtml('Ophaaldatum', order.pickup_date) : ''}
-      ${order.order_type  ? fieldHtml('Type', order.order_type) : ''}
+      ${pickup ? fieldHtml('Ophalen', esc(pickup)) : ''}
       ${order.message ? `
         <div class="info-row notes-row">
           <div class="info-label">Notitie</div>
-          <div class="info-value">${order.message}</div>
+          <div class="info-value" style="white-space:pre-line">${esc(order.message)}</div>
         </div>` : ''}
     </div>`;
 
@@ -114,7 +139,7 @@ export function renderOrderDetail(order: Order): string {
         <span class="status-dot" style="background:${sc.dot}"></span>
         <span class="status-text">${sc.label}</span>
       </div>
-      ${order.pickup_date ? `<span class="date-text"><i class="fa-solid fa-calendar" style="margin-right:0.25rem"></i>${order.pickup_date}</span>` : ''}
+      ${pickup ? `<span class="date-text"><i class="fa-solid fa-calendar" style="margin-right:0.25rem"></i>${esc(pickup)}</span>` : ''}
     </div>
 
     <!-- Customer -->
@@ -139,18 +164,12 @@ export function renderOrderDetail(order: Order): string {
       <div class="order-items-list">${itemsHtml}</div>
       ${order.total ? `
         <div class="total-row">
-          <span class="total-label">Totaal</span>
-          <span class="total-amount">${order.total}</span>
+          <span class="total-label">Totaal (indicatie)</span>
+          <span class="total-amount">${esc(order.total)}</span>
         </div>` : ''}
     </div>`;
 }
 
-function productLabel(product: string): string {
-  const labels: Record<string, string> = {
-    'feesttaart': 'Feesttaart', 'koekjes': 'Koekjes', 'mini-gebak': 'Mini-gebak'
-  };
-  return labels[product] || product;
-}
 
 function fieldHtml(
   label: string,

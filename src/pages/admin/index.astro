@@ -1,533 +1,556 @@
 ---
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
-import StatCard from '../../components/admin/StatCard.astro';
 import OrderModal from '../../components/admin/orders/OrderModal.astro';
 import { d1Query } from '../../lib/d1';
+import { customerNameSql } from '../../lib/schema';
+import { getAvailability, toLocalDateStr } from '../../lib/availability';
+import { formatEuro, parseEuro, productName, PRODUCTS, itemSummary } from '../../lib/catalog';
+import { STATUS_CONFIG } from '../../lib/orders';
 
-// Fetch real stats from D1
-let stats = { totalOrders: 0, pendingOrders: 0, monthlyRevenue: '€0', avgOrderValue: '€0' };
-let recentOrders: any[] = [];
-let upcomingOrders: any[] = [];
-
-try {
-  const countRes = await d1Query('SELECT COUNT(*) as cnt FROM orders');
-  const totalOrders = (countRes.results?.[0]?.cnt as number) ?? 0;
-
-  const pendingRes = await d1Query("SELECT COUNT(*) as cnt FROM orders WHERE status = 'pending'");
-  const pendingOrders = (pendingRes.results?.[0]?.cnt as number) ?? 0;
-
-  const monthRes = await d1Query(
-    "SELECT SUM(total) as sum FROM orders WHERE status != 'cancelled' AND date >= date('now', 'start of month')"
-  );
-  const monthlyRevenue = monthRes.results?.[0]?.sum as number ?? 0;
-
-  const avgRes = await d1Query(
-    "SELECT AVG(total) as avg FROM orders WHERE status != 'cancelled'"
-  );
-  const avgOrderValue = avgRes.results?.[0]?.avg as number ?? 0;
-
-  stats = {
-    totalOrders,
-    pendingOrders,
-    monthlyRevenue: `€${monthlyRevenue.toFixed(2)}`,
-    avgOrderValue: `€${avgOrderValue.toFixed(2)}`
-  };
-
-  // Upcoming orders — next 14 days, sorted by delivery date ascending
-  try {
-    const upcomingRes = await d1Query(`
-      SELECT o.id, o.date, o.status, o.total, (c.firstname || ' ' || c.lastname) as customer,
-             (SELECT product FROM order_items WHERE order_id = o.id LIMIT 1) as product
-      FROM orders o
-      JOIN customers c ON o.customer_id = c.id
-      WHERE o.date >= date('now') AND o.date <= date('now', '+14 days')
-        AND o.status NOT IN ('completed', 'cancelled')
-      ORDER BY o.date ASC
-      LIMIT 10
-    `);
-    upcomingOrders = (upcomingRes.results || []).map((row: any) => ({
-      id: row.id,
-      customer: row.customer?.trim() || 'Onbekend',
-      product: row.product || '—',
-      date: row.date,
-      total: row.total ? `€${Number(row.total).toFixed(2)}` : '€0.00',
-      status: row.status
-    }));
-  } catch (e) { /* ignore */ }
-
-  const ordersRes = await d1Query(`
-    SELECT o.id, o.date, o.status, o.total, (c.firstname || ' ' || c.lastname) as customer,
-           (SELECT product FROM order_items WHERE order_id = o.id LIMIT 1) as product
-    FROM orders o
-    JOIN customers c ON o.customer_id = c.id
-    ORDER BY o.created_at DESC
-    LIMIT 5
-  `);
-  recentOrders = (ordersRes.results || []).map((row: any) => {
-    const totalRaw = row.total;
-    // row.total may already be a string like '€57.00' or a number
-    let totalFormatted = '€0.00';
-    if (totalRaw !== null && totalRaw !== undefined && totalRaw !== '') {
-      const numeric = typeof totalRaw === 'string' ? parseFloat(totalRaw.replace(/[^0-9.]/g, '')) : Number(totalRaw);
-      totalFormatted = isNaN(numeric) ? String(totalRaw) : `€${numeric.toFixed(2)}`;
-    }
-    return {
-      id: row.id,
-      customer: row.customer?.trim() || 'Onbekend',
-      date: row.date || '—',
-      total: totalFormatted,
-      status: row.status
-    };
-  });
-} catch (e) {
-  // D1 not available — stats stay at 0
+interface Row {
+  id: string; date: string; time: string | null; status: string; total: number;
+  createdAt: string; customer: string; phone: string; products: string[]; summary: string;
 }
 
-const statusBadge = (status: string) => {
-  const styles = {
-    pending: 'background: #fef3c7; color: #92400e;',
-    completed: 'background: #dcfce7; color: #166534;',
-    cancelled: 'background: #fee2e2; color: #991b1b;'
-  };
-  return `<span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; ${styles[status as keyof typeof styles] || styles.pending}">${status === 'pending' ? 'In afwachting' : status === 'completed' ? 'Voltooid' : 'Geannuleerd'}</span>`;
+let orders: Row[] = [];
+let capacity: Array<{ date: string; orders: number; maxOrders: number; available: boolean; reason?: string }> = [];
+let loadError = false;
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const todayStr = toLocalDateStr(today);
+const in14 = new Date(today); in14.setDate(in14.getDate() + 13);
+const in7 = new Date(today); in7.setDate(in7.getDate() + 6);
+
+try {
+  const name = await customerNameSql('c');
+  const [ordersRes, itemsRes, avail] = await Promise.all([
+    d1Query(`
+      SELECT o.id, o.date, o.time, o.status, o.total, o.created_at, ${name.full} as customer, c.phone
+      FROM orders o JOIN customers c ON o.customer_id = c.id
+      ORDER BY o.created_at DESC
+    `),
+    d1Query('SELECT order_id, product, event, persons, flavor, topper, quantity FROM order_items'),
+    getAvailability(todayStr, toLocalDateStr(in14)),
+  ]);
+  const itemsByOrder = new Map<string, any[]>();
+  for (const it of itemsRes.results || []) {
+    itemsByOrder.set(it.order_id, [...(itemsByOrder.get(it.order_id) ?? []), it]);
+  }
+  orders = (ordersRes.results || []).map((r: any) => {
+    const items = itemsByOrder.get(r.id) ?? [];
+    return {
+      id: r.id,
+      date: r.date,
+      time: r.time,
+      status: r.status,
+      total: parseEuro(r.total),
+      createdAt: r.created_at,
+      customer: (r.customer || '').trim() || 'Onbekend',
+      phone: r.phone || '',
+      products: items.map((i) => i.product),
+      summary: items.map((i) => `${productName(i.product)}${itemSummary(i) ? ` (${itemSummary(i)})` : ''}`).join(', ') || '—',
+    };
+  });
+  capacity = avail.availability;
+} catch (e) {
+  console.error('[admin] dashboard data failed:', e);
+  loadError = true;
+}
+
+// ── KPIs ────────────────────────────────────────────────────────────────
+const active = orders.filter((o) => o.status !== 'cancelled');
+const pending = orders.filter((o) => o.status === 'pending').sort((a, b) => a.date.localeCompare(b.date));
+const upcoming = orders
+  .filter((o) => o.date >= todayStr && o.date <= toLocalDateStr(in14) && (o.status === 'approved' || o.status === 'pending'))
+  .sort((a, b) => (a.date + (a.time ?? '')).localeCompare(b.date + (b.time ?? '')));
+const thisWeek = upcoming.filter((o) => o.date <= toLocalDateStr(in7) && o.status === 'approved');
+const todayPickups = upcoming.filter((o) => o.date === todayStr);
+
+const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+const MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+const months = Array.from({ length: 6 }, (_, i) => {
+  const d = new Date(today.getFullYear(), today.getMonth() - 5 + i, 1);
+  const key = monthKey(d);
+  const inMonth = active.filter((o) => o.date?.startsWith(key));
+  return { key, label: MONTHS[d.getMonth()], year: d.getFullYear(), revenue: inMonth.reduce((s, o) => s + o.total, 0), count: inMonth.length };
+});
+const thisMonth = months[5];
+const lastMonth = months[4];
+const revenueDelta = lastMonth.revenue > 0 ? Math.round(((thisMonth.revenue - lastMonth.revenue) / lastMonth.revenue) * 100) : null;
+const avgValue = active.length ? active.reduce((s, o) => s + o.total, 0) / active.length : 0;
+const maxRevenue = Math.max(...months.map((m) => m.revenue), 1);
+
+// Product mix (all non-cancelled items)
+const mix = PRODUCTS.map((p) => ({
+  id: p.id,
+  name: p.name,
+  count: active.reduce((s, o) => s + o.products.filter((x) => x === p.id).length, 0),
+}));
+const maxMix = Math.max(...mix.map((m) => m.count), 1);
+
+const maxCap = Math.max(...capacity.map((c) => Math.max(c.maxOrders, c.orders)), 1);
+
+const fmtDay = (iso: string, opts: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' }) =>
+  new Date(iso + 'T00:00:00').toLocaleDateString('nl-BE', opts);
+const relDay = (iso: string) => {
+  const diff = Math.round((new Date(iso + 'T00:00:00').getTime() - today.getTime()) / 86400000);
+  if (diff === 0) return 'Vandaag';
+  if (diff === 1) return 'Morgen';
+  if (diff < 7) return `Over ${diff} dagen`;
+  return fmtDay(iso);
 };
+const hour = new Date().getHours();
+const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeienavond';
 ---
 
 <AdminLayout title="Dashboard">
-  <div class="stats-grid">
-    <StatCard 
-      title="Totale Bestellingen"
-      value={stats.totalOrders}
-      subtitle="Alle tijd"
-      icon={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>`}
-      color="pink"
-      trend={{ value: 12, positive: true }}
-    />
-    
-    <StatCard 
-      title="Openstaand"
-      value={stats.pendingOrders}
-      subtitle="Wachten op bevestiging"
-      icon={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`}
-      color="orange"
-    />
-    
-    <StatCard 
-      title="Maandelijkse Omzet"
-      value={stats.monthlyRevenue}
-      subtitle="Maart 2026"
-      icon={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`}
-      color="green"
-      trend={{ value: 8, positive: true }}
-    />
-    
-    <StatCard 
-      title="Gem. Bestelwaarde"
-      value={stats.avgOrderValue}
-      subtitle="Per order"
-      icon={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>`}
-      color="blue"
-      trend={{ value: 3, positive: true }}
-    />
-  </div>
-  
-  {upcomingOrders.length > 0 && (
-    <div class="upcoming-orders">
-      <div class="section-header">
-        <h2>Opkomend <span class="badge">{upcomingOrders.length}</span></h2>
-        <a href="/admin/orders" class="view-all">Bekijk alles →</a>
-      </div>
-
-      <div class="upcoming-cards">
-        {upcomingOrders.map(order => (
-          <a href={`/admin/orders/${order.id}`} class="upcoming-card">
-            <div class="upcoming-date">
-              <span class="date-day">{new Date(order.date + 'T00:00:00').getDate()}</span>
-              <span class="date-month">{new Date(order.date + 'T00:00:00').toLocaleDateString('nl-BE', { month: 'short' })}</span>
-            </div>
-            <div class="upcoming-info">
-              <strong>{order.customer}</strong>
-              <span>{order.product}</span>
-            </div>
-            <div class="upcoming-total">{order.total}</div>
-            <div class="upcoming-status"><Fragment set:html={statusBadge(order.status)} /></div>
-          </a>
-        ))}
-      </div>
+  {loadError && (
+    <div class="alert-error" role="alert">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      De gegevens konden niet geladen worden. Controleer de databaseverbinding (CLOUDFLARE_API_TOKEN).
     </div>
   )}
 
-  <div class="recent-orders">
-    <div class="section-header">
-      <h2>Recente Bestellingen</h2>
-      <a href="/admin/orders" class="view-all">Bekijk alles →</a>
+  <section class="welcome reveal">
+    <div>
+      <h2>{greeting} Nathalie 👋</h2>
+      <p>
+        {todayPickups.length > 0
+          ? `Vandaag ${todayPickups.length === 1 ? 'komt 1 klant' : `komen ${todayPickups.length} klanten`} iets ophalen.`
+          : pending.length > 0
+            ? `Er ${pending.length === 1 ? 'wacht 1 nieuwe aanvraag' : `wachten ${pending.length} nieuwe aanvragen`} op je antwoord.`
+            : 'Alles is bijgewerkt. Tijd voor een koffie ☕'}
+      </p>
     </div>
-    
-    <table class="orders-table">
-      <thead>
-        <tr>
-          <th>Order ID</th>
-          <th>Klant</th>
-          <th>Datum</th>
-          <th>Totaal</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {recentOrders.map(order => (
-          <tr class="clickable-row" data-order-id={order.id}>
-            <td class="order-id">{order.id}</td>
-            <td>{order.customer}</td>
-            <td>{order.date}</td>
-            <td class="order-total">{order.total}</td>
-            <td><Fragment set:html={statusBadge(order.status)} /></td>
-          </tr>
+    <div class="welcome-actions">
+      <a href="/admin/orders" class="btn-pill primary"><i class="fa-solid fa-inbox" aria-hidden="true"></i> Alle aanvragen</a>
+      <a href="/admin/calendar" class="btn-pill"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Beschikbaarheid</a>
+    </div>
+  </section>
+
+  <!-- KPI tiles -->
+  <section class="kpis" aria-label="Kerncijfers">
+    <a href="#te-bevestigen" class="kpi reveal" style="--d: 0">
+      <span class="kpi-icon amber"><i class="fa-solid fa-bell" aria-hidden="true"></i></span>
+      <span class="kpi-label">Te bevestigen</span>
+      <strong class="kpi-value" data-count={pending.length}>{pending.length}</strong>
+      <span class="kpi-sub">{pending.length ? 'wachten op je antwoord' : 'niets openstaand'}</span>
+    </a>
+    <a href="#komend" class="kpi reveal" style="--d: 1">
+      <span class="kpi-icon blue"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></span>
+      <span class="kpi-label">Ophalen deze week</span>
+      <strong class="kpi-value" data-count={thisWeek.length}>{thisWeek.length}</strong>
+      <span class="kpi-sub">{todayPickups.length} vandaag</span>
+    </a>
+    <div class="kpi reveal" style="--d: 2">
+      <span class="kpi-icon pink"><i class="fa-solid fa-euro-sign" aria-hidden="true"></i></span>
+      <span class="kpi-label">Omzet {MONTHS[today.getMonth()]}</span>
+      <strong class="kpi-value" data-count={thisMonth.revenue} data-euro>{formatEuro(thisMonth.revenue)}</strong>
+      <span class="kpi-sub">
+        {revenueDelta === null
+          ? `${thisMonth.count} aanvragen · indicatief`
+          : <span class={revenueDelta >= 0 ? 'delta up' : 'delta down'}>{revenueDelta >= 0 ? '▲' : '▼'} {Math.abs(revenueDelta)}% t.o.v. {lastMonth.label}</span>}
+      </span>
+    </div>
+    <div class="kpi reveal" style="--d: 3">
+      <span class="kpi-icon green"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
+      <span class="kpi-label">Gem. waarde</span>
+      <strong class="kpi-value" data-count={avgValue} data-euro>{formatEuro(avgValue)}</strong>
+      <span class="kpi-sub">over {active.length} aanvragen</span>
+    </div>
+  </section>
+
+  <div class="grid-main">
+    <!-- Pending approvals -->
+    <section id="te-bevestigen" class="panel reveal" aria-labelledby="pending-title">
+      <header class="panel-head">
+        <h2 id="pending-title">Te bevestigen <span class="count">{pending.length}</span></h2>
+        <a href="/admin/orders" class="link">Alles bekijken →</a>
+      </header>
+      {pending.length === 0 ? (
+        <div class="empty"><i class="fa-regular fa-face-smile" aria-hidden="true"></i><p>Geen openstaande aanvragen.</p></div>
+      ) : (
+        <ul class="pending-list">
+          {pending.slice(0, 6).map((o) => (
+            <li class="pending-item" data-order-row={o.id}>
+              <button type="button" class="pending-main" data-open-order={o.id}>
+                <span class="avatar">{o.customer.charAt(0).toUpperCase()}</span>
+                <span class="pending-info">
+                  <strong>{o.customer}</strong>
+                  <span>{o.summary}</span>
+                  <small><i class="fa-regular fa-calendar" aria-hidden="true"></i> {fmtDay(o.date)}{o.time ? ` · ${o.time}` : ''} · {formatEuro(o.total)}</small>
+                </span>
+              </button>
+              <div class="pending-actions">
+                <button type="button" class="act approve" data-status-action="approved" data-order-id={o.id} title="Goedkeuren" aria-label={`Aanvraag ${o.id} goedkeuren`}>
+                  <i class="fa-solid fa-check" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="act cancel" data-status-action="cancelled" data-order-id={o.id} title="Weigeren" aria-label={`Aanvraag ${o.id} weigeren`}>
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <!-- Upcoming pickups timeline -->
+    <section id="komend" class="panel reveal" aria-labelledby="upcoming-title">
+      <header class="panel-head">
+        <h2 id="upcoming-title">Komende 14 dagen</h2>
+        <a href="/admin/todo" class="link">Te maken →</a>
+      </header>
+      {upcoming.length === 0 ? (
+        <div class="empty"><i class="fa-regular fa-calendar" aria-hidden="true"></i><p>Nog niets gepland.</p></div>
+      ) : (
+        <ol class="timeline">
+          {upcoming.slice(0, 8).map((o) => {
+            const sc = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.pending;
+            return (
+              <li>
+                <button type="button" class="tl-item" data-open-order={o.id}>
+                  <span class="tl-date">
+                    <b>{new Date(o.date + 'T00:00:00').getDate()}</b>
+                    <small>{MONTHS[new Date(o.date + 'T00:00:00').getMonth()]}</small>
+                  </span>
+                  <span class="tl-body">
+                    <strong>{o.customer}</strong>
+                    <span>{relDay(o.date)}{o.time ? ` · ${o.time}` : ''} · {o.summary}</span>
+                  </span>
+                  <span class="status" style={`background:${sc.bg};color:${sc.color}`}>
+                    <span class="dot" style={`background:${sc.dot}`}></span>{sc.label}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </section>
+  </div>
+
+  <div class="grid-charts">
+    <!-- Revenue per month: single series → one hue, no legend -->
+    <section class="panel reveal" aria-labelledby="rev-title">
+      <header class="panel-head">
+        <h2 id="rev-title">Omzet per maand <small>indicatief, excl. geannuleerd</small></h2>
+      </header>
+      <div class="bars" role="img" aria-label={`Omzet laatste 6 maanden: ${months.map((m) => `${m.label} ${formatEuro(m.revenue)}`).join(', ')}`}>
+        {months.map((m, i) => (
+          <div class="bar-col" data-tip={`${m.label} ${m.year}: ${formatEuro(m.revenue)} · ${m.count} aanvra${m.count === 1 ? 'ag' : 'gen'}`}>
+            <span class="bar-value">{m.revenue ? `€${Math.round(m.revenue)}` : ''}</span>
+            <span class="bar-track">
+              <span class="bar" class:list={[{ current: i === 5 }]} style={`--h: ${(m.revenue / maxRevenue) * 100}%; --i: ${i}`}></span>
+            </span>
+            <span class="bar-label">{m.label}</span>
+          </div>
         ))}
-      </tbody>
-    </table>
+      </div>
+      <details class="table-view">
+        <summary>Toon als tabel</summary>
+        <table>
+          <thead><tr><th>Maand</th><th>Aanvragen</th><th>Omzet</th></tr></thead>
+          <tbody>{months.map((m) => <tr><td>{m.label} {m.year}</td><td>{m.count}</td><td>{formatEuro(m.revenue)}</td></tr>)}</tbody>
+        </table>
+      </details>
+    </section>
+
+    <!-- Capacity: orders vs daily max for the next 14 days -->
+    <section class="panel reveal" aria-labelledby="cap-title">
+      <header class="panel-head">
+        <h2 id="cap-title">Bezetting <small>volgende 14 dagen</small></h2>
+        <a href="/admin/calendar" class="link">Aanpassen →</a>
+      </header>
+      <div class="cap" role="img" aria-label="Aantal aanvragen per dag ten opzichte van de maximale capaciteit">
+        {capacity.map((c, i) => {
+          const closed = !c.available && c.orders < c.maxOrders;
+          return (
+            <div class="cap-col" data-tip={`${fmtDay(c.date, { weekday: 'long', day: 'numeric', month: 'long' })}: ${c.orders}/${c.maxOrders}${c.reason ? ` · ${c.reason}` : ''}`}>
+              <span class="cap-track" class:list={[{ closed }]} style={`--cap: ${(c.maxOrders / maxCap) * 100}%`}>
+                <span class="cap-fill" class:list={[{ full: c.orders >= c.maxOrders }]} style={`--h: ${(c.orders / maxCap) * 100}%; --i: ${i}`}></span>
+              </span>
+              <span class="cap-label" class:list={[{ today: c.date === todayStr }]}>{fmtDay(c.date, { weekday: 'narrow' })}<br />{new Date(c.date + 'T00:00:00').getDate()}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p class="cap-legend">
+        <span><i class="sw fill"></i> aanvragen</span>
+        <span><i class="sw track"></i> capaciteit</span>
+        <span><i class="sw closed"></i> gesloten</span>
+        <span><i class="fa-solid fa-circle-exclamation" style="color:#b45309" aria-hidden="true"></i> vol</span>
+      </p>
+    </section>
+
+    <!-- Product mix: single hue horizontal bars -->
+    <section class="panel reveal" aria-labelledby="mix-title">
+      <header class="panel-head"><h2 id="mix-title">Populairste producten</h2></header>
+      <ul class="mix">
+        {mix.map((m, i) => (
+          <li data-tip={`${m.name}: ${m.count}× aangevraagd`}>
+            <span class="mix-name">{m.name}</span>
+            <span class="mix-track"><span class="mix-bar" style={`--w: ${(m.count / maxMix) * 100}%; --i: ${i}`}></span></span>
+            <span class="mix-count">{m.count}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   </div>
-  
-  <div class="quick-actions">
-    <h2>Snelle Acties</h2>
-    <div class="actions-grid">
-      <a href="/admin/orders/new" class="action-card">
-        <div class="action-icon pink">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-        </div>
-        <span>Nieuwe Bestelling</span>
-      </a>
-      
-      <a href="/admin/calendar" class="action-card">
-        <div class="action-icon blue">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-        </div>
-        <span>Beschikbaarheid</span>
-      </a>
-      
-      <a href="/admin/settings" class="action-card">
-        <div class="action-icon green">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        </div>
-        <span>Instellingen</span>
-      </a>
-    </div>
-  </div>
+
+  <div id="chart-tip" class="chart-tip" role="tooltip" hidden></div>
 </AdminLayout>
 
 <OrderModal />
 
 <script>
-  import { STATUS_CONFIG, renderOrderDetail } from '../../lib/orders';
-
-  (window as any).STATUS_CONFIG = STATUS_CONFIG;
+  import { STATUS_CONFIG, renderOrderDetail, esc } from '../../lib/orders';
 
   let allOrders: any[] = [];
+  const ordersReady = fetch('/api/orders').then((r) => r.json()).then((d) => (allOrders = d)).catch(() => []);
 
-  async function loadDashboardOrders() {
-    try {
-      const res = await fetch('/api/orders');
-      allOrders = await res.json();
-    } catch (e) {
-      console.error('Failed to load orders for modal');
-    }
+  function toast(message: string, error = false) {
+    const c = document.getElementById('toast-container');
+    if (!c) return;
+    const t = document.createElement('div');
+    t.className = 'toast';
+    if (error) t.style.background = '#ef4444';
+    t.textContent = message;
+    c.appendChild(t);
+    setTimeout(() => { t.style.animation = 'toastOut 0.2s ease forwards'; setTimeout(() => t.remove(), 200); }, 3000);
   }
 
-  function openModal(orderId: string) {
+  // ── Order detail modal ────────────────────────────────────────────────
+  async function openModal(orderId: string) {
+    await ordersReady;
     const order = allOrders.find((o: any) => o.id === orderId);
     if (!order) return;
     const subtitle = document.getElementById('modalOrderId');
-    if (subtitle) {
-      const d = order.date ? new Date(order.date + 'T00:00:00') : null;
-      if (d && !isNaN(d.getTime())) {
-        const formatted = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
-        subtitle.textContent = `#${order.id} · Ophaaldatum: ${formatted}`;
-      } else if (order.createdAt) {
-        const created = new Date(order.createdAt);
-        const createdStr = created.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
-        subtitle.textContent = `#${order.id} · Geplaatst: ${createdStr}`;
-      } else {
-        subtitle.textContent = `#${order.id}`;
-      }
-    }
+    if (subtitle) subtitle.textContent = `#${order.id}`;
     const badge = document.getElementById('modalStatusBadge');
     if (badge) {
       const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-      const hexToRgba = (hex: string, alpha: number) => {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-      };
-      badge.innerHTML = `<span class="dot" style="background:${sc.dot}"></span>${sc.label}`;
-      badge.style.background = hexToRgba(sc.bg, 0.25);
+      badge.innerHTML = `<span class="dot" style="background:${sc.dot}"></span>${esc(sc.label)}`;
+      badge.style.background = sc.bg;
       badge.style.color = sc.color;
-      badge.style.borderColor = hexToRgba(sc.color, 0.4);
     }
     const body = document.getElementById('orderModalBody');
     if (body) body.innerHTML = renderOrderDetail(order);
     document.getElementById('orderModal')?.classList.add('active');
   }
-
-  function closeModal() {
-    document.getElementById('orderModal')?.classList.remove('active');
-    const badge = document.getElementById('modalStatusBadge');
-    if (badge) { badge.textContent = ''; badge.style.background = ''; badge.style.color = ''; badge.style.borderColor = ''; }
-  }
-
-  document.addEventListener('click', (e) => {
-    const row = (e.target as Element).closest('.clickable-row') as HTMLElement | null;
-    if (!row) return;
-    const orderId = row.dataset.orderId;
-    if (orderId) openModal(orderId);
-  });
-
+  const closeModal = () => document.getElementById('orderModal')?.classList.remove('active');
   document.getElementById('closeOrderModalBtn')?.addEventListener('click', closeModal);
   document.getElementById('closeOrderModalBtn2')?.addEventListener('click', closeModal);
   document.getElementById('orderModal')?.addEventListener('click', (e) => {
     if ((e.target as Element).classList.contains('modal-overlay')) closeModal();
   });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-  loadDashboardOrders();
+  document.addEventListener('click', async (e) => {
+    const target = e.target as Element;
+    const open = target.closest<HTMLElement>('[data-open-order]');
+    if (open) { openModal(open.dataset.openOrder!); return; }
+
+    // ── Quick approve / decline ──────────────────────────────────────
+    const act = target.closest<HTMLButtonElement>('[data-status-action]');
+    if (!act) return;
+    const orderId = act.dataset.orderId!;
+    const status = act.dataset.statusAction!;
+    const row = document.querySelector<HTMLElement>(`[data-order-row="${CSS.escape(orderId)}"]`);
+    act.disabled = true;
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status }),
+      });
+      if (!res.ok) throw new Error();
+      row?.classList.add(status === 'approved' ? 'leaving-ok' : 'leaving-no');
+      toast(status === 'approved' ? `Aanvraag ${orderId} goedgekeurd ✓` : `Aanvraag ${orderId} geweigerd`);
+      setTimeout(() => {
+        row?.remove();
+        document.querySelectorAll('.count').forEach((el) => { el.textContent = String(Math.max(0, Number(el.textContent) - 1)); });
+      }, 450);
+    } catch {
+      act.disabled = false;
+      toast('Bijwerken mislukt. Probeer opnieuw.', true);
+    }
+  });
+
+  // ── Chart tooltips (hover + keyboard focus) ─────────────────────────
+  const tip = document.getElementById('chart-tip')!;
+  document.querySelectorAll<HTMLElement>('[data-tip]').forEach((el) => {
+    el.tabIndex = 0;
+    const show = () => {
+      tip.textContent = el.dataset.tip!;
+      tip.hidden = false;
+      const r = el.getBoundingClientRect();
+      const tr = tip.getBoundingClientRect();
+      tip.style.left = `${Math.min(window.innerWidth - tr.width - 8, Math.max(8, r.left + r.width / 2 - tr.width / 2))}px`;
+      tip.style.top = `${r.top - tr.height - 8}px`;
+      el.classList.add('is-hover');
+    };
+    const hide = () => { tip.hidden = true; el.classList.remove('is-hover'); };
+    el.addEventListener('pointerenter', show);
+    el.addEventListener('pointerleave', hide);
+    el.addEventListener('focus', show);
+    el.addEventListener('blur', hide);
+  });
+
+  // ── Count-up KPI values ──────────────────────────────────────────────
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
+      const to = Number(el.dataset.count);
+      const euro = el.hasAttribute('data-euro');
+      const start = performance.now();
+      const step = (now: number) => {
+        const p = Math.min(1, (now - start) / 1100);
+        const v = to * (1 - Math.pow(1 - p, 3));
+        el.textContent = euro ? `€${v.toFixed(2)}` : String(Math.round(v));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }
 </script>
 
 <style>
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
+  .alert-error { display: flex; gap: 0.6rem; align-items: center; padding: 1rem 1.25rem; margin-bottom: 1.5rem; border-radius: 0.9rem; background: #fef2f2; color: #991b1b; }
 
-.upcoming-orders {
-  background: white;
-  border-radius: 1rem;
-  border: 1px solid #e2e8f0;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-}
+  .reveal { animation: rise 700ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--d, 0) * 70ms + 60ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 
-.upcoming-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
+  .welcome {
+    display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+    padding: 1.6rem 1.75rem; margin-bottom: 1.5rem; border-radius: 1.25rem; color: white;
+    background: radial-gradient(80% 140% at 100% 0%, #f2a0aa 0%, transparent 60%), linear-gradient(135deg, #e8788a, #d45a6a);
+    box-shadow: 0 20px 40px -24px rgba(212, 90, 106, 0.8);
+  }
+  .welcome h2 { margin: 0 0 0.3rem; font-size: 1.5rem; font-weight: 700; color: white; }
+  .welcome p { margin: 0; opacity: 0.92; }
+  .welcome-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .btn-pill { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.1rem; border-radius: 999px; font-weight: 600; font-size: 0.875rem; text-decoration: none; color: white; background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); transition: transform 200ms, background 200ms; }
+  .btn-pill:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.28); }
+  .btn-pill.primary { background: white; color: #d45a6a; }
 
-.upcoming-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #f1f5f9;
-  border-radius: 0.75rem;
-  text-decoration: none;
-  transition: all 0.15s;
-}
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .kpi { display: grid; gap: 0.2rem; padding: 1.25rem; border-radius: 1.1rem; background: white; border: 1px solid #e2e8f0; text-decoration: none; color: inherit; transition: transform 250ms, box-shadow 250ms, border-color 250ms; }
+  a.kpi:hover { transform: translateY(-3px); border-color: #f2a0aa; box-shadow: 0 14px 30px -18px rgba(212, 90, 106, 0.6); }
+  .kpi-icon { width: 2.4rem; height: 2.4rem; border-radius: 0.75rem; display: grid; place-items: center; margin-bottom: 0.5rem; }
+  .kpi-icon.amber { background: #fffbeb; color: #b45309; }
+  .kpi-icon.blue { background: #eff6ff; color: #1d4ed8; }
+  .kpi-icon.pink { background: #fdf2f4; color: #d45a6a; }
+  .kpi-icon.green { background: #f0fdf4; color: #15803d; }
+  .kpi-label { font-size: 0.8rem; font-weight: 600; color: #64748b; }
+  .kpi-value { font-size: 1.9rem; line-height: 1.1; color: #0f172a; font-variant-numeric: tabular-nums; }
+  .kpi-sub { font-size: 0.8rem; color: #94a3b8; }
+  .delta { font-weight: 700; }
+  .delta.up { color: #15803d; }
+  .delta.down { color: #b91c1c; }
 
-.upcoming-card:hover {
-  border-color: #e8788a;
-  background: #fef8f8;
-}
+  .grid-main { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  .grid-charts { display: grid; grid-template-columns: 1.2fr 1.2fr 1fr; gap: 1.5rem; }
+  .panel { background: white; border: 1px solid #e2e8f0; border-radius: 1.1rem; padding: 1.25rem 1.35rem; min-width: 0; }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 1rem; }
+  .panel-head h2 { margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; }
+  .panel-head small { font-weight: 500; color: #94a3b8; font-size: 0.75rem; margin-left: 0.3rem; }
+  .count { display: inline-grid; place-items: center; min-width: 1.4rem; height: 1.4rem; padding: 0 0.4rem; margin-left: 0.35rem; border-radius: 999px; background: #e8788a; color: white; font-size: 0.72rem; }
+  .link { font-size: 0.85rem; font-weight: 600; color: #d45a6a; text-decoration: none; white-space: nowrap; }
+  .link:hover { text-decoration: underline; }
+  .empty { display: grid; place-items: center; gap: 0.4rem; padding: 2rem 1rem; color: #94a3b8; text-align: center; }
+  .empty i { font-size: 1.6rem; }
+  .empty p { margin: 0; }
 
-.upcoming-date {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 2.5rem;
-}
+  .pending-list, .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  .pending-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem; border-radius: 0.9rem; border: 1px solid #f1f5f9; transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1), opacity 450ms, background 200ms; }
+  .pending-item:hover { background: #fffafb; border-color: #fbd5db; }
+  .pending-item.leaving-ok { transform: translateX(40px); opacity: 0; background: #f0fdf4; }
+  .pending-item.leaving-no { transform: translateX(-40px); opacity: 0; background: #fef2f2; }
+  .pending-main, .tl-item { display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0; padding: 0.4rem; border: 0; background: none; font: inherit; text-align: left; color: inherit; cursor: pointer; border-radius: 0.7rem; }
+  .avatar { width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; background: #fdf2f4; color: #d45a6a; font-weight: 700; }
+  .pending-info, .tl-body { display: grid; min-width: 0; }
+  .pending-info strong, .tl-body strong { color: #0f172a; font-size: 0.9rem; }
+  .pending-info span, .tl-body span { color: #64748b; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pending-info small { color: #94a3b8; font-size: 0.75rem; margin-top: 0.1rem; }
+  .pending-actions { display: flex; gap: 0.35rem; padding-right: 0.35rem; }
+  .act { width: 2.3rem; height: 2.3rem; border-radius: 0.7rem; border: 1px solid #e2e8f0; background: white; cursor: pointer; transition: all 200ms; }
+  .act.approve { color: #15803d; }
+  .act.approve:hover { background: #22c55e; border-color: #22c55e; color: white; transform: scale(1.06); }
+  .act.cancel { color: #b91c1c; }
+  .act.cancel:hover { background: #ef4444; border-color: #ef4444; color: white; transform: scale(1.06); }
+  .act:disabled { opacity: 0.5; cursor: wait; }
 
-.date-day {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #e8788a;
-  line-height: 1;
-}
+  .tl-item { padding: 0.55rem; border: 1px solid #f1f5f9; border-radius: 0.9rem; transition: background 200ms, border-color 200ms; }
+  .tl-item:hover { background: #fffafb; border-color: #fbd5db; }
+  .tl-date { display: grid; place-items: center; width: 2.8rem; flex-shrink: 0; padding: 0.3rem 0; border-radius: 0.7rem; background: #fdf2f4; line-height: 1; }
+  .tl-date b { font-size: 1.2rem; color: #d45a6a; }
+  .tl-date small { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; margin-top: 0.15rem; }
+  .tl-body { flex: 1; }
+  .status { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+  .status .dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; }
 
-.date-month {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #94a3b8;
-}
+  /* Charts — recessive axes, thin marks, 4px rounded data-ends, 2px gaps */
+  .bars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; height: 12rem; align-items: end; }
+  .bar-col { display: grid; grid-template-rows: auto 1fr auto; height: 100%; gap: 0.3rem; text-align: center; border-radius: 0.5rem; outline: none; cursor: default; }
+  .bar-col:focus-visible { box-shadow: 0 0 0 2px #e8788a; }
+  .bar-value { font-size: 0.7rem; font-weight: 700; color: #64748b; min-height: 1em; }
+  .bar-track { position: relative; display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid #e2e8f0; }
+  .bar { width: min(2.25rem, 70%); height: var(--h); min-height: 2px; border-radius: 4px 4px 0 0; background: #f2a0aa; transform-origin: bottom; animation: grow 900ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i) * 70ms + 300ms); transition: background 200ms; }
+  .bar.current { background: #d45a6a; }
+  .bar-col.is-hover .bar { background: #e8788a; }
+  .bar-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+  @keyframes grow { from { transform: scaleY(0); } }
 
-.upcoming-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
+  .cap { display: grid; grid-template-columns: repeat(14, 1fr); gap: 2px; height: 11rem; align-items: end; }
+  .cap-col { display: grid; grid-template-rows: 1fr auto; height: 100%; gap: 0.3rem; text-align: center; outline: none; border-radius: 0.4rem; }
+  .cap-col:focus-visible { box-shadow: 0 0 0 2px #e8788a; }
+  .cap-track { position: relative; display: flex; align-items: flex-end; justify-content: center; }
+  .cap-track::before { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: min(1rem, 80%); height: var(--cap); border-radius: 4px 4px 0 0; background: #f1f5f9; }
+  .cap-track.closed::before { background: repeating-linear-gradient(45deg, #e2e8f0 0 3px, #f8fafc 3px 6px); height: 100%; }
+  .cap-fill { position: relative; width: min(1rem, 80%); height: var(--h); border-radius: 4px 4px 0 0; background: #e8788a; transform-origin: bottom; animation: grow 800ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i) * 35ms + 300ms); }
+  .cap-fill.full::after { content: '!'; position: absolute; top: -1.2rem; left: 50%; transform: translateX(-50%); font-size: 0.7rem; font-weight: 800; color: #b45309; }
+  .cap-col.is-hover .cap-fill { background: #d45a6a; }
+  .cap-label { font-size: 0.62rem; line-height: 1.2; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+  .cap-label.today { color: #d45a6a; }
+  .cap-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin: 0.9rem 0 0; font-size: 0.72rem; color: #64748b; }
+  .cap-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .sw { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 3px; }
+  .sw.fill { background: #e8788a; }
+  .sw.track { background: #f1f5f9; border: 1px solid #e2e8f0; }
+  .sw.closed { background: repeating-linear-gradient(45deg, #cbd5e1 0 2px, #f8fafc 2px 4px); }
 
-.upcoming-info strong {
-  font-size: 0.9rem;
-  color: #1e293b;
-}
+  .mix { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+  .mix li { display: grid; grid-template-columns: 6.5rem 1fr 2rem; align-items: center; gap: 0.75rem; outline: none; border-radius: 0.4rem; }
+  .mix li:focus-visible { box-shadow: 0 0 0 2px #e8788a; }
+  .mix-name { font-size: 0.85rem; font-weight: 600; color: #334155; }
+  .mix-track { height: 0.75rem; border-radius: 4px; background: #f8fafc; overflow: hidden; }
+  .mix-bar { display: block; height: 100%; width: var(--w); border-radius: 0 4px 4px 0; background: #e8788a; transform-origin: left; animation: growX 900ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i) * 90ms + 300ms); }
+  .mix li.is-hover .mix-bar { background: #d45a6a; }
+  .mix-count { font-weight: 700; color: #0f172a; text-align: right; font-variant-numeric: tabular-nums; }
+  @keyframes growX { from { transform: scaleX(0); } }
 
-.upcoming-info span {
-  font-size: 0.8rem;
-  color: #64748b;
-}
+  .table-view { margin-top: 0.9rem; font-size: 0.8rem; color: #64748b; }
+  .table-view summary { cursor: pointer; font-weight: 600; }
+  .table-view table { width: 100%; margin-top: 0.5rem; border-collapse: collapse; }
+  .table-view th, .table-view td { text-align: left; padding: 0.35rem 0.25rem; border-bottom: 1px solid #f1f5f9; }
 
-.upcoming-total {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #1e293b;
-}
+  .chart-tip { position: fixed; z-index: 500; padding: 0.45rem 0.7rem; border-radius: 0.5rem; background: #0f172a; color: white; font-size: 0.75rem; font-weight: 600; pointer-events: none; white-space: nowrap; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25); }
 
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #e8788a;
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border-radius: 9999px;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 0.4rem;
-  margin-left: 0.5rem;
-  vertical-align: middle;
-}
-
-.recent-orders {
-  background: white;
-  border-radius: 1rem;
-  border: 1px solid #e2e8f0;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.section-header h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0;
-}
-
-.view-all {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #e11d48;
-  text-decoration: none;
-}
-
-.view-all:hover {
-  text-decoration: underline;
-}
-
-.orders-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.orders-table th {
-  text-align: left;
-  padding: 0.75rem 1rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.orders-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  color: #334155;
-  font-size: 0.875rem;
-}
-
-.orders-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.orders-table tbody tr:hover {
-  background: #f8fafc;
-}
-
-.clickable-row {
-  cursor: pointer;
-}
-
-.clickable-row:hover td {
-  background: #fdf2f4;
-}
-
-.order-id {
-  font-family: monospace;
-  font-weight: 600;
-  color: #64748b;
-}
-
-.order-total {
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.quick-actions h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 1rem 0;
-}
-
-.actions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.action-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.action-card:hover {
-  border-color: #e11d48;
-  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.1);
-  transform: translateY(-2px);
-}
-
-.action-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-icon.pink {
-  background: #fce7f3;
-  color: #db2777;
-}
-
-.action-icon.blue {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.action-icon.green {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.action-card span {
-  font-weight: 500;
-  color: #1e293b;
-}
+  @media (max-width: 1200px) {
+    .grid-charts { grid-template-columns: 1fr 1fr; }
+    .grid-charts > :last-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 900px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid-main, .grid-charts { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .kpi-value { font-size: 1.5rem; }
+    .welcome { padding: 1.25rem; }
+    .tl-item .status { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .bar, .cap-fill, .mix-bar { animation: none; }
+  }
 </style>

@@ -11,6 +11,10 @@ export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   integrations: [svelte()],
+  // Old URL keeps working for bookmarks, printed flyers and search results
+  redirects: {
+    '/bestellen': { status: 301, destination: '/aanvraag' },
+  },
   vite: {
     plugins: [tailwindcss()],
     server: {

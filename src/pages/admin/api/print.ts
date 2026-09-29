@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import PDFDocument from 'pdfkit';
 import { d1Query } from '../../../lib/d1';
+import { customerNameSql } from '../../../lib/schema';
+import { formatEuro, parseEuro } from '../../../lib/catalog';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -15,9 +17,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Fetch orders with customer and items
     const placeholders = orderIds.map(() => '?').join(',');
+    const name = await customerNameSql('c');
     const ordersResult = await d1Query(
       `SELECT o.id, o.date, o.status, o.total, o.message,
-              c.firstname, c.lastname, c.email, c.phone
+              ${name.first} as firstname, ${name.last} as lastname, c.email, c.phone
        FROM orders o
        JOIN customers c ON o.customer_id = c.id
        WHERE o.id IN (${placeholders})`,
@@ -103,7 +106,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       // Total + message
-      doc.font('Helvetica-Bold').fontSize(10).fillColor('#1e293b').text(order.total || '€0.00', 60, y + cardHeight - 22);
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#1e293b').text(formatEuro(parseEuro(order.total)), 60, y + cardHeight - 22);
       if (order.message) {
         doc.font('Helvetica').fontSize(8).fillColor('#64748b')
           .text(`Opmerking: ${order.message}`, 120, y + cardHeight - 22, { width: 320 });

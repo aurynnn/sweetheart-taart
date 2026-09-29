@@ -6,13 +6,13 @@ import OrderModal from '../../components/admin/orders/OrderModal.astro';
 import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
 ---
 
-<AdminLayout title="Bestellingen">
+<AdminLayout title="Aanvragen">
 
   <!-- Page Header -->
   <div class="page-header">
     <div class="header-left">
-      <h1 class="page-title">Bestellingen</h1>
-      <p class="page-subtitle">Beheer alle bestellingen</p>
+      <h1 class="page-title">Aanvragen</h1>
+      <p class="page-subtitle">Beheer en bevestig alle aanvragen</p>
     </div>
     <div class="header-actions">
       <button class="btn btn-secondary" id="exportBtn">
@@ -28,7 +28,7 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
-        Nieuwe Bestelling
+        Nieuwe aanvraag
       </button>
     </div>
   </div>
@@ -85,8 +85,8 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
           <rect x="9" y="3" width="6" height="4" rx="1"/>
         </svg>
       </div>
-      <p class="empty-title">Geen bestellingen</p>
-      <p class="empty-sub">Bestellingen verschijnen hier wanneer klanten bestellen.</p>
+      <p class="empty-title">Geen aanvragen</p>
+      <p class="empty-sub">Aanvragen verschijnen hier zodra klanten het aanvraagformulier versturen.</p>
     </div>
 
     <!-- Pagination -->
@@ -127,6 +127,7 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
 
 <script>
   import { getOrders, setOrders, setCurrentOrderId, STATUS_CONFIG, renderOrderDetail } from '../../lib/orders';
+  import { productName } from '../../lib/catalog';
 
   // ── Config ─────────────────────────────────────────────────────────────────
   const PER_PAGE = 20;
@@ -156,8 +157,8 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
       // Auto-complete orders past their pickup date
       const today = new Date(); today.setHours(0, 0, 0, 0);
       for (const order of data) {
-        if (order.status === 'approved' && order.pickup_date) {
-          const d = new Date(order.pickup_date + 'T00:00:00');
+        if (order.status === 'approved' && order.date) {
+          const d = new Date(order.date + 'T00:00:00');
           if (d < today) {
             await patchStatus(order.id, 'completed', true); // silent patch, no toast
           }
@@ -195,7 +196,10 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
       let av: string = '', bv: string = '';
       if (sortKey === 'id')      { av = a.id;      bv = b.id; }
       else if (sortKey === 'date') { av = a.date || ''; bv = b.date || ''; }
-      else if (sortKey === 'total') { av = a.total || ''; bv = b.total || ''; }
+      else if (sortKey === 'total') {
+        const diff = (a.totalValue ?? 0) - (b.totalValue ?? 0);
+        return sortDir === 'asc' ? diff : -diff;
+      }
       const cmp = av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
       return sortDir === 'asc' ? cmp : -cmp;
     });
@@ -239,17 +243,17 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
 
   function renderRow(order: any): string {
     const c = order.customer || {};
-    const name = c.name || 'Onbekend';
+    const name = [c.firstname, c.lastname].filter(Boolean).join(' ') || 'Onbekend';
     const first = order.items?.[0];
     const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
 
     return `
       <tr data-order-id="${order.id}" data-status="${order.status}">
         <td class="td-id">#${order.id}</td>
-        <td class="td-date">${order.date || '—'}</td>
+        <td class="td-date">${escHtml(order.date || '—')}${order.time ? `<br><small>${escHtml(order.time)}</small>` : ''}</td>
         <td>
           <div class="td-customer">
-            <div class="td-avatar">${name.charAt(0).toUpperCase()}</div>
+            <div class="td-avatar">${escHtml(name.charAt(0).toUpperCase())}</div>
             <div class="td-customer-info">
               <span class="td-customer-name">${escHtml(name)}</span>
               <span class="td-customer-email">${escHtml(c.email || '—')}</span>
@@ -257,7 +261,7 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
           </div>
         </td>
         <td class="td-product">
-          <span class="td-product-name">${first?.product || '—'}</span>
+          <span class="td-product-name">${escHtml(productName(first?.product || '—'))}${order.items?.length > 1 ? ` <small>+${order.items.length - 1}</small>` : ''}</span>
           ${first?.event ? `<span class="td-product-event">${escHtml(first.event)}</span>` : ''}
         </td>
         <td class="td-total">${order.total || '—'}</td>
@@ -300,7 +304,7 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
 
     pagInfo.innerHTML = total === 0
       ? ''
-      : `<strong>${start}–${end}</strong> van <strong>${total}</strong> bestellingen`;
+      : `<strong>${start}–${end}</strong> van <strong>${total}</strong> aanvragen`;
 
     const pages: (number|'...')[] = [];
     if (tp <= 7) {
