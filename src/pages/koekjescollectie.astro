@@ -4,185 +4,112 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import GalleryModal from '../components/GalleryModal.svelte';
-import fs from 'fs';
-import path from 'path';
+import CollectionHero from '../components/collection/CollectionHero.astro';
+import FeatureCard from '../components/collection/FeatureCard.astro';
+import { listMedia } from '../lib/r2';
 
-// Dynamically load all images from koekjescollectie folder
-const imagesDir = path.join(process.cwd(), 'public', 'images', 'koekjescollectie');
-const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm', '.mov'];
-const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
+const R2 = (import.meta.env.PUBLIC_R2_BASE_URL || '').replace(/\/$/, '');
+const img = (key: string) => `${R2}/koekjescollectie/images/${key}`;
 
-let galleryImages: Array<{src: string, alt: string, caption: string, type?: string}> = [];
+const galleryImages = await listMedia('koekjescollectie');
 
-try {
-  const files = fs.readdirSync(imagesDir);
-  galleryImages = files
-    .filter(file => {
-      const ext = path.extname(file).toLowerCase();
-      return imageExtensions.includes(ext) && !file.includes(':Zone.Identifier');
-    })
-    .map(file => {
-      const ext = path.extname(file).toLowerCase();
-      const isVideo = ['.mp4', '.webm', '.mov'].includes(ext);
-      const name = path.basename(file, ext).replace(/[-_]/g, ' ').substring(0, 50);
-      const r2Path = `${R2_BASE}/koekjescollectie/${file}`;
-      return {
-        src: r2Path,
-        alt: name,
-        caption: name,
-        type: isVideo ? 'video' : 'image'
-      };
-    })
-    .sort((a, b) => a.src.localeCompare(b.src));
-} catch (e) {
-  console.error('Error loading gallery images:', e);
-}
+const presentations = [
+  { title: 'Op stok', text: 'Perfect als attentie, bedankje of in een mooi potje als blikvanger.', icon: 'fa-gift', image: img('koek_geel.jpg') },
+  { title: 'In zakje', text: 'Mooi verpakt met lint — handig om uit te delen aan de gasten.', icon: 'fa-bag-shopping', image: img('sweetheart.taart_1557306314_2039155620111759877_8631104567.jpg') },
+  { title: 'Op schaaltje', text: 'Elegant gepresenteerd voor op de dessert- of sweet table.', icon: 'fa-plate-wheat', image: img('koek_wit_thumb.jpg') },
+];
+
+const occasions = [
+  { icon: 'fa-baby', label: 'Geboorte' },
+  { icon: 'fa-cake-candles', label: 'Verjaardag' },
+  { icon: 'fa-seedling', label: 'Lentefeest' },
+  { icon: 'fa-dove', label: 'Communie' },
+  { icon: 'fa-ring', label: 'Huwelijk' },
+  { icon: 'fa-briefcase', label: 'Bedrijfsevent' },
+];
+
+const priceFactors = [
+  { icon: 'fa-palette', label: 'Afwerking en versiering' },
+  { icon: 'fa-box-open', label: 'Verpakkingskeuze' },
+  { icon: 'fa-hashtag', label: 'Aantal koekjes' },
+  { icon: 'fa-wheat-awn', label: 'Gebruikte ingrediënten' },
+];
 ---
 
-<Layout title="Koekjescollectie" description="Knap knapperig en prachtig versierd! Koekjes op stok, in zakjes of op schaaltjes. Perfect voor geboorte, verjaardag, communie of trouw." bodyClass="collection-page">
+<Layout title="Koekjescollectie" description="Knap knapperig en prachtig versierd! Speltkoekjes op stok, in zakjes of op schaaltjes. Perfect voor geboorte, verjaardag, communie of trouw." bodyClass="collection-page">
   <Header />
 
-  <main id="koekjes-main">
-    <!-- Hero Section -->
-    <section id="koekjes-hero" class="pt-32 pb-16" style="background-color: #f0c0c0;">
-      <div id="koekjes-hero-content" class="container">
-        <div id="koekjes-hero-inner" class="max-w-3xl mx-auto text-center">
-          <span id="koekjes-badge" class="inline-block px-4 py-1 text-sm font-semibold bg-[var(--color-primary)] text-white rounded-full mb-4">
-            Koekjescollectie
-          </span>
-          <h1 id="koekjes-title" class="font-heading text-4xl md:text-5xl lg:text-6xl font-semibold text-[var(--color-text)] mb-6" data-split>
-            Knap knapperig
-          </h1>
-          <p id="koekjes-subtitle" class="text-lg text-[var(--color-text-muted)] animate-on-scroll stagger-1">
-            Koekjes op stok, in een zakje of op een schaaltje… een heerlijke traktatie voor geboorte, verjaardag, lentefeest, communie, huwelijk,...
+  <main id="koekjes-main" class="collection">
+    <CollectionHero
+      id="koekjes-hero"
+      badge="Koekjescollectie"
+      title="Knap knapperig"
+      subtitle="Koekjes op stok, in een zakje of op een schaaltje… een heerlijke traktatie voor geboorte, verjaardag, lentefeest, communie, huwelijk en meer."
+      product="koekjes"
+      ctaLabel="Bestellen"
+      photos={[img('koekejs.png'), img('sweetheart.taart_1641141988_2742420221900333997_8631104567.jpg'), img('sweetheart.taart_1557306214_2039154781586553919_8631104567.jpg')]}
+      highlights={[{ icon: 'fa-wheat-awn', label: 'Speltkoekjes' }, { icon: 'fa-paintbrush', label: 'Versierd naar wens' }, { icon: 'fa-euro-sign', label: 'Vanaf €2 per koekje' }]}
+    />
+
+    <!-- Presentations -->
+    <section id="koekjes-presentaties" class="section c-section">
+      <div class="container">
+        <header class="c-head">
+          <span class="eyebrow animate-on-scroll">Presentatie</span>
+          <h2 class="section-title" data-split>Hoe wil je ze?</h2>
+          <p class="section-subtitle mx-auto animate-on-scroll stagger-1">
+            Deze speltkoekjes worden versierd naar wens — elke koek een klein kunstwerkje.
           </p>
+        </header>
+        <div class="c-grid-3">
+          {presentations.map((p, i) => <FeatureCard {...p} index={i} />)}
         </div>
       </div>
     </section>
 
-    <!-- Main Content -->
-    <section id="koekjes-content" class="section">
-      <div id="koekjes-content-inner" class="container">
-        <div id="koekjes-grid" class="grid lg:grid-cols-2 gap-16 items-start">
-          <!-- Products Column -->
-          <div id="koekjes-products">
-            <h2 id="koekjes-products-title" class="font-heading text-2xl md:text-3xl font-semibold text-[var(--color-text)] mb-6 animate-on-scroll">
-              Onze koekjes
-            </h2>
+    <!-- Occasions marquee -->
+    <section class="c-occasions" aria-label="Gelegenheden">
+      <div class="c-occasions-track" data-marquee data-marquee-duration="32">
+        {occasions.map((o) => (
+          <span class="c-occasion" data-marquee-item><i class={`fa-solid ${o.icon}`} aria-hidden="true"></i>{o.label}</span>
+        ))}
+      </div>
+    </section>
 
-            <p id="koekjes-products-text" class="text-[var(--color-text-muted)] mb-8 leading-relaxed">
-              Deze speltkoekjes worden versierd naar wens. Ze zijn gemaakt met zorg en aandacht, zodat elke koek een klein kunstwerkje is.
-            </p>
+    <!-- Gallery -->
+    <section id="creaties" class="section c-section c-gallery">
+      <div class="container">
+        <header class="c-head">
+          <span class="eyebrow animate-on-scroll">Inspiratie</span>
+          <h2 class="section-title" data-split>Onze koekjes</h2>
+        </header>
+        <div class="animate-on-scroll">
+          <GalleryModal client:visible images={galleryImages} />
+        </div>
+      </div>
+    </section>
 
-            <!-- Presentation Options -->
-            <div id="koekjes-options-list" class="grid grid-cols-1 gap-4">
-              <!-- Op Stock -->
-              <div id="koekjes-option-stok" class="card p-6">
-                <div id="koekjes-option-stok-inner" class="flex items-center gap-4">
-                  <div id="koekjes-option-stok-icon" class="w-14 h-14 rounded-lg bg-gradient-to-br from-[#E8B4B8] to-[#D4A574] flex items-center justify-center flex-shrink-0">
-                    <svg id="koekjes-option-stok-icon-svg" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-                    </svg>
-                  </div>
-                  <div id="koekjes-option-stok-content">
-                    <h3 id="koekjes-option-stok-title" class="font-heading text-lg font-semibold text-[var(--color-text)]">Op stok</h3>
-                    <p id="koekjes-option-stok-text" class="text-sm text-[var(--color-text-muted)]">Perfect als attentie of geschenk</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- In Zakje -->
-              <div id="koekjes-option-zakje" class="card p-6">
-                <div id="koekjes-option-zakje-inner" class="flex items-center gap-4">
-                  <div id="koekjes-option-zakje-icon" class="w-14 h-14 rounded-lg bg-gradient-to-br from-[#CD853F] to-[#DEB887] flex items-center justify-center flex-shrink-0">
-                    <svg id="koekjes-option-zakje-icon-svg" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 2h12a2 2 0 012 2v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 10h12" />
-                    </svg>
-                  </div>
-                  <div id="koekjes-option-zakje-content">
-                    <h3 id="koekjes-option-zakje-title" class="font-heading text-lg font-semibold text-[var(--color-text)]">In zakje</h3>
-                    <p id="koekjes-option-zakje-text" class="text-sm text-[var(--color-text-muted)]">Handig om te delen met meerdere personen</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Op Schaaltje -->
-              <div id="koekjes-option-schaaltje" class="card p-6">
-                <div id="koekjes-option-schaaltje-inner" class="flex items-center gap-4">
-                  <div id="koekjes-option-schaaltje-icon" class="w-14 h-14 rounded-lg bg-gradient-to-br from-[#E8D5C4] to-[#F5DEB3] flex items-center justify-center flex-shrink-0">
-                    <svg id="koekjes-option-schaaltje-icon-svg" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v8.25m0 0v3.75a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.75A2.25 2.25 0 0019.5 7.5h-8.27a1.5 1.5 0 01-1.06-.44z" />
-                    </svg>
-                  </div>
-                  <div id="koekjes-option-schaaltje-content">
-                    <h3 id="koekjes-option-schaaltje-title" class="font-heading text-lg font-semibold text-[var(--color-text)]">Op schaaltje</h3>
-                    <p id="koekjes-option-schaaltje-text" class="text-sm text-[var(--color-text-muted)]">Elegant gepresenteerd voor uw feest</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <!-- Price -->
+    <section id="koekjes-prijs" class="section c-section">
+      <div class="container">
+        <div class="c-price-card animate-on-scroll" data-tilt="3">
+          <div class="c-price">
+            <span class="c-price-label">Vanaf</span>
+            <span class="c-price-amount">€<span data-counter="2" data-counter-from="0">2</span></span>
+            <span class="c-price-unit">per koekje</span>
+            <small>(niet op stok en niet verpakt)</small>
           </div>
-
-          <!-- Pricing & Order Column -->
-          <div id="koekjes-order" class="animate-on-scroll stagger-2">
-            <div id="koekjes-order-card" class="card p-8 bg-[var(--color-surface)]">
-              <!-- Price -->
-              <div id="koekjes-price" class="text-center mb-8 pb-8 border-b border-[var(--color-border)]">
-                <span id="koekjes-price-label" class="text-sm text-[var(--color-text-muted)] uppercase tracking-wider">Vanaf</span>
-                <div id="koekjes-price-value" class="flex items-baseline justify-center gap-1 mt-2">
-                  <span id="koekjes-price-amount" class="font-heading text-5xl font-bold text-[var(--color-primary)]">€2</span>
-                  <span id="koekjes-price-unit" class="text-[var(--color-text-muted)]">per koekje</span>
-                </div>
-                <p id="koekjes-price-note" class="text-sm text-[var(--color-text-muted)] mt-2">
-                  (niet op stok en niet verpakt)
-                </p>
-              </div>
-
-              <h3 id="koekjes-order-title" class="font-heading text-xl font-semibold text-[var(--color-text)] mb-4 flex items-center gap-3">
-                <svg id="koekjes-order-icon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42-3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-                </svg>
-                Prijs hangt af van
-              </h3>
-
-              <ul id="koekjes-order-list" class="space-y-3 mb-8">
-                <li id="koekjes-order-item-1" class="flex items-start gap-3 text-[var(--color-text-muted)]">
-                  <svg id="koekjes-order-check-1" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[var(--color-accent)] flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span id="koekjes-order-text-1">Afwerking en versiering</span>
-                </li>
-                <li id="koekjes-order-item-2" class="flex items-start gap-3 text-[var(--color-text-muted)]">
-                  <svg id="koekjes-order-check-2" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[var(--color-accent)] flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span id="koekjes-order-text-2">Verpakkingskeuze</span>
-                </li>
-                <li id="koekjes-order-item-3" class="flex items-start gap-3 text-[var(--color-text-muted)]">
-                  <svg id="koekjes-order-check-3" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[var(--color-accent)] flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span id="koekjes-order-text-3">Aantal koekjes</span>
-                </li>
-                <li id="koekjes-order-item-4" class="flex items-start gap-3 text-[var(--color-text-muted)]">
-                  <svg id="koekjes-order-check-4" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[var(--color-accent)] flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span id="koekjes-order-text-4">Gebruikte ingrediënten</span>
-                </li>
-              </ul>
-
-              <div id="koekjes-order-button-wrapper" class="mt-6">
-                <a id="koekjes-order-button" href="/aanvraag?product=koekjes" class="btn btn-primary btn-shine w-full justify-center">
-                  Vraag koekjes aan
-                </a>
-              </div>
-
-              <p id="koekjes-order-note" class="text-center text-sm text-[var(--color-text-muted)] mt-4">
-                Mail of bel voor een vrijblijvende offerte
-              </p>
-            </div>
+          <div class="c-price-body">
+            <h3>De prijs hangt af van</h3>
+            <ul class="c-factors">
+              {priceFactors.map((f, i) => (
+                <li class={`animate-on-scroll stagger-${i + 1}`}><span><i class={`fa-solid ${f.icon}`} aria-hidden="true"></i></span>{f.label}</li>
+              ))}
+            </ul>
+            <a href="/aanvraag?product=koekjes" class="btn btn-primary btn-shine c-cta-wide" data-magnetic="0.15">
+              Vraag je koekjes aan <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
+            <p class="c-small">Vrijblijvend — Nathalie bevestigt je aanvraag met de definitieve prijs.</p>
           </div>
         </div>
       </div>

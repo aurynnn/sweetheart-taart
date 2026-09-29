@@ -2,464 +2,233 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+
+const tabs = [
+  {
+    id: 'ophalen',
+    label: 'Ophalen',
+    icon: 'fa-car-side',
+    title: 'Ophaalinfo',
+    tips: [
+      { icon: 'fa-clock', title: 'Kom op tijd', text: 'Ben je onverhoopt toch te laat? Geef me een seintje als het ophaaluur meer dan 10 minuten afwijkt.', link: { href: 'tel:+32486953210', label: 'Bel 0486 95 32 10' } },
+      { icon: 'fa-square-parking', title: 'Parkeren', text: 'Parkeer gerust voor de deur, op de oprit of voor mijn auto — Zwanenlaan 62, Oostende.', warn: 'Parkeer niet voor de garage van de buren' },
+      { icon: 'fa-bell', title: 'De bel van het atelier', text: 'De bel hangt aan de carport, net naast het uithangbord. Duw wat langer op de bel, niet harder.' },
+      { icon: 'fa-wallet', title: 'Betaling', text: 'Het resterende bedrag betaal je graag contant of met Payconiq bij het ophalen.' },
+    ],
+  },
+  {
+    id: 'bewaren',
+    label: 'Bewaren',
+    icon: 'fa-snowflake',
+    title: 'Cake care',
+    tips: [
+      { icon: 'fa-box', title: 'Hou de doos altijd onderaan vast' },
+      { icon: 'fa-scale-balanced', title: 'Hou de taart waterpas', text: 'Ook tijdens het vervoer.' },
+      { icon: 'fa-car', title: 'Vervoer in een gekoelde wagen', text: 'Vermijd losse voorwerpen in de auto.' },
+      { icon: 'fa-snowflake', title: 'Zet de taart in de doos in de koelkast' },
+      { icon: 'fa-sun', title: 'Koel, droog en uit de zon', text: 'Direct zonlicht is de grootste vijand van botercrème.' },
+      { icon: 'fa-hourglass-half', title: 'Een half uurtje op voorhand uit de koelkast', text: 'Zo proef je alle smaken op hun best.' },
+      { icon: 'fa-circle-dot', title: 'Gebruik een stevig taartplateau', text: 'Minstens 3 cm groter dan de taart.' },
+      { icon: 'fa-calendar-days', title: 'Overschotjes max. 3 dagen', text: 'In een luchtdichte doos in de koelkast.' },
+    ],
+  },
+  {
+    id: 'serveren',
+    label: 'Aansnijden',
+    icon: 'fa-utensils',
+    title: 'Aansnijden & opdienen',
+    steps: [
+      { title: 'Hou een plank naast de taart', text: 'en snij een plak af.' },
+      { title: 'Leg het taartstuk op de plank', text: 'en snij nu in de lengte.' },
+      { title: 'Snij het stuk verder', text: 'indien gewenst in kleinere porties.' },
+      { title: 'Herhaal aan de overkant', text: 'snij een schijf aan de tegenovergestelde kant en volg hetzelfde proces.' },
+    ],
+  },
+];
 ---
 
-<Layout title="Tips - Ophaalinfo & Tips" bodyClass="collection-page" noFooter={true}>
+<Layout title="Tips & ophaalinfo" description="Alles wat je moet weten over het ophalen, bewaren en aansnijden van je taart van Sweetheart." bodyClass="collection-page">
   <Header />
 
-  <main id="tips-main" class="tips-page">
-    <!-- Hero -->
-    <section id="tips-hero" class="pt-32 pb-12" style="background-color: #f0c0c0;">
+  <main id="tips-main" class="collection">
+    <section class="c-hero tips-hero grain">
+      <div class="container relative z-10 text-center">
+        <span class="c-badge animate-on-scroll"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> Tips & info</span>
+        <h1 class="tips-title" data-split>Alles voor een perfect feest</h1>
+        <p class="tips-sub animate-on-scroll stagger-2">Van ophalen tot aansnijden — zo komt je taart er even mooi aan als ze uit het atelier vertrok.</p>
+      </div>
+      <svg class="c-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0,50 C300,90 520,10 780,35 C1040,60 1240,20 1440,45 L1440,80 L0,80 Z" fill="currentColor" />
+      </svg>
+    </section>
+
+    <section class="section tips-body">
       <div class="container">
-        <div class="max-w-3xl mx-auto text-center">
-          <span class="inline-block px-4 py-1 text-sm font-semibold bg-white text-[#E8788A] rounded-full mb-4">📋 Tips & Info</span>
-          <h1 class="font-heading text-4xl md:text-5xl lg:text-6xl font-semibold text-white mb-4">Alles voor een perfecte ervaring</h1>
-          <p class="text-lg text-white/80">Van ophaaltijden tot cake-verzorging — hier vind je alles wat je moet weten</p>
+        <div class="tabs animate-on-scroll" role="tablist" aria-label="Tips">
+          <span class="tab-indicator" aria-hidden="true"></span>
+          {tabs.map((t, i) => (
+            <button
+              class="tab"
+              role="tab"
+              id={`tab-${t.id}`}
+              aria-controls={`panel-${t.id}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+              data-tab={t.id}
+            >
+              <i class={`fa-solid ${t.icon}`} aria-hidden="true"></i><span>{t.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {tabs.map((t, i) => (
+          <div class="panel" role="tabpanel" id={`panel-${t.id}`} aria-labelledby={`tab-${t.id}`} hidden={i !== 0} data-panel={t.id}>
+            <h2 class="section-title panel-title">{t.title}</h2>
+
+            {t.tips && (
+              <div class="tip-grid">
+                {t.tips.map((tip, j) => (
+                  <article class="tip" style={`--j:${j}`}>
+                    <span class="tip-icon"><i class={`fa-solid ${tip.icon}`} aria-hidden="true"></i></span>
+                    <div>
+                      <h3>{tip.title}</h3>
+                      {tip.text && <p>{tip.text}</p>}
+                      {tip.warn && <p class="tip-warn"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {tip.warn}</p>}
+                      {tip.link && <a href={tip.link.href} class="tip-link"><i class="fa-solid fa-phone" aria-hidden="true"></i> {tip.link.label}</a>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {t.steps && (
+              <div class="serve">
+                <ol class="steps">
+                  {t.steps.map((s, j) => (
+                    <li class="step" style={`--j:${j}`}>
+                      <span class="step-num">{j + 1}</span>
+                      <div><strong>{s.title}</strong> {s.text}</div>
+                    </li>
+                  ))}
+                </ol>
+                <div class="video">
+                  <iframe
+                    src="https://www.youtube-nocookie.com/embed/jnqiMk7d7iM"
+                    title="Hoe snij je een taart aan"
+                    loading="lazy"
+                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+
+        <div class="review animate-on-scroll" data-tilt="4">
+          <div class="review-stars" aria-hidden="true">
+            {[0, 1, 2, 3, 4].map((i) => <i class="fa-solid fa-star" style={`--s:${i}`}></i>)}
+          </div>
+          <h2 class="on-dark">Vond je het lekker?</h2>
+          <p>Laat een review achter en help anderen om te genieten van mijn taarten!</p>
+          <a href="https://search.google.com/local/writereview?placeid=ChIJ722oViGs3EcRQQq7hspVsDs" target="_blank" rel="noopener" class="btn btn-primary btn-shine review-btn" data-magnetic="0.2">
+            <i class="fa-brands fa-google" aria-hidden="true"></i> Laat een review
+          </a>
         </div>
       </div>
     </section>
-
-    <div class="tips-header" style="display:none;">
-      <h1>📋 Tips & Info</h1>
-      <p class="intro">Alles wat je moet weten voor een perfecte ervaring</p>
-    </div>
-
-    <!-- Tab Buttons -->
-    <div class="tab-buttons">
-      <button class="tab-btn active" onclick="showSection('pickup')">
-        <span class="tab-icon">🚗</span>
-        <span class="tab-label">Ophalen</span>
-      </button>
-      <button class="tab-btn" onclick="showSection('care')">
-        <span class="tab-icon">🎂</span>
-        <span class="tab-label">Cake Care</span>
-      </button>
-      <button class="tab-btn" onclick="showSection('serve')">
-        <span class="tab-icon">🔪</span>
-        <span class="tab-label">Serveren</span>
-      </button>
-    </div>
-
-    <!-- Pickup Section -->
-    <div class="tab-content active" id="section-pickup">
-      <div class="section-card">
-        <h2>🚗 Ophaalinfo</h2>
-        <div class="tips-list">
-          <div class="tip-item">
-            <span class="tip-emoji">⏰</span>
-            <div>
-              <strong>Kom op tijd!</strong>
-              <p>Ben je onverhoopt toch te laat, geef me dan seintje indien het uur van afhalen meer dan 10 minuten afwijkt dan het afgesproken uur.</p>
-              <a href="tel:+32486953210">📞 0486/953210</a>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">🅿️</span>
-            <div>
-              <strong>Parkeren</strong>
-              <p>Parkeer gerust voor de deur, op de oprit of voor mijn auto.</p>
-              <p><strong>📍 Zwanenlaan 62, Oostende</strong></p>
-              <p class="warning">⚠️ Parkeer niet voor de garage van de buren</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">🔔</span>
-            <div>
-              <strong>De bel van het atelier</strong>
-              <p>De bel van het atelier bevindt zich aan de carport, net naast het uithangbord. Duw wat langer op de bel, niet harder.</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">💳</span>
-            <div>
-              <strong>Betaling</strong>
-              <p>Het resterende bedrag wordt graag contant betaald, of met payconic vereffend bij afhaling.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Cake Care Section -->
-    <div class="tab-content" id="section-care">
-      <div class="section-card">
-        <h2>🎂 Cake Care</h2>
-        <div class="tips-list">
-          <div class="tip-item">
-            <span class="tip-emoji">📦</span>
-            <div>
-              <strong>Hou de doos altijd onderaan vast</strong>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">⚖️</span>
-            <div>
-              <strong>Hou de taart zoveel mogelijk waterpas</strong>
-              <p>Ook tijdens het vervoer.</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">🚗</span>
-            <div>
-              <strong>Vervoer in een gekoelde wagen</strong>
-              <p>Vermijd losse voorwerpen.</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">🧊</span>
-            <div>
-              <strong>Zet de cake in de doos in de koelkast</strong>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">🌡️</span>
-            <div>
-              <strong>Hou de taart koel, droog</strong>
-              <p>En uit direct zonlicht.</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">⏱️</span>
-            <div>
-              <strong>Haal de taart een half uurtje vóór aansnijden uit de koelkast</strong>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">🍽️</span>
-            <div>
-              <strong>Gebruik een stevig taartplateau</strong>
-              <p>Min. 3 cm groter dan de taart.</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">📅</span>
-            <div>
-              <strong>Bewaar overschotjes max. 3 dagen</strong>
-              <p>In een luchtdichte doos in de koelkast.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Serve Section -->
-    <div class="tab-content" id="section-serve">
-      <div class="section-card">
-        <h2>🔪 Aansnijden & Opdienen</h2>
-        <div class="tips-list">
-          <div class="tip-item">
-            <span class="tip-emoji">1️⃣</span>
-            <div>
-              <strong>Hou een plank naast de taart</strong>
-              <p>En snij een plak af.</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">2️⃣</span>
-            <div>
-              <strong>Leg het taartstuk op de plank</strong>
-              <p>En snij nu in de lengte.</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">3️⃣</span>
-            <div>
-              <strong>Nu kan het stuk taart</strong>
-              <p>Indien gewenst, nog eens gesneden worden.</p>
-            </div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-emoji">4️⃣</span>
-            <div>
-              <strong>Snij een schijf aan de tegenovergestelde kant</strong>
-              <p>En volg hetzelfde proces.</p>
-            </div>
-          </div>
-        </div>
-        <div class="video-container">
-          <iframe
-            src="https://www.youtube.com/embed/jnqiMk7d7iM"
-            title="Taart aansnijden instructies"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-          </iframe>
-        </div>
-      </div>
-    </div>
-
-    <!-- Share Block -->
-    <div class="share-block">
-      <h3>Vond je het lekker?</h3>
-      <p>Laat een review achter en help anderen om te genieten van mijn taarten!</p>
-      <a href="https://search.google.com/local/writereview?placeid=ChIJ722oViGs3EcRQQq7hspVsDs" target="_blank" rel="noopener" class="review-btn">
-        <i class="fa-solid fa-star"></i>
-        Laat een review
-      </a>
-    </div>
-
-    <div class="back-link">
-      <a href="/aanvraag">← Terug naar je aanvraag</a>
-    </div>
   </main>
 
   <Footer id="tips-footer" />
 </Layout>
 
-<script is:inline>
-  function showSection(section) {
-    // Hide all content
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    // Remove active from all buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    // Show selected content
-    document.getElementById('section-' + section).classList.add('active');
-    // Activate selected button
-    event.currentTarget.classList.add('active');
+<script>
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="tab"][data-tab]'));
+  const indicator = document.querySelector<HTMLElement>('.tab-indicator');
+
+  function moveIndicator(tab: HTMLElement) {
+    if (!indicator) return;
+    indicator.style.width = `${tab.offsetWidth}px`;
+    indicator.style.transform = `translateX(${tab.offsetLeft}px)`;
   }
+
+  function select(id: string, focus = false) {
+    const tab = tabs.find((t) => t.dataset.tab === id);
+    if (!tab) return;
+    tabs.forEach((t) => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
+    document.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => {
+      p.hidden = p.dataset.panel !== id;
+    });
+    moveIndicator(tab);
+    if (focus) tab.focus();
+    history.replaceState(null, '', `#${id}`);
+  }
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(tab.dataset.tab!));
+    tab.addEventListener('keydown', (e) => {
+      const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!dir) return;
+      e.preventDefault();
+      select(tabs[(i + dir + tabs.length) % tabs.length].dataset.tab!, true);
+    });
+  });
+
+  const initial = location.hash.slice(1);
+  select(tabs.some((t) => t.dataset.tab === initial) ? initial : tabs[0].dataset.tab!);
+  window.addEventListener('resize', () => {
+    const active = tabs.find((t) => t.getAttribute('aria-selected') === 'true');
+    if (active) moveIndicator(active);
+  });
 </script>
 
 <style>
-  .tips-page {
-    min-height: 100vh;
-    padding: 2rem 1rem 4rem;
-    background: #f0c0c0;
+  .tips-hero { position: relative; overflow: hidden; padding: 8.5rem 0 6rem; background: radial-gradient(60% 70% at 20% 20%, #ffd9e0 0%, transparent 60%), linear-gradient(180deg, #f0c0c0, #f4c9cc); }
+  .c-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.8); color: var(--color-primary-dark); font-weight: 700; font-size: 0.85rem; }
+  .tips-title { font-family: var(--font-heading); font-weight: 900; font-size: clamp(2.8rem, 7vw, 5rem); line-height: 1.05; margin: 1rem 0; }
+  .tips-sub { max-width: 36rem; margin: 0 auto; font-size: 1.1rem; color: #5b4346; }
+  .c-wave { position: absolute; left: 0; bottom: -1px; width: 100%; height: 60px; color: var(--color-surface); }
+
+  .tabs { position: relative; display: flex; gap: 0.25rem; width: fit-content; max-width: 100%; margin: 0 auto 2.5rem; padding: 0.35rem; border-radius: 999px; background: var(--color-secondary); overflow-x: auto; }
+  .tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 0.55rem; padding: 0.8rem 1.4rem; border: 0; border-radius: 999px; background: none; font: inherit; font-weight: 700; color: var(--color-text-muted); cursor: pointer; white-space: nowrap; transition: color 300ms ease; }
+  .tab[aria-selected='true'] { color: #fff; }
+  .tab-indicator { position: absolute; top: 0.35rem; bottom: 0.35rem; left: 0; border-radius: 999px; background: linear-gradient(135deg, #F2A0AA, #E8788A); box-shadow: 0 8px 20px -8px rgba(212, 90, 106, 0.8); transition: transform 500ms var(--ease-spring), width 500ms var(--ease-spring); }
+
+  .panel-title { text-align: center; }
+  .tip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-width: 60rem; margin: 2rem auto 0; }
+  .tip { display: flex; gap: 1rem; align-items: flex-start; padding: 1.25rem 1.4rem; border-radius: 1.25rem; background: #fff; border: 1px solid var(--color-border-light); box-shadow: var(--shadow-md); animation: tipIn 600ms var(--ease-out-expo) both; animation-delay: calc(var(--j) * 60ms); transition: transform 300ms var(--ease-spring), box-shadow 300ms; }
+  .tip:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -24px rgba(212, 90, 106, 0.6); }
+  @keyframes tipIn { from { opacity: 0; transform: translateY(16px); } }
+  .tip-icon { width: 3rem; height: 3rem; border-radius: 1rem; display: grid; place-items: center; flex-shrink: 0; background: linear-gradient(135deg, #FDEEF0, #FBD9DE); color: var(--color-primary-dark); font-size: 1.2rem; }
+  .tip h3 { font-family: var(--font-body); font-weight: 800; font-size: 1rem; margin: 0.2rem 0 0; }
+  .tip p { margin: 0.3rem 0 0; color: var(--color-text-muted); font-size: 0.92rem; line-height: 1.6; }
+  .tip-warn { color: #B45309 !important; font-weight: 600; }
+  .tip-link { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem; font-weight: 700; }
+
+  .serve { display: grid; grid-template-columns: 1fr 1.2fr; gap: 2.5rem; align-items: center; max-width: 64rem; margin: 2rem auto 0; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; counter-reset: s; }
+  .step { display: flex; gap: 1rem; align-items: center; padding: 1rem 1.2rem; border-radius: 1.1rem; background: #fff; border: 1px solid var(--color-border-light); animation: tipIn 600ms var(--ease-out-expo) both; animation-delay: calc(var(--j) * 90ms); color: var(--color-text-muted); }
+  .step strong { color: var(--color-text); }
+  .step-num { width: 2.5rem; height: 2.5rem; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; background: var(--color-primary); color: #fff; font-weight: 800; }
+  .video { position: relative; aspect-ratio: 16 / 9; border-radius: 1.25rem; overflow: hidden; box-shadow: 0 30px 60px -30px rgba(74, 58, 61, 0.5); background: #2a1c1f; }
+  .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+  .review { max-width: 36rem; margin: 5rem auto 0; padding: 2.5rem 2rem; text-align: center; border-radius: 1.75rem; color: #fff; background: radial-gradient(80% 90% at 20% 0%, #F2A0AA, transparent 70%), linear-gradient(160deg, #E8788A, #D45A6A); box-shadow: 0 40px 80px -40px rgba(212, 90, 106, 0.8); }
+  .review h2 { color: #fff !important; text-shadow: none !important; font-size: 2.2rem; margin: 0.5rem 0; }
+  .review p { opacity: 0.92; margin: 0 0 1.5rem; }
+  .review-stars i { color: #FFD66B; font-size: 1.4rem; margin: 0 0.1rem; animation: star 2.4s ease-in-out infinite; animation-delay: calc(var(--s) * 120ms); }
+  @keyframes star { 0%, 70%, 100% { transform: none; } 80% { transform: scale(1.3) rotate(12deg); } }
+  .review-btn { background: #fff !important; color: var(--color-primary-dark) !important; border-color: #fff !important; border-radius: 999px; }
+
+  @media (max-width: 800px) {
+    .tip-grid, .serve { grid-template-columns: 1fr; }
+    .tab { padding: 0.7rem 1rem; }
   }
-
-  .tips-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    margin-top: 3rem;
-  }
-
-  .tips-header h1 {
-    color: #E8788A;
-    margin-bottom: 0.5rem;
-    font-size: 2rem;
-  }
-
-  .tips-header .intro {
-    color: #64748b;
-    font-size: 1.1rem;
-  }
-
-  /* Tab Buttons */
-  .tab-buttons {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-bottom: 2rem;
-  }
-
-  .tab-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1.5rem 2rem;
-    background: white;
-    border: 2px solid #f0e0e2;
-    border-radius: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 140px;
-  }
-
-  .tab-btn:hover {
-    border-color: #E8788A;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(232, 120, 138, 0.15);
-  }
-
-  .tab-btn.active {
-    background: #E8788A;
-    border-color: #E8788A;
-    color: white;
-  }
-
-  .tab-icon {
-    font-size: 2rem;
-  }
-
-  .tab-label {
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  /* Tab Content */
-  .tab-content {
-    display: none;
-    max-width: 800px;
-    margin: 0 auto 2rem;
-  }
-
-  .tab-content.active {
-    display: block;
-    animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .section-card {
-    background: white;
-    border-radius: 1.5rem;
-    padding: 2rem;
-    box-shadow: 0 4px 20px rgba(232, 120, 138, 0.1);
-  }
-
-  .section-card h2 {
-    color: #E8788A;
-    margin: 0 0 1.5rem 0;
-    font-size: 1.5rem;
-    text-align: center;
-  }
-
-  .tips-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .tip-item {
-    display: flex;
-    gap: 1rem;
-    padding: 1rem;
-    background: #f8fafc;
-    border-radius: 0.75rem;
-    border-left: 4px solid #E8788A;
-  }
-
-  .tip-emoji {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-  }
-
-  .tip-item strong {
-    color: #1e293b;
-    display: block;
-    margin-bottom: 0.25rem;
-  }
-
-  .tip-item p {
-    margin: 0 0 0.5rem 0;
-    color: #475569;
-    font-size: 0.9rem;
-    line-height: 1.4;
-  }
-
-  .tip-item a {
-    color: #E8788A;
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 0.9rem;
-  }
-
-  .tip-item a:hover {
-    text-decoration: underline;
-  }
-
-  .warning {
-    color: #dc2626 !important;
-    font-weight: 500;
-  }
-
-  .video-container {
-    margin-top: 1.5rem;
-    border-radius: 1rem;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  }
-
-  .video-container iframe {
-    width: 100%;
-    aspect-ratio: 16/9;
-    display: block;
-  }
-
-  /* Share Block */
-  .share-block {
-    max-width: 600px;
-    margin: 2rem auto;
-    background: linear-gradient(135deg, #E8788A, #d66b7a);
-    border-radius: 1.5rem;
-    padding: 2rem;
-    text-align: center;
-    color: white;
-  }
-
-  .share-block h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.5rem;
-  }
-
-  .share-block p {
-    margin: 0 0 1rem 0;
-    opacity: 0.9;
-    line-height: 1.5;
-  }
-
-  .review-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: white;
-    color: #E8788A !important;
-    border-radius: 9999px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: transform 0.2s;
-  }
-
-  .review-btn:hover {
-    transform: scale(1.05);
-  }
-
-  .back-link {
-    text-align: center;
-    margin-top: 2rem;
-  }
-
-  .back-link a {
-    color: #E8788A;
-    text-decoration: none;
-    font-weight: 500;
-  }
-
-  .back-link a:hover {
-    text-decoration: underline;
-  }
-
-  /* Mobile */
-  @media (max-width: 600px) {
-    .tab-btn {
-      min-width: 100px;
-      padding: 1rem;
-    }
-
-    .tab-icon {
-      font-size: 1.5rem;
-    }
-
-    .tab-label {
-      font-size: 0.875rem;
-    }
-
-    .section-card {
-      padding: 1.5rem;
-    }
-
-    .tip-item {
-      flex-direction: column;
-      text-align: center;
-    }
-
-    .tip-emoji {
-      margin: 0 auto;
-    }
+  @media (prefers-reduced-motion: reduce) {
+    .tip, .step, .review-stars i { animation: none; }
   }
 </style>

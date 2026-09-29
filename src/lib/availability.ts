@@ -3,6 +3,7 @@
 // so the customer can never submit a date the calendar would have refused.
 
 import { d1Query } from './d1';
+import { getPickupConfig, timesForDate } from './pickupTimes';
 
 export interface DayAvailability {
   date: string;
@@ -11,6 +12,8 @@ export interface DayAvailability {
   maxOrders: number;
   remaining: number;
   reason?: string;
+  /** Ophaalmomenten offered that day */
+  times: string[];
 }
 
 export interface AvailabilitySettings {
@@ -40,6 +43,8 @@ export async function getAvailability(startDate: string | null, endDate: string 
       leadTimeDays = parseInt(leadResult.results[0].value as string, 10) || 0;
     }
   } catch { /* table may not exist yet */ }
+
+  const pickupConfig = await getPickupConfig();
 
   // Fetch recurring schedule
   const recurringResult = await d1Query(
@@ -162,7 +167,14 @@ export async function getAvailability(startDate: string | null, endDate: string 
         reason = isPast ? 'Datum is voorbij' : 'Volledig bezet';
       }
 
+      const times = timesForDate(pickupConfig, dateStr);
+      if (isAvailable && times.length === 0) {
+        isAvailable = false;
+        reason = 'Geen ophaalmomenten';
+      }
+
       availability.push({
+        times,
         date: dateStr,
         available: isAvailable,
         orders: ordersCount,

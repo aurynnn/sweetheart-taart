@@ -4,17 +4,19 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 ---
 
-<Layout title="Algemene Voorwaarden">
+<Layout title="Algemene Voorwaarden" bodyClass="collection-page">
   <Header />
-  
-  <main class="py-20 bg-[var(--color-bg)]">
-    <div class="container max-w-3xl">
-      
-      <h1 id="algemene-voorwaarden-title" class="font-heading text-4xl md:text-5xl font-semibold text-[var(--color-text)] mb-8 text-center">
-        Algemene Voorwaarden
-      </h1>
 
-      <div class="prose prose-lg max-w-none text-[var(--color-text-muted)] space-y-6">
+  <main class="collection">
+    <section class="legal-hero grain">
+      <div class="container relative z-10 text-center">
+        <span class="legal-badge"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Goed om te weten</span>
+        <h1 id="algemene-voorwaarden-title" class="legal-title" data-split>Algemene voorwaarden</h1>
+      </div>
+    </section>
+
+    <div class="container max-w-3xl legal-body">
+      <div class="legal-card animate-on-scroll text-[var(--color-text-muted)] space-y-6">
         
         <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">Verkoopvoorwaarden</h2>
         
@@ -79,9 +81,17 @@ import Footer from '../components/Footer.astro';
         </p>
 
       </div>
-      
     </div>
   </main>
-  
+
   <Footer />
 </Layout>
+
+<style>
+  .legal-hero { position: relative; overflow: hidden; padding: 8.5rem 0 5rem; background: radial-gradient(60% 70% at 20% 20%, #ffd9e0 0%, transparent 60%), linear-gradient(180deg, #f0c0c0, #f4c9cc); }
+  .legal-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.8); color: var(--color-primary-dark); font-weight: 700; font-size: 0.85rem; }
+  .legal-title { font-family: var(--font-heading); font-weight: 900; font-size: clamp(2.8rem, 7vw, 4.5rem); margin: 1rem 0 0; }
+  .legal-body { position: relative; z-index: 2; margin-top: -3rem; padding-bottom: 5rem; }
+  .legal-card { background: #fff; border-radius: 1.5rem; padding: clamp(1.5rem, 4vw, 3rem); box-shadow: 0 40px 80px -40px rgba(212, 90, 106, 0.45); border: 1px solid var(--color-border-light); line-height: 1.75; }
+  .legal-card h2 { font-family: var(--font-heading); font-size: 1.9rem !important; color: var(--color-text) !important; text-shadow: none !important; margin-top: 2rem; }
+</style>

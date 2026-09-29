@@ -5,8 +5,10 @@
   import { fly } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
 
-  interface DayInfo { available: boolean; remaining: number; reason?: string }
-  let { value = $bindable('') }: { value?: string } = $props();
+  import { PICKUP_TIMES } from '../../lib/catalog';
+
+  interface DayInfo { available: boolean; remaining: number; reason?: string; times: string[] }
+  let { value = $bindable(''), times = $bindable<string[]>([]) }: { value?: string; times?: string[] } = $props();
 
   const MONTHS = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
   const DAYS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
@@ -35,7 +37,7 @@
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json();
       const map: Record<string, DayInfo> = {};
-      for (const d of data.availability ?? []) map[d.date] = { available: d.available, remaining: d.remaining, reason: d.reason };
+      for (const d of data.availability ?? []) map[d.date] = { available: d.available, remaining: d.remaining, reason: d.reason, times: d.times ?? PICKUP_TIMES };
       availability = map;
       // Drop a restored draft date that is no longer free
       if (value && !map[value]?.available) value = '';
@@ -51,6 +53,11 @@
     } finally {
       loading = false;
     }
+  });
+
+  // Ophaalmomenten for the chosen day (falls back to the defaults if availability failed to load)
+  $effect(() => {
+    times = value ? (availability[value]?.times ?? (failed ? PICKUP_TIMES : [])) : [];
   });
 
   let cells = $derived.by(() => {

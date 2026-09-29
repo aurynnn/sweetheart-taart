@@ -1,0 +1,127 @@
+---
+// Hero for the collection pages: copy on the left, a floating polaroid collage
+// of real creations on the right (parallax + gentle float).
+interface Props {
+  id: string;
+  badge: string;
+  title: string;
+  subtitle: string;
+  product: 'feesttaart' | 'koekjes' | 'mini-gebak';
+  ctaLabel: string;
+  photos: string[];
+  highlights?: Array<{ icon: string; label: string }>;
+}
+
+const { id, badge, title, subtitle, product, ctaLabel, photos, highlights = [] } = Astro.props;
+const [a, b, c] = photos;
+---
+
+<section id={id} class="c-hero grain">
+  <div class="c-hero-blob one" aria-hidden="true"></div>
+  <div class="c-hero-blob two" aria-hidden="true"></div>
+
+  <div class="container c-hero-grid">
+    <div class="c-hero-copy">
+      <span class="c-badge animate-on-scroll"><i class="fa-solid fa-heart" aria-hidden="true"></i> {badge}</span>
+      <h1 class="c-title" data-split>{title}</h1>
+      <p class="c-sub animate-on-scroll stagger-2">{subtitle}</p>
+
+      <div class="c-actions animate-on-scroll stagger-3">
+        <a href={`/aanvraag?product=${product}`} class="btn btn-primary btn-shine c-cta" data-magnetic="0.2">
+          <i class="fa-solid fa-cake-candles" aria-hidden="true"></i> {ctaLabel}
+        </a>
+        <a href="#creaties" class="c-link">
+          Bekijk creaties <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+        </a>
+      </div>
+      <p class="c-note animate-on-scroll stagger-4"><i class="fa-regular fa-circle-check" aria-hidden="true"></i> Vrijblijvende aanvraag — je betaalt pas na bevestiging</p>
+
+      {highlights.length > 0 && (
+        <ul class="c-highlights animate-on-scroll stagger-4">
+          {highlights.map((h) => (
+            <li><i class={`fa-solid ${h.icon}`} aria-hidden="true"></i>{h.label}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+
+    <div class="c-collage" aria-hidden="true">
+      {a && <figure class="polaroid p1" data-parallax="-0.25"><img src={a} alt="" loading="eager" /></figure>}
+      {b && <figure class="polaroid p2" data-parallax="0.18"><img src={b} alt="" loading="eager" /></figure>}
+      {c && <figure class="polaroid p3" data-parallax="-0.1"><img src={c} alt="" loading="lazy" /></figure>}
+      <span class="sticker"><i class="fa-solid fa-star" aria-hidden="true"></i> handgemaakt</span>
+    </div>
+  </div>
+
+  <svg class="c-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,50 C300,90 520,10 780,35 C1040,60 1240,20 1440,45 L1440,80 L0,80 Z" fill="currentColor" />
+  </svg>
+</section>
+
+<style>
+  .c-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 8.5rem 0 7rem;
+    color: #fff;
+    background:
+      radial-gradient(60% 70% at 15% 20%, #ffd9e0 0%, transparent 60%),
+      radial-gradient(50% 60% at 95% 80%, #ffe8d6 0%, transparent 60%),
+      linear-gradient(180deg, #f0c0c0 0%, #f4c9cc 100%);
+  }
+  .c-hero-blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.55; pointer-events: none; }
+  .c-hero-blob.one { width: 28rem; height: 28rem; background: #fff; top: -10rem; right: 20%; animation: drift 16s ease-in-out infinite; }
+  .c-hero-blob.two { width: 22rem; height: 22rem; background: #e8788a; bottom: -8rem; left: -6rem; opacity: 0.35; animation: drift 20s ease-in-out infinite reverse; }
+  @keyframes drift { 50% { transform: translate(3rem, 2rem) scale(1.1); } }
+
+  .c-hero-grid { position: relative; z-index: 2; display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: center; }
+  .c-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px);
+    color: var(--color-primary-dark); font-weight: 700; font-size: 0.85rem;
+  }
+  .c-title {
+    font-family: var(--font-heading); font-weight: 900; font-size: clamp(3rem, 7vw, 5.25rem); line-height: 1.02;
+    margin: 1rem 0 1rem;
+  }
+  .c-sub { font-size: 1.15rem; line-height: 1.7; color: #5b4346; max-width: 34rem; margin: 0; }
+  .c-actions { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 2rem; }
+  .c-cta { border-radius: 999px; padding: 0.95rem 1.75rem; font-size: 1.05rem; box-shadow: 0 16px 30px -12px rgba(212, 90, 106, 0.7); }
+  .c-link { font-weight: 700; color: var(--color-primary-dark); display: inline-flex; align-items: center; gap: 0.5rem; }
+  .c-link i { transition: transform 300ms var(--ease-spring); }
+  .c-link:hover i { transform: translateY(4px); }
+  .c-note { margin: 1rem 0 0; font-size: 0.85rem; color: #6b5256; }
+  .c-note i { color: var(--color-primary-dark); margin-right: 0.3rem; }
+  .c-highlights { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; padding: 0; margin: 1.75rem 0 0; }
+  .c-highlights li { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.9rem; border-radius: 999px; background: rgba(255, 255, 255, 0.6); color: #5b4346; font-weight: 600; font-size: 0.85rem; }
+  .c-highlights i { color: var(--color-primary); }
+
+  .c-collage { position: relative; height: 30rem; }
+  .polaroid {
+    position: absolute; margin: 0; padding: 0.6rem 0.6rem 2.2rem; background: #fff; border-radius: 0.6rem;
+    box-shadow: 0 30px 60px -25px rgba(90, 30, 40, 0.55); overflow: hidden;
+  }
+  .polaroid img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0.3rem; }
+  .p1 { width: 58%; height: 68%; top: 4%; left: 6%; rotate: -6deg; animation: bob 7s ease-in-out infinite; z-index: 2; }
+  .p2 { width: 48%; height: 55%; top: 28%; right: 0; rotate: 7deg; animation: bob 8s ease-in-out infinite 1s; z-index: 3; }
+  .p3 { width: 40%; height: 44%; bottom: 0; left: 22%; rotate: -2deg; animation: bob 9s ease-in-out infinite 2s; z-index: 1; }
+  @keyframes bob { 50% { translate: 0 -12px; } }
+  .sticker {
+    position: absolute; top: 2%; right: 8%; z-index: 4; padding: 0.55rem 1rem; border-radius: 999px; rotate: 10deg;
+    background: var(--color-primary); color: #fff; font-family: var(--font-heading); font-size: 1.35rem; font-weight: 700;
+    box-shadow: 0 12px 24px -10px rgba(212, 90, 106, 0.8);
+  }
+  .c-wave { position: absolute; left: 0; bottom: -1px; width: 100%; height: 60px; z-index: 3; color: var(--color-surface); }
+
+  @media (max-width: 1023px) {
+    .c-hero { padding: 7.5rem 0 5.5rem; text-align: center; }
+    .c-hero-grid { grid-template-columns: 1fr; }
+    .c-sub { margin-inline: auto; }
+    .c-actions, .c-highlights { justify-content: center; }
+    .c-collage { height: 20rem; max-width: 26rem; margin: 0 auto; width: 100%; }
+    .sticker { font-size: 1.1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .c-hero-blob, .polaroid { animation: none; }
+  }
+</style>

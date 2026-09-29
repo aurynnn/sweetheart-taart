@@ -16,6 +16,10 @@ export interface AanvraagItem {
   quantity?: number;
   allergies?: string;
   message?: string;
+  /** R2 key of an uploaded example photo (see /api/uploads) */
+  image?: string;
+  /** Small data-URL thumbnail, only kept client-side for the draft */
+  imagePreview?: string;
 }
 
 export const PRODUCTS: Array<{ id: ProductId; name: string; tagline: string; image: string; icon: string; from: string }> = [
@@ -119,9 +123,14 @@ export function validateItem(item: AanvraagItem): string[] {
     if (!type) errors.push('Kies een type mini-gebak');
     else if (!Number.isInteger(q) || q < type.min || q > MINI_MAX) errors.push(`Minstens ${type.min} stuks`);
   }
+  if (item.image && !isUploadKey(item.image)) errors.push('Ongeldige voorbeeldfoto');
   if ((item.allergies?.length ?? 0) > 500) errors.push('Allergieën: maximaal 500 tekens');
   if ((item.message?.length ?? 0) > 1000) errors.push('Opmerkingen: maximaal 1000 tekens');
   return errors;
+}
+
+export function isUploadKey(key: string): boolean {
+  return /^aanvragen\/\d{4}-\d{2}\/[0-9a-f-]{36}\.(jpg|png|webp)$/.test(key);
 }
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;

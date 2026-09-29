@@ -7,11 +7,12 @@
   import { cubicOut, backOut } from 'svelte/easing';
   import {
     type AanvraagItem, type ProductId,
-    PRODUCTS, EVENTS, PERSONS, FLAVORS, TOPPERS, MINI_TYPES, KOEKJES_QTY, MINI_MAX, MAX_ITEMS, PICKUP_TIMES,
+    PRODUCTS, EVENTS, PERSONS, FLAVORS, TOPPERS, MINI_TYPES, KOEKJES_QTY, MINI_MAX, MAX_ITEMS,
     EMAIL_RE, isValidPhone, itemPrice, itemSummary, validateItem, formatEuro, optionLabel, productName,
   } from '../../lib/catalog';
   import AanvraagCalendar from './AanvraagCalendar.svelte';
   import Confetti from './Confetti.svelte';
+  import ImageDrop from './ImageDrop.svelte';
 
   const DRAFT_KEY = 'sweetheart-aanvraag-draft-v1';
   const STEPS = [
@@ -28,8 +29,10 @@
   let editor = $state<AanvraagItem | null>(null);
   let editingIndex = $state<number | null>(null);
   let editorErrors = $state<string[]>([]);
+  let photoBusy = $state(false);
   let date = $state('');
   let time = $state('');
+  let dayTimes = $state<string[]>([]);
   let contact = $state({ firstname: '', lastname: '', email: '', phone: '' });
   let touched = $state<Record<string, boolean>>({});
   let message = $state('');
@@ -41,6 +44,11 @@
   let stepAttempted = $state(false);
   let draftLoaded = $state(false);
   let root: HTMLElement;
+
+  // A time that isn't offered on the newly chosen day is cleared
+  $effect(() => {
+    if (time && date && dayTimes.length && !dayTimes.includes(time)) time = '';
+  });
 
   let total = $derived(items.reduce((s, i) => s + itemPrice(i), 0));
   let contactErrors = $derived({
@@ -141,7 +149,8 @@
   async function openEditor(product: ProductId, index: number | null = null) {
     editorErrors = [];
     editingIndex = index;
-    editor = index === null ? blankItem(product) : { ...items[index] };
+    // Photo fields must be defined strings: ImageDrop binds to them
+    editor = { image: '', imagePreview: '', ...(index === null ? blankItem(product) : items[index]) };
     await tick();
     root.querySelector('#item-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -161,6 +170,7 @@
       return;
     }
     const clean: AanvraagItem = { ...editor };
+    if (!clean.image) { delete clean.image; delete clean.imagePreview; }
     if (editingIndex === null) items = [...items, clean];
     else items = items.map((it, i) => (i === editingIndex ? clean : it));
     closeEditor();
@@ -212,13 +222,14 @@
             firstname: contact.firstname.trim(), lastname: contact.lastname.trim(),
             email: contact.email.trim(), phone: contact.phone.trim(),
           },
-          items,
+          items: items.map(({ imagePreview, ...rest }) => rest),
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
-        if (data.code === 'date_unavailable') {
-          date = '';
+        if (data.code === 'date_unavailable' || data.code === 'time_unavailable') {
+          if (data.code === 'date_unavailable') date = '';
+          time = '';
           submitError = data.error || 'Deze datum is intussen volzet. Kies een andere datum.';
           direction = -1;
           step = 1;
@@ -268,12 +279,14 @@
         <li><span>3</span><div><strong>Ophalen & smullen</strong><p>{formatDate(date)} om {time}, Zwanenlaan 62, Oostende.</p></div></li>
       </ol>
 
+      {#if !items.some((i) => i.image)}
       <p class="success-hint">
         <i class="fa-solid fa-image" aria-hidden="true"></i>
         Heb je een inspiratiefoto? Mail die gerust naar
         <a href="mailto:nathalie@sweetheart-taart.com?subject=Aanvraag%20{result.orderId}">nathalie@sweetheart-taart.com</a>
         met je aanvraagnummer.
       </p>
+      {/if}
 
       <div class="success-actions">
         <a class="btn btn-primary" href="/">Terug naar home</a>
@@ -338,7 +351,7 @@
               <ul class="cart" aria-label="Gekozen producten">
                 {#each items as item, i (i + item.product + JSON.stringify(item))}
                   <li class="cart-item" in:fly={{ y: 16, duration: 400 }} out:slide={{ duration: 250 }}>
-                    <img src={productImage(item.product)} alt="" width="56" height="56" />
+                    <img src={item.imagePreview || productImage(item.product)} alt="" width="56" height="56" />
                     <div class="cart-info">
                       <strong>{productName(item.product)}</strong>
                       <span>{itemSummary(item) || 'Standaard'}</span>
@@ -440,6 +453,11 @@
                   </div>
                 </fieldset>
 
+                <div class="field">
+                  <span class="legend">Voorbeeldfoto <small>(optioneel — bv. een inspiratiebeeld of thema)</small></span>
+                  <ImageDrop bind:key={editor.image} bind:preview={editor.imagePreview} bind:busy={photoBusy} />
+                </div>
+
                 <div class="grid-2">
                   <label class="field">
                     <span class="legend">Allergieën <small>(optioneel)</small></span>
@@ -454,7 +472,7 @@
                 <div class="editor-foot">
                   <span class="price-tag">Indicatie <strong>{formatEuro(itemPrice(editor))}</strong></span>
                   <button type="button" class="btn btn-ghost" onclick={closeEditor}>Annuleren</button>
-                  <button type="button" class="btn btn-primary" onclick={saveEditor}>
+                  <button type="button" class="btn btn-primary" onclick={saveEditor} disabled={photoBusy} title={photoBusy ? 'Even geduld, de foto wordt geüpload' : undefined}>
                     <i class="fa-solid fa-check" aria-hidden="true"></i>
                     {editingIndex === null ? 'Toevoegen' : 'Opslaan'}
                   </button>
@@ -495,17 +513,23 @@
             <div class="pickup-grid">
               <div class="field" class:needs-attention={stepAttempted && !date} tabindex="-1">
                 <span class="legend">Datum <span class="req">*</span></span>
-                <AanvraagCalendar bind:value={date} />
+                <AanvraagCalendar bind:value={date} bind:times={dayTimes} />
               </div>
               <fieldset class="field" class:needs-attention={stepAttempted && !time} tabindex="-1">
                 <legend>Ophaalmoment <span class="req">*</span></legend>
-                <div class="times">
-                  {#each PICKUP_TIMES as t, i}
-                    <button type="button" class="time" class:is-on={time === t} aria-pressed={time === t} onclick={() => (time = t)} in:fade={{ delay: 40 * i }}>
-                      <i class="fa-regular fa-clock" aria-hidden="true"></i>{t}
-                    </button>
-                  {/each}
-                </div>
+                {#if !date}
+                  <p class="times-hint"><i class="fa-regular fa-hand-point-left" aria-hidden="true"></i> Kies eerst een datum, dan zie je de vrije uren.</p>
+                {:else}
+                  {#key date}
+                    <div class="times">
+                      {#each dayTimes as t, i}
+                        <button type="button" class="time" class:is-on={time === t} aria-pressed={time === t} onclick={() => (time = t)} in:fly={{ y: 10, delay: 40 * i, duration: 300 }}>
+                          <i class="fa-regular fa-clock" aria-hidden="true"></i>{t}
+                        </button>
+                      {/each}
+                    </div>
+                  {/key}
+                {/if}
                 {#if date}
                   <p class="picked" transition:slide><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> {formatDate(date)}{time ? ` om ${time}` : ''}</p>
                 {/if}
@@ -570,12 +594,13 @@
                 <ul class="review-items">
                   {#each items as item}
                     <li>
-                      <img src={productImage(item.product)} alt="" width="44" height="44" />
+                      <img src={item.imagePreview || productImage(item.product)} alt="" width="44" height="44" />
                       <div>
                         <strong>{productName(item.product)}</strong>
                         <span>{itemSummary(item)}</span>
                         {#if item.allergies}<span class="cart-allergy">Allergieën: {item.allergies}</span>{/if}
                         {#if item.message}<span class="review-note">“{item.message}”</span>{/if}
+                        {#if item.image}<span class="review-photo"><i class="fa-solid fa-image" aria-hidden="true"></i> Voorbeeldfoto toegevoegd</span>{/if}
                       </div>
                       <b>{formatEuro(itemPrice(item))}</b>
                     </li>
@@ -752,6 +777,7 @@
 
   /* Pickup */
   .pickup-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 1.5rem; align-items: start; }
+  .times-hint { margin: 0; padding: 1rem; border-radius: 1rem; background: var(--blush); color: var(--muted); font-size: 0.9rem; }
   .times { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
   .time { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.9rem; border-radius: 1rem; border: 1.5px solid var(--line); background: white; font: inherit; font-weight: 700; color: var(--ink); cursor: pointer; transition: all 250ms var(--ease-spring); }
   .time i { color: var(--pink); }
@@ -784,6 +810,7 @@
   .review-items li div { display: flex; flex-direction: column; flex: 1; min-width: 0; font-size: 0.875rem; }
   .review-items li div span { color: var(--muted); }
   .review-note { font-style: italic; }
+  .review-photo { color: #15803D !important; font-weight: 600; }
   .review-text { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
   .review-text small { color: var(--muted); }
   .total { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.1rem 1.25rem; border-radius: 1.1rem; background: linear-gradient(135deg, var(--blush), #FFE4EA); }

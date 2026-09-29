@@ -9,7 +9,8 @@ import { STATUS_CONFIG } from '../../lib/orders';
 
 interface Row {
   id: string; date: string; time: string | null; status: string; total: number;
-  createdAt: string; customer: string; phone: string; products: string[]; summary: string;
+  createdAt: string; customer: string; email: string; phone: string; products: string[]; summary: string;
+  items: any[]; allergies: string[]; hasPhoto: boolean;
 }
 
 let orders: Row[] = [];
@@ -26,11 +27,11 @@ try {
   const name = await customerNameSql('c');
   const [ordersRes, itemsRes, avail] = await Promise.all([
     d1Query(`
-      SELECT o.id, o.date, o.time, o.status, o.total, o.created_at, ${name.full} as customer, c.phone
+      SELECT o.id, o.date, o.time, o.status, o.total, o.created_at, o.message, ${name.full} as customer, c.email, c.phone
       FROM orders o JOIN customers c ON o.customer_id = c.id
       ORDER BY o.created_at DESC
     `),
-    d1Query('SELECT order_id, product, event, persons, flavor, topper, quantity FROM order_items'),
+    d1Query('SELECT * FROM order_items ORDER BY id'),
     getAvailability(todayStr, toLocalDateStr(in14)),
   ]);
   const itemsByOrder = new Map<string, any[]>();
@@ -47,9 +48,16 @@ try {
       total: parseEuro(r.total),
       createdAt: r.created_at,
       customer: (r.customer || '').trim() || 'Onbekend',
+      email: r.email || '',
       phone: r.phone || '',
+      items,
+      allergies: items.map((i) => (i.allergies || '').trim()).filter(Boolean),
+      hasPhoto: items.some((i) => i.image) || /\/admin\/api\/upload\?key=/.test(r.message || ''),
       products: items.map((i) => i.product),
-      summary: items.map((i) => `${productName(i.product)}${itemSummary(i) ? ` (${itemSummary(i)})` : ''}`).join(', ') || '—',
+      summary: items.map((i) => {
+        const detail = itemSummary({ ...i, quantity: i.product === 'feesttaart' ? undefined : i.quantity, miniType: i.mini_type });
+        return `${productName(i.product)}${detail ? ` (${detail})` : ''}`;
+      }).join(', ') || '—',
     };
   });
   capacity = avail.availability;
@@ -89,6 +97,33 @@ const mix = PRODUCTS.map((p) => ({
 }));
 const maxMix = Math.max(...mix.map((m) => m.count), 1);
 
+// Bakplanning: what has to be ready on each of the next 7 days (approved + pending)
+const bakeDays = Array.from({ length: 7 }, (_, i) => {
+  const d = new Date(today); d.setDate(d.getDate() + i);
+  const iso = toLocalDateStr(d);
+  const dayOrders = upcoming.filter((o) => o.date === iso);
+  const lines = dayOrders.flatMap((o) => o.items.map((it: any) => ({
+    order: o.id,
+    customer: o.customer,
+    time: o.time,
+    pending: o.status === 'pending',
+    label: `${it.product === 'feesttaart' ? '' : `${it.quantity ?? ''}× `}${productName(it.product)}`,
+    detail: itemSummary({ ...it, quantity: undefined }),
+    allergy: (it.allergies || '').trim(),
+  })));
+  return { iso, date: d, lines };
+});
+const bakeTotal = bakeDays.reduce((s, d) => s + d.lines.length, 0);
+
+// Status mix (all time) and customer stats
+const statusMix = (['pending', 'approved', 'completed', 'cancelled'] as const).map((k) => ({
+  key: k, label: STATUS_CONFIG[k].label, color: STATUS_CONFIG[k].dot, count: orders.filter((o) => o.status === k).length,
+}));
+const customerKeys = orders.map((o) => (o.email || o.phone || o.customer).toLowerCase());
+const uniqueCustomers = new Set(customerKeys).size;
+const returning = [...new Set(customerKeys)].filter((k) => customerKeys.filter((x) => x === k).length > 1).length;
+const newThisWeek = orders.filter((o) => (Date.now() - new Date(o.createdAt.replace(' ', 'T') + 'Z').getTime()) < 7 * 86400000).length;
+
 const maxCap = Math.max(...capacity.map((c) => Math.max(c.maxOrders, c.orders)), 1);
 
 const fmtDay = (iso: string, opts: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' }) =>
@@ -126,6 +161,7 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
     <div class="welcome-actions">
       <a href="/admin/orders" class="btn-pill primary"><i class="fa-solid fa-inbox" aria-hidden="true"></i> Alle aanvragen</a>
       <a href="/admin/calendar" class="btn-pill"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Beschikbaarheid</a>
+      <a href="/admin/calendar#ophaal" class="btn-pill"><i class="fa-regular fa-clock" aria-hidden="true"></i> Ophaalmomenten</a>
     </div>
   </section>
 
@@ -180,6 +216,12 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
                   <strong>{o.customer}</strong>
                   <span>{o.summary}</span>
                   <small><i class="fa-regular fa-calendar" aria-hidden="true"></i> {fmtDay(o.date)}{o.time ? ` · ${o.time}` : ''} · {formatEuro(o.total)}</small>
+                  {(o.allergies.length > 0 || o.hasPhoto) && (
+                    <span class="flags">
+                      {o.allergies.length > 0 && <em class="flag allergy" title={o.allergies.join(' · ')}><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> allergie</em>}
+                      {o.hasPhoto && <em class="flag photo"><i class="fa-solid fa-image" aria-hidden="true"></i> foto</em>}
+                    </span>
+                  )}
                 </span>
               </button>
               <div class="pending-actions">
@@ -230,6 +272,40 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
       )}
     </section>
   </div>
+
+  <!-- Bakplanning: what needs to be ready, day by day -->
+  <section class="panel reveal bake" aria-labelledby="bake-title">
+    <header class="panel-head">
+      <h2 id="bake-title">Bakplanning <small>komende 7 dagen · {bakeTotal} product{bakeTotal === 1 ? '' : 'en'}</small></h2>
+      <button type="button" class="link as-btn" id="printBake"><i class="fa-solid fa-print" aria-hidden="true"></i> Afdrukken</button>
+    </header>
+    <div class="bake-days">
+      {bakeDays.map((d) => (
+        <div class="bake-day" class:list={[{ empty: d.lines.length === 0, today: d.iso === todayStr }]}>
+          <div class="bake-date">
+            <span>{d.date.toLocaleDateString('nl-BE', { weekday: 'short' })}</span>
+            <b>{d.date.getDate()}</b>
+          </div>
+          {d.lines.length === 0 ? (
+            <p class="bake-free">vrij</p>
+          ) : (
+            <ul>
+              {d.lines.map((l) => (
+                <li class:list={[{ pending: l.pending }]}>
+                  <button type="button" data-open-order={l.order}>
+                    <strong>{l.label}</strong>
+                    {l.detail && <span>{l.detail}</span>}
+                    <small>{l.time ? `${l.time} · ` : ''}{l.customer}{l.pending ? ' · nog te bevestigen' : ''}</small>
+                    {l.allergy && <em class="flag allergy"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {l.allergy}</em>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  </section>
 
   <div class="grid-charts">
     <!-- Revenue per month: single series → one hue, no legend -->
@@ -299,7 +375,29 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
     </section>
   </div>
 
+  <section class="panel reveal status-panel" aria-labelledby="status-title">
+    <header class="panel-head"><h2 id="status-title">Aanvragen & klanten</h2></header>
+    <div class="status-bar" role="img" aria-label={statusMix.map((m) => `${m.label}: ${m.count}`).join(', ')}>
+      {statusMix.filter((m) => m.count > 0).map((m, i) => (
+        <span style={`flex:${m.count};background:${m.color};--i:${i}`} data-tip={`${m.label}: ${m.count}`}></span>
+      ))}
+    </div>
+    <ul class="status-legend">
+      {statusMix.map((m) => <li><i style={`background:${m.color}`}></i>{m.label} <b>{m.count}</b></li>)}
+    </ul>
+    <div class="cust-stats">
+      <div><b data-count={uniqueCustomers}>{uniqueCustomers}</b><span>klanten</span></div>
+      <div><b data-count={returning}>{returning}</b><span>terugkerend</span></div>
+      <div><b data-count={newThisWeek}>{newThisWeek}</b><span>nieuw deze week</span></div>
+    </div>
+  </section>
+
   <div id="chart-tip" class="chart-tip" role="tooltip" hidden></div>
+  <div id="live-banner" class="live-banner" hidden>
+    <i class="fa-solid fa-bell" aria-hidden="true"></i>
+    <span id="live-text">Nieuwe aanvraag binnen!</span>
+    <button type="button" onclick="location.reload()">Vernieuwen</button>
+  </div>
 </AdminLayout>
 
 <OrderModal />
@@ -396,6 +494,34 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
     el.addEventListener('pointerleave', hide);
     el.addEventListener('focus', show);
     el.addEventListener('blur', hide);
+  });
+
+  // ── Live: check for new aanvragen every minute ──────────────────────
+  const knownIds = new Set<string>();
+  ordersReady.then(() => allOrders.forEach((o: any) => knownIds.add(o.id)));
+  setInterval(async () => {
+    if (document.hidden) return;
+    try {
+      const fresh: any[] = await (await fetch('/api/orders')).json();
+      const added = fresh.filter((o) => !knownIds.has(o.id));
+      if (!added.length || !knownIds.size) return;
+      added.forEach((o) => knownIds.add(o.id));
+      allOrders = fresh;
+      const first = added[0];
+      const who = [first.customer?.firstname, first.customer?.lastname].filter(Boolean).join(' ');
+      const banner = document.getElementById('live-banner')!;
+      document.getElementById('live-text')!.textContent = added.length === 1
+        ? `Nieuwe aanvraag van ${who || 'een klant'}!`
+        : `${added.length} nieuwe aanvragen binnen!`;
+      banner.hidden = false;
+      document.title = `(${added.length}) Dashboard | Admin`;
+    } catch { /* offline — try again next minute */ }
+  }, 60_000);
+
+  document.getElementById('printBake')?.addEventListener('click', () => {
+    document.body.classList.add('print-bake');
+    window.print();
+    setTimeout(() => document.body.classList.remove('print-bake'), 500);
   });
 
   // ── Count-up KPI values ──────────────────────────────────────────────
@@ -534,6 +660,55 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
   .table-view summary { cursor: pointer; font-weight: 600; }
   .table-view table { width: 100%; margin-top: 0.5rem; border-collapse: collapse; }
   .table-view th, .table-view td { text-align: left; padding: 0.35rem 0.25rem; border-bottom: 1px solid #f1f5f9; }
+
+  .flags { display: flex; gap: 0.35rem; margin-top: 0.3rem; }
+  .flag { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.1rem 0.5rem; border-radius: 999px; font-style: normal; font-size: 0.68rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .flag.allergy { background: #fffbeb; color: #b45309; }
+  .flag.photo { background: #eff6ff; color: #1d4ed8; }
+
+  .bake { margin-bottom: 1.5rem; }
+  .as-btn { border: 0; background: none; cursor: pointer; font: inherit; }
+  .bake-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.6rem; }
+  .bake-day { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; padding: 0.7rem; border-radius: 0.9rem; background: #f8fafc; border: 1px solid #f1f5f9; }
+  .bake-day.today { background: #fff7f8; border-color: #fbd5db; }
+  .bake-date { display: flex; align-items: baseline; gap: 0.35rem; }
+  .bake-date span { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; }
+  .bake-date b { font-size: 1.2rem; color: #0f172a; }
+  .today .bake-date b { color: #d45a6a; }
+  .bake-free { margin: 0; font-size: 0.75rem; color: #cbd5e1; }
+  .bake-day ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .bake-day li button { width: 100%; display: grid; gap: 0.1rem; text-align: left; padding: 0.5rem 0.55rem; border-radius: 0.6rem; border: 1px solid #fbd5db; border-left: 3px solid #e8788a; background: #fff; font: inherit; cursor: pointer; transition: transform 200ms, box-shadow 200ms; }
+  .bake-day li.pending button { border-left-color: #f59e0b; border-style: dashed solid dashed dashed; }
+  .bake-day li button:hover { transform: translateY(-2px); box-shadow: 0 8px 16px -10px rgba(212, 90, 106, 0.6); }
+  .bake-day strong { font-size: 0.8rem; color: #0f172a; }
+  .bake-day span, .bake-day small { font-size: 0.7rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; }
+
+  .status-panel { margin-top: 1.5rem; }
+  .status-bar { display: flex; gap: 2px; height: 0.9rem; border-radius: 999px; overflow: hidden; background: #f1f5f9; }
+  .status-bar span { transform-origin: left; animation: growX 900ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i) * 120ms + 300ms); outline: none; }
+  .status-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; list-style: none; padding: 0; margin: 0.9rem 0 1.25rem; font-size: 0.8rem; color: #475569; }
+  .status-legend i { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.35rem; }
+  .status-legend b { color: #0f172a; margin-left: 0.15rem; }
+  .cust-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+  .cust-stats div { padding: 0.9rem; border-radius: 0.9rem; background: #f8fafc; text-align: center; }
+  .cust-stats b { display: block; font-size: 1.6rem; color: #0f172a; font-variant-numeric: tabular-nums; }
+  .cust-stats span { font-size: 0.75rem; color: #64748b; }
+
+  .live-banner { position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 400; display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0.8rem 0.8rem 1.1rem; border-radius: 1rem; background: #0f172a; color: #fff; box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.5); animation: rise 500ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .live-banner i { color: #f2a0aa; animation: ring 1.2s ease-in-out infinite; }
+  .live-banner button { padding: 0.45rem 0.9rem; border-radius: 0.6rem; border: 0; background: #e8788a; color: #fff; font-weight: 700; cursor: pointer; }
+  @keyframes ring { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(18deg); } 75% { transform: rotate(-18deg); } }
+
+  @media (max-width: 1100px) { .bake-days { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .bake-days { grid-template-columns: 1fr 1fr; } .bake-day.empty { display: none; } }
+
+  @media print {
+    :global(body.print-bake) :global(.sidebar), :global(body.print-bake) :global(.mobile-bar), :global(body.print-bake) :global(.content-header) { display: none !important; }
+    :global(body.print-bake) :global(.main-content) { margin: 0 !important; }
+    :global(body.print-bake) .panel:not(.bake), :global(body.print-bake) .welcome, :global(body.print-bake) .kpis, :global(body.print-bake) .grid-main, :global(body.print-bake) .grid-charts { display: none !important; }
+    .bake-days { grid-template-columns: repeat(4, 1fr); }
+    .bake-day.empty { display: none; }
+  }
 
   .chart-tip { position: fixed; z-index: 500; padding: 0.45rem 0.7rem; border-radius: 0.5rem; background: #0f172a; color: white; font-size: 0.75rem; font-weight: 600; pointer-events: none; white-space: nowrap; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25); }
 

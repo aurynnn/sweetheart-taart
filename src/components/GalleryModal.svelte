@@ -1,38 +1,88 @@
 <script>
 // GalleryModal.svelte
-// Modern modal gallery with thumbnails - supports both images and videos
+// Photo/video grid with a lightbox. Shows `rowsToShow` clear rows plus one extra
+// row that fades out behind a blur, hinting there is more. "Toon meer" adds rows.
+// Rows are measured from the real grid, so the blurred row is always exactly one row.
 
-let { images = [], rowsToShow = 2, rowsToAdd = 10, minItemsPerRow = 10 } = $props();
+import { onMount, tick } from 'svelte';
+
+let { images = [], rowsToShow = 2, rowsToAdd = 4 } = $props();
 
 let isOpen = $state(false);
 let currentIndex = $state(0);
-let visibleCount = $state(rowsToShow * minItemsPerRow); // Start with 2 rows (20 items)
-let activeFilter = $state('image'); // 'image' or 'video'
-let loadedImages = $state(new Set()); // Track which images have finished loading
-let lqipFailed = $state(new Set()); // Track which LQIP URLs failed (R2 transform not available)
+let visibleRows = $state(rowsToShow + 1); // 2 clear rows + 1 blurred row
+let activeFilter = $state('image'); // 'image' | 'video'
+let columns = $state(6);
+let broken = $state(new Set()); // files that turned out not to be images/videos
+let loaded = $state(new Set());
+let revealFrom = $state(0); // index where the latest "Toon meer" batch starts (for stagger)
+let grid;
+let strip;
+let touchStartX = 0;
 
-// Filter images based on activeFilter
+function isVideo(item) {
+  return item.type === 'video' || /\.(mp4|webm|mov)$/i.test(item.src || '');
+}
+
 let filteredImages = $derived(
-  activeFilter === 'video' ? images.filter(img => isVideo(img)) :
-  images.filter(img => !isVideo(img))
+  images.filter((img) => (activeFilter === 'video' ? isVideo(img) : !isVideo(img)) && !broken.has(img.src))
 );
+let imageCount = $derived(images.filter((img) => !isVideo(img) && !broken.has(img.src)).length);
+let videoCount = $derived(images.filter((img) => isVideo(img) && !broken.has(img.src)).length);
 
-// Count images and videos
-let imageCount = $derived(images.filter(img => !isVideo(img)).length);
-let videoCount = $derived(images.filter(img => isVideo(img)).length);
-
-// hasMore = there are items beyond current visible range
+let visibleCount = $derived(visibleRows * columns);
 let hasMore = $derived(filteredImages.length > visibleCount);
+let blurFrom = $derived(hasMore ? (visibleRows - 1) * columns : Infinity);
+let shown = $derived(filteredImages.slice(0, visibleCount));
 
-// Items to render: ALL filtered images, but mark those beyond visibleCount as "revealed"
-// We always render everything — just apply different CSS classes
-let visibleItems = $derived(filteredImages.slice(0, visibleCount));
-let blurredItems = $derived(filteredImages.slice(visibleCount, visibleCount + rowsToAdd * minItemsPerRow));
+// Lightbox strip: only render thumbnails around the current one
+let stripStart = $derived(Math.max(0, currentIndex - 12));
+let stripItems = $derived(filteredImages.slice(stripStart, currentIndex + 13));
 
-function openGallery(index = 0) {
+onMount(() => {
+  const measure = () => {
+    if (!grid) return;
+    const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+    if (cols > 0) columns = cols;
+  };
+  const ro = new ResizeObserver(measure);
+  ro.observe(grid);
+  measure();
+  return () => ro.disconnect();
+});
+
+function setFilter(f) {
+  activeFilter = f;
+  visibleRows = rowsToShow + 1;
+  revealFrom = 0;
+}
+
+function markBroken(src) {
+  broken = new Set([...broken, src]);
+}
+
+function markLoaded(src) {
+  loaded = new Set([...loaded, src]);
+}
+
+function showMoreRows() {
+  revealFrom = blurFrom;
+  visibleRows += rowsToAdd;
+}
+
+async function showLess() {
+  visibleRows = rowsToShow + 1;
+  revealFrom = 0;
+  await tick();
+  grid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function openGallery(index = 0) {
   currentIndex = index;
   isOpen = true;
   document.body.style.overflow = 'hidden';
+  await tick();
+  scrollStrip();
 }
 
 function closeGallery() {
@@ -40,141 +90,108 @@ function closeGallery() {
   document.body.style.overflow = '';
 }
 
-function nextImage() {
-  currentIndex = (currentIndex + 1) % filteredImages.length;
+async function go(delta) {
+  currentIndex = (currentIndex + delta + filteredImages.length) % filteredImages.length;
+  // Warm the cache for the next photo in the same direction
+  const next = filteredImages[(currentIndex + delta + filteredImages.length) % filteredImages.length];
+  if (next && !isVideo(next)) new Image().src = next.src;
+  await tick();
+  scrollStrip();
 }
 
-function prevImage() {
-  currentIndex = (currentIndex - 1 + filteredImages.length) % filteredImages.length;
-}
-
-function showMoreRows() {
-  visibleCount += rowsToAdd * minItemsPerRow;
-}
-
-function showLess() {
-  visibleCount = rowsToShow * minItemsPerRow;
+function scrollStrip() {
+  strip?.querySelector('.strip-thumb.active')?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 }
 
 function handleKeydown(e) {
   if (!isOpen) return;
   if (e.key === 'Escape') closeGallery();
-  if (e.key === 'ArrowRight') nextImage();
-  if (e.key === 'ArrowLeft') prevImage();
+  if (e.key === 'ArrowRight') go(1);
+  if (e.key === 'ArrowLeft') go(-1);
 }
 
-function isVideo(item) {
-  return item.type === 'video' || (item.src && (item.src.endsWith('.mp4') || item.src.endsWith('.webm') || item.src.endsWith('.mov')));
+function onTouchStart(e) {
+  touchStartX = e.changedTouches[0].clientX;
 }
 
-function getVideoThumbnail(item) {
-  if (item.thumbnail) return item.thumbnail;
-  if (item.src && item.src.includes('r2.dev')) {
-    return null;
-  }
-  return item.thumbnail || item.src;
+function onTouchEnd(e) {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
 }
-
-function handleImageLoad(index) {
-  loadedImages = new Set([...loadedImages, index]);
-}
-
-function handleLqipError(index) {
-  lqipFailed = new Set([...lqipFailed, index]);
-}
-
-function getLqipUrl(src) {
-  // For R2/CF Images, try Cloudflare Image Resizing with tiny dimensions
-  // This returns a low-quality blurred version almost instantly
-  if (src.includes('r2.dev') || src.includes('cloudflare.com')) {
-    // Use CF Images transform: downscale to 20px wide, very low quality
-    // The image will be pixelated/blurred — perfect LQIP
-    return src + (src.includes('?') ? '&' : '?') + 'width=20&quality=15&format=webp';
-  }
-  return null;
-}</script>
+</script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- Filter Buttons -->
-<div class="gallery-filter-buttons">
-  <button 
+<div class="gallery-filter-buttons" role="tablist" aria-label="Soort media">
+  <button
     class="filter-btn {activeFilter === 'image' ? 'active' : ''}"
-    onclick={() => { activeFilter = 'image'; visibleCount = rowsToShow * minItemsPerRow; loadedImages = new Set(); lqipFailed = new Set(); }}
+    role="tab"
+    aria-selected={activeFilter === 'image'}
+    onclick={() => setFilter('image')}
   >
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
       <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
     </svg>
     <span>Foto's</span>
     <span class="badge">{imageCount}</span>
   </button>
-  
-  <button 
-    class="filter-btn {activeFilter === 'video' ? 'active' : ''}"
-    onclick={() => { activeFilter = 'video'; visibleCount = rowsToShow * minItemsPerRow; loadedImages = new Set(); lqipFailed = new Set(); }}
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-    </svg>
-    <span>Video's</span>
-    <span class="badge">{videoCount}</span>
-  </button>
+
+  {#if videoCount > 0}
+    <button
+      class="filter-btn {activeFilter === 'video' ? 'active' : ''}"
+      role="tab"
+      aria-selected={activeFilter === 'video'}
+      onclick={() => setFilter('video')}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+      </svg>
+      <span>Video's</span>
+      <span class="badge">{videoCount}</span>
+    </button>
+  {/if}
 </div>
 
 <!-- Thumbnails Grid -->
-{#if filteredImages.length > 0}
 <div class="gallery-dropdown">
-  <div class="thumbnails-grid">
-    {#each filteredImages as img, i}
-      <button 
-        class="thumbnail {i >= visibleCount ? 'blurred' : ''} {!loadedImages.has(i) && i < visibleCount ? 'loading' : 'loaded'}"
-        onclick={() => { if (i < visibleCount) openGallery(i); }}
-        disabled={i >= visibleCount}
+  <div class="thumbnails-grid" bind:this={grid}>
+    {#each shown as img, i (img.src)}
+      {@const blurred = i >= blurFrom}
+      <button
+        class="thumbnail {blurred ? 'blurred' : ''} {loaded.has(img.src) ? 'is-loaded' : ''} {i >= revealFrom && revealFrom > 0 ? 'reveal' : ''}"
+        style="--d: {Math.max(0, i - revealFrom) * 25}ms"
+        onclick={() => (blurred ? showMoreRows() : openGallery(i))}
+        tabindex={blurred ? -1 : 0}
+        aria-label={blurred ? 'Toon meer' : `Open ${isVideo(img) ? 'video' : 'foto'} ${i + 1}`}
       >
         {#if isVideo(img)}
           <div class="thumbnail-video-wrapper">
-            {#if getVideoThumbnail(img)}
-              <img 
-                src={getVideoThumbnail(img)} 
-                alt={img.alt || 'Video thumbnail'} 
-                onload={() => handleImageLoad(i)}
-                class="thumbnail-video-img"
-              />
-            {:else}
-              <div class="video-placeholder">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-                </svg>
-              </div>
-            {/if}
+            <!-- #t= shows a real frame of the video as its thumbnail -->
+            <video
+              src="{img.src}#t=0.5"
+              preload="metadata"
+              muted
+              playsinline
+              class="thumbnail-video-img"
+              onloadeddata={() => markLoaded(img.src)}
+              onerror={() => markBroken(img.src)}
+            ></video>
             <div class="video-play-indicator">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
             </div>
           </div>
         {:else}
-          {@const lqipSrc = getLqipUrl(img.src)}
-          {@const showLqip = lqipSrc && !lqipFailed.has(i) && !loadedImages.has(i)}
-          <!-- LQIP: tiny blurred placeholder shown while full image loads -->
-          {#if showLqip}
-            <img 
-              src={lqipSrc} 
-              alt="" 
-              aria-hidden="true"
-              onerror={() => handleLqipError(i)}
-              class="thumbnail-lqip"
-            />
-          {/if}
-          <!-- Full image: starts loading immediately, fades in when ready -->
-          <img 
-            src={img.src} 
-            alt={img.alt} 
-            onload={() => handleImageLoad(i)}
-            class="thumbnail-img {loadedImages.has(i) || !showLqip ? 'visible' : 'hidden'}"
+          <img
+            src={img.src}
+            alt={img.alt}
+            loading="lazy"
+            decoding="async"
+            onload={() => markLoaded(img.src)}
+            onerror={() => markBroken(img.src)}
           />
           <div class="thumbnail-overlay">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
           </div>
@@ -182,105 +199,82 @@ function getLqipUrl(src) {
       </button>
     {/each}
   </div>
-  
-  <!-- Show More Button -->
+
   {#if hasMore}
     <div class="show-more-container">
       <button class="show-more-btn" onclick={showMoreRows}>
-        <span>Toon meer ({filteredImages.length - visibleCount} remaining)</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <span>Toon meer <small>({filteredImages.length - blurFrom} {activeFilter === 'video' ? "video's" : "foto's"})</small></span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
     </div>
-  {:else if visibleCount > rowsToShow * minItemsPerRow}
-    <div class="show-more-container">
+  {:else if visibleRows > rowsToShow + 1}
+    <div class="show-more-container less">
       <button class="show-more-btn" onclick={showLess}>
         <span>Toon minder</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
         </svg>
       </button>
     </div>
-  {:else if filteredImages.length === 0}
+  {/if}
+
+  {#if filteredImages.length === 0}
     <p class="no-content">Geen {activeFilter === 'video' ? "video's" : "foto's"} beschikbaar</p>
   {/if}
 </div>
-{/if}
 
-<!-- Modal -->
-{#if isOpen}
-  <div class="modal-overlay" onclick={closeGallery} role="dialog" aria-modal="true">
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
-      <!-- Close button -->
-      <button class="modal-close" onclick={closeGallery}>
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+<!-- Lightbox -->
+{#if isOpen && filteredImages[currentIndex]}
+  {@const item = filteredImages[currentIndex]}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="modal-overlay" onclick={closeGallery} role="dialog" aria-modal="true" aria-label="Galerij" data-lenis-prevent>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} ontouchstart={onTouchStart} ontouchend={onTouchEnd}>
+      <button class="modal-close" onclick={closeGallery} aria-label="Sluiten">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
 
-      <!-- Counter -->
-      <div class="modal-counter">
-        {currentIndex + 1} / {filteredImages.length}
-      </div>
+      <div class="modal-counter">{currentIndex + 1} / {filteredImages.length}</div>
 
-      <!-- Main image/video -->
       <div class="modal-image-container">
-        {#if isVideo(filteredImages[currentIndex])}
-          <video 
-            src={filteredImages[currentIndex].src} 
-            controls 
-            autoplay
-            class="modal-video"
-          >
-            <track kind="captions" />
-          </video>
-        {:else}
-          <img 
-            src={filteredImages[currentIndex].src} 
-            alt={filteredImages[currentIndex].alt}
-            class="modal-image"
-          />
-        {/if}
-        
-        <!-- Navigation arrows -->
+        {#key item.src}
+          {#if isVideo(item)}
+            <video src={item.src} controls autoplay playsinline class="modal-video"><track kind="captions" /></video>
+          {:else}
+            <img src={item.src} alt={item.alt} class="modal-image" />
+          {/if}
+        {/key}
+
         {#if filteredImages.length > 1}
-          <button class="nav-btn nav-prev" onclick={(e) => { e.stopPropagation(); prevImage(); }}>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <button class="nav-btn nav-prev" onclick={() => go(-1)} aria-label="Vorige">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
-          
-          <button class="nav-btn nav-next" onclick={(e) => { e.stopPropagation(); nextImage(); }}>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <button class="nav-btn nav-next" onclick={() => go(1)} aria-label="Volgende">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
         {/if}
       </div>
 
-      <!-- Caption -->
-      {#if filteredImages[currentIndex].caption}
-        <p class="modal-caption">{filteredImages[currentIndex].caption}</p>
-      {/if}
-
-      <!-- Thumbnail strip -->
-      {#if images.length > 1}
-        <div class="thumbnail-strip">
-          {#each images as img, i}
-            <button 
-              class="strip-thumb {i === currentIndex ? 'active' : ''}"
-              onclick={() => currentIndex = i}
-            >
+      {#if filteredImages.length > 1}
+        <div class="thumbnail-strip" bind:this={strip}>
+          {#each stripItems as img, j (img.src)}
+            {@const index = stripStart + j}
+            <button class="strip-thumb {index === currentIndex ? 'active' : ''}" onclick={() => { currentIndex = index; scrollStrip(); }} aria-label="Toon {index + 1}">
               {#if isVideo(img)}
-                <img src={img.thumbnail || '/images/video-placeholder.jpg'} alt={img.alt} loading="lazy" />
-                <div class="video-indicator">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </div>
+                <video src="{img.src}#t=0.5" preload="metadata" muted playsinline></video>
+                <div class="video-indicator"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></div>
               {:else}
-                <img src={img.src} alt={img.alt} loading="lazy" />
+                <img src={img.src} alt="" loading="lazy" />
               {/if}
             </button>
           {/each}
@@ -290,438 +284,102 @@ function getLqipUrl(src) {
   </div>
 {/if}
 
-
 <style>
-  .gallery-trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #E8788A 0%, #F2A0AA 100%);
-    color: white;
-    border: none;
-    border-radius: 9999px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 0 4px 15px rgba(232, 120, 138, 0.4);
-  }
+  .gallery-dropdown { margin-top: 1.5rem; }
 
-  .gallery-trigger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(232, 120, 138, 0.5);
-  }
-
-  .gallery-trigger .badge {
-    background: rgba(255, 255, 255, 0.25);
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-  }
-
-  .gallery-dropdown {
-    margin-top: 1.5rem;
-  }
-
-  .gallery-filter-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 1rem;
-  }
+  .gallery-filter-buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; }
 
   .filter-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: white;
-    color: #E8788A;
-    border: 2px solid #E8788A;
-    border-radius: 9999px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem;
+    background: white; color: #E8788A; border: 2px solid #E8788A; border-radius: 9999px;
+    font-weight: 600; cursor: pointer; transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
+  .filter-btn:hover { background: #FDEEF0; }
+  .filter-btn.active { background: linear-gradient(135deg, #E8788A 0%, #F2A0AA 100%); color: white; border-color: transparent; box-shadow: 0 8px 20px -8px rgba(232, 120, 138, 0.7); }
+  .filter-btn .badge { background: rgba(232, 120, 138, 0.15); padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
+  .filter-btn.active .badge { background: rgba(255, 255, 255, 0.25); color: white; }
 
-  .filter-btn:hover {
-    background: #FDEEF0;
-  }
-
-  .filter-btn.active {
-    background: linear-gradient(135deg, #E8788A 0%, #F2A0AA 100%);
-    color: white;
-    border-color: transparent;
-  }
-
-  .filter-btn .badge {
-    background: rgba(232, 120, 138, 0.15);
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-  }
-
-  .filter-btn.active .badge {
-    background: rgba(255, 255, 255, 0.25);
-    color: white;
-  }
-
-  .thumbnails-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 1rem;
-  }
-
-  .thumbnail-video-wrapper {
-    position: relative;
-    width: 100%;
-    height: 100%;
-  }
-
-  .thumbnail-video-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .video-play-indicator {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.3);
-    color: white;
-  }
-
-  .video-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #E8788A 0%, #F2A0AA 100%);
-    color: white;
-  }
-
-  .thumbnail:hover .video-play-indicator {
-    background: rgba(232, 120, 138, 0.6);
-  }
-
-  .show-more-container {
-    margin-top: -2rem;
-    display: flex;
-    justify-content: center;
-    position: relative;
-    z-index: 10;
-  }
-
-  .show-more-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #E8788A 0%, #F2A0AA 100%);
-    color: white;
-    border: none;
-    border-radius: 9999px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 0 4px 15px rgba(232, 120, 138, 0.3);
-  }
-
-  .show-more-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(232, 120, 138, 0.4);
-  }
-
-  .no-content {
-    text-align: center;
-    padding: 2rem;
-    color: #888;
-    font-style: italic;
-  }
+  .thumbnails-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem; }
 
   .thumbnail {
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 1rem;
-    overflow: hidden;
-    border: 3px solid #F0E0E2;
-    cursor: pointer;
-    transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    padding: 0;
-    background: none;
+    position: relative; aspect-ratio: 1; border-radius: 1rem; overflow: hidden; border: 3px solid #F0E0E2;
+    cursor: pointer; padding: 0; transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    /* soft shimmer while the photo loads */
+    background: linear-gradient(110deg, #FDEEF0 30%, #FFF7F8 50%, #FDEEF0 70%) 0 0 / 250% 100%;
+    animation: shimmer 1.4s linear infinite;
   }
+  .thumbnail.is-loaded { animation: none; background: #FDEEF0; }
+  .thumbnail img, .thumbnail video { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 500ms ease, transform 600ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .thumbnail.is-loaded img, .thumbnail.is-loaded video { opacity: 1; }
+  .thumbnail:not(.blurred):hover { border-color: #E8788A; transform: scale(1.05); z-index: 1; }
+  .thumbnail:not(.blurred):hover img { transform: scale(1.06); }
+  .thumbnail.reveal { animation: popIn 550ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: var(--d); }
+  @keyframes popIn { from { opacity: 0; transform: translateY(18px) scale(0.94); } }
+  @keyframes shimmer { to { background-position: -250% 0; } }
 
-  .thumbnail:hover {
-    border-color: #E8788A;
-    transform: scale(1.05);
-  }
-
+  /* The row that hints there's more: fades out downwards behind a blur */
   .thumbnail.blurred {
     mask-image: linear-gradient(to bottom, white 0%, white 30%, transparent 70%);
     -webkit-mask-image: linear-gradient(to bottom, white 0%, white 30%, transparent 70%);
     filter: blur(4px);
     opacity: 0.5;
-    cursor: default;
-  }
-
-  .thumbnail.blurred:hover {
-    filter: blur(2px);
-    opacity: 0.7;
-  }
-
-  .thumbnail:not(.blurred):hover {
-    border-color: #E8788A;
-    transform: scale(1.05);
-  }
-
-  .thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .thumbnail.loading .thumbnail-img {
-    opacity: 0;
-  }
-
-  /* LQIP: tiny blurred placeholder behind the main image */
-  .thumbnail-lqip {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: blur(8px);
-    transform: scale(1.1); /* Prevent blur edges from showing */
-    z-index: 1;
-    /* Pink gradient shows through while LQIP loads */
-    background: linear-gradient(135deg, #F2A0AA 0%, #E8788A 100%);
-  }
-
-  .thumbnail.loaded .thumbnail-img {
-    opacity: 1;
-    transition: opacity 300ms ease-out;
-  }
-
-  .thumbnail.loaded.loading::before {
-    display: none;
-  }
-
-  /* Full image sits on top of LQIP */
-  .thumbnail-img {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .thumbnail-img.hidden {
-    opacity: 0;
-  }
-
-  .thumbnail-img.visible {
-    opacity: 1;
-  }
-
-  .thumbnail-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(232, 120, 138, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 150ms ease;
-    color: white;
-  }
-
-  .thumbnail:hover .thumbnail-overlay {
-    opacity: 1;
-  }
-
-  .video-overlay {
-    background: rgba(0, 0, 0, 0.6);
-  }
-
-  /* Modal */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 300;
-    background: rgba(0, 0, 0, 0.95);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 200ms ease-out;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  .modal-content {
-    position: relative;
-    max-width: 90vw;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .modal-close {
-    position: absolute;
-    top: -3rem;
-    right: 0;
-    background: none;
-    border: none;
-    color: white;
     cursor: pointer;
-    padding: 0.5rem;
-    opacity: 0.7;
-    transition: opacity 150ms ease;
   }
+  .thumbnail.blurred:hover { filter: blur(2px); opacity: 0.7; }
 
-  .modal-close:hover {
-    opacity: 1;
-  }
+  .thumbnail-video-wrapper { position: relative; width: 100%; height: 100%; }
+  .video-play-indicator { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.25); color: white; transition: background 200ms; }
+  .thumbnail:hover .video-play-indicator { background: rgba(232, 120, 138, 0.6); }
 
-  .modal-counter {
-    position: absolute;
-    top: -3rem;
-    left: 0;
-    color: white;
-    font-size: 0.875rem;
-    opacity: 0.7;
-  }
+  .thumbnail-overlay { position: absolute; inset: 0; background: rgba(232, 120, 138, 0.55); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 200ms ease; color: white; }
+  .thumbnail:not(.blurred):hover .thumbnail-overlay { opacity: 1; }
 
-  .modal-image-container {
-    position: relative;
-    max-height: 70vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .show-more-container { margin-top: -2rem; display: flex; justify-content: center; position: relative; z-index: 10; }
+  .show-more-container.less { margin-top: 1.5rem; }
+  .show-more-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #E8788A 0%, #F2A0AA 100%); color: white; border: none; border-radius: 9999px;
+    font-weight: 600; cursor: pointer; transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 4px 15px rgba(232, 120, 138, 0.3);
   }
+  .show-more-btn small { opacity: 0.85; font-weight: 500; }
+  .show-more-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(232, 120, 138, 0.4); }
+  .show-more-btn:hover svg { animation: nudge 800ms ease infinite; }
+  @keyframes nudge { 50% { transform: translateY(3px); } }
 
-  .modal-image,
-  .modal-video {
-    max-width: 100%;
-    max-height: 70vh;
-    object-fit: contain;
-    border-radius: 0.5rem;
-    animation: scaleIn 200ms ease-out;
-  }
+  .no-content { text-align: center; padding: 2rem; color: #888; font-style: italic; }
 
-  .modal-video {
-    width: 100%;
-    max-width: 90vw;
-  }
-
-  @keyframes scaleIn {
-    from { transform: scale(0.95); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-
-  .nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: white;
-    cursor: pointer;
-    padding: 1rem;
-    border-radius: 9999px;
-    transition: all 150ms ease;
-  }
-
-  .nav-btn:hover {
-    background: rgba(232, 120, 138, 0.4);
-  }
-
-  .nav-prev {
-    left: -4rem;
-  }
-
-  .nav-next {
-    right: -4rem;
-  }
-
-  .modal-caption {
-    color: white;
-    margin-top: 1rem;
-    text-align: center;
-    opacity: 0.8;
-  }
-
-  .thumbnail-strip {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding: 0.5rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-    max-width: 100%;
-    overflow-x: auto;
-  }
-
-  .strip-thumb {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    border-radius: 0.375rem;
-    overflow: hidden;
-    border: 2px solid transparent;
-    cursor: pointer;
-    padding: 0;
-    background: none;
-    opacity: 0.5;
-    transition: all 150ms ease;
-    flex-shrink: 0;
-  }
-
-  .strip-thumb:hover {
-    opacity: 0.8;
-  }
-
-  .strip-thumb.active {
-    border-color: #E8788A;
-    opacity: 1;
-  }
-
-  .strip-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .video-indicator {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.4);
-    color: white;
-  }
+  /* Lightbox */
+  .modal-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(20, 10, 12, 0.95); display: flex; align-items: center; justify-content: center; animation: fadeIn 200ms ease-out; }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .modal-content { position: relative; width: min(90vw, 1100px); max-height: 92vh; display: flex; flex-direction: column; align-items: center; }
+  .modal-close { position: absolute; top: -3rem; right: 0; background: none; border: none; color: white; cursor: pointer; padding: 0.5rem; opacity: 0.8; }
+  .modal-close:hover { opacity: 1; }
+  .modal-counter { position: absolute; top: -2.6rem; left: 0; color: white; font-size: 0.875rem; opacity: 0.7; }
+  .modal-image-container { position: relative; width: 100%; height: 70vh; display: flex; align-items: center; justify-content: center; }
+  .modal-image, .modal-video { max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 0.75rem; animation: scaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes scaleIn { from { transform: scale(0.96); opacity: 0; } }
+  .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.12); border: none; color: white; cursor: pointer; padding: 1rem; border-radius: 9999px; transition: background 150ms ease; }
+  .nav-btn:hover { background: rgba(232, 120, 138, 0.5); }
+  .nav-prev { left: -4.5rem; }
+  .nav-next { right: -4.5rem; }
+  .thumbnail-strip { display: flex; gap: 0.5rem; margin-top: 1rem; padding: 0.5rem; background: rgba(255, 255, 255, 0.08); border-radius: 0.75rem; max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
+  .strip-thumb { position: relative; width: 60px; height: 60px; border-radius: 0.5rem; overflow: hidden; border: 2px solid transparent; cursor: pointer; padding: 0; background: #2a1c1f; opacity: 0.5; transition: all 150ms ease; flex-shrink: 0; }
+  .strip-thumb:hover { opacity: 0.85; }
+  .strip-thumb.active { border-color: #E8788A; opacity: 1; }
+  .strip-thumb img, .strip-thumb video { width: 100%; height: 100%; object-fit: cover; }
+  .video-indicator { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.4); color: white; }
 
   @media (max-width: 768px) {
-    .nav-prev {
-      left: 0.5rem;
-    }
-    
-    .nav-next {
-      right: 0.5rem;
-    }
-    
-    .thumbnails-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    .nav-prev { left: 0.25rem; }
+    .nav-next { right: 0.25rem; }
+    .nav-btn { padding: 0.6rem; background: rgba(0, 0, 0, 0.35); }
+    .thumbnails-grid { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+    .modal-content { width: 100vw; }
+    .modal-close { top: -3rem; right: 0.5rem; }
+    .modal-counter { left: 1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .thumbnail, .thumbnail.reveal { animation: none; }
   }
 </style>
-

@@ -1,0 +1,52 @@
+---
+// Small feature/option card used on the collection pages. Shows a real photo when
+// one is given, otherwise a soft gradient icon tile in the same shape.
+interface Props {
+  title: string;
+  text?: string;
+  icon: string;
+  image?: string;
+  tone?: 'pink' | 'peach' | 'mint' | 'lilac';
+  index?: number;
+}
+
+const { title, text, icon, image, tone = 'pink', index = 0 } = Astro.props;
+---
+
+<article class={`f-card animate-on-scroll stagger-${Math.min(index + 1, 5)}`} data-tilt="6">
+  <div class={`f-media tone-${tone}`}>
+    {image ? <img src={image} alt={title} loading="lazy" /> : <i class={`fa-solid ${icon}`} aria-hidden="true"></i>}
+  </div>
+  <div class="f-body">
+    {image && <span class="f-icon"><i class={`fa-solid ${icon}`} aria-hidden="true"></i></span>}
+    <h3>{title}</h3>
+    {text && <p>{text}</p>}
+  </div>
+</article>
+
+<style>
+  .f-card {
+    position: relative; display: flex; flex-direction: column; height: 100%;
+    border-radius: 1.25rem; overflow: hidden; background: #fff;
+    border: 1px solid var(--color-border-light); box-shadow: var(--shadow-sm);
+    transition: box-shadow 400ms ease;
+  }
+  .f-card:hover { box-shadow: 0 30px 50px -25px rgba(212, 90, 106, 0.5); }
+  .f-media { position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center; overflow: hidden; }
+  .f-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 900ms var(--ease-out-expo); }
+  .f-card:hover .f-media img { transform: scale(1.08); }
+  .f-media > i { font-size: 3rem; color: #fff; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.12)); transition: transform 600ms var(--ease-spring); }
+  .f-card:hover .f-media > i { transform: scale(1.15) rotate(-8deg); }
+  .tone-pink { background: linear-gradient(135deg, #F2A0AA, #E8788A); }
+  .tone-peach { background: linear-gradient(135deg, #FFD6A5, #F2A0AA); }
+  .tone-mint { background: linear-gradient(135deg, #BDE0C7, #8FC9A8); }
+  .tone-lilac { background: linear-gradient(135deg, #E3D4FA, #CDB4F5); }
+  .f-icon {
+    position: absolute; left: 1rem; top: -1.4rem; width: 2.75rem; height: 2.75rem; border-radius: 50%;
+    display: grid; place-items: center; background: #fff; color: var(--color-primary);
+    box-shadow: 0 8px 18px -6px rgba(212, 90, 106, 0.5); z-index: 2;
+  }
+  .f-body { position: relative; padding: 1.6rem 1.25rem 1.3rem; }
+  .f-body h3 { font-family: var(--font-heading); font-size: 1.6rem; margin: 0 0 0.3rem; }
+  .f-body p { margin: 0; color: var(--color-text-muted); font-size: 0.92rem; line-height: 1.6; }
+</style>

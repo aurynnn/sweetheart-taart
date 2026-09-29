@@ -6,9 +6,9 @@ import {
   type AanvraagItem,
   EMAIL_RE,
   MAX_ITEMS,
-  PICKUP_TIMES,
   formatEuro,
   isValidPhone,
+  isUploadKey,
   itemPrice,
   parseEuro,
   validateItem,
@@ -76,6 +76,7 @@ export const GET: APIRoute = async ({ url }) => {
         quantity: item.product === 'feesttaart' ? undefined : item.quantity,
         miniType: itemCols.has('mini_type') ? item.mini_type : undefined,
         message: itemCols.has('message') ? item.message : undefined,
+        image: itemCols.has('image') ? item.image : undefined,
       });
       itemsByOrder.set(item.order_id, list);
     }
@@ -153,7 +154,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (!firstname || !lastname) return json({ success: false, error: 'Vul uw voor- en achternaam in' }, 400);
       if (!EMAIL_RE.test(email)) return json({ success: false, error: 'Vul een geldig e-mailadres in' }, 400);
       if (!isValidPhone(phone)) return json({ success: false, error: 'Vul een geldig telefoonnummer in' }, 400);
-      if (!PICKUP_TIMES.includes(time)) return json({ success: false, error: 'Kies een ophaalmoment' }, 400);
+      if (!/^\d{2}:\d{2}$/.test(time)) return json({ success: false, error: 'Kies een ophaalmoment' }, 400);
       if (items.length === 0) return json({ success: false, error: 'Voeg minstens één product toe' }, 400);
       for (const item of items) {
         const problems = validateItem(item);
@@ -163,6 +164,9 @@ export const POST: APIRoute = async ({ request }) => {
       const day = await getDayAvailability(date);
       if (!day || !day.available) {
         return json({ success: false, error: day?.reason ? `Deze datum is niet beschikbaar: ${day.reason}` : 'Deze datum is niet beschikbaar', code: 'date_unavailable' }, 409);
+      }
+      if (!day.times.includes(time)) {
+        return json({ success: false, error: 'Dit ophaalmoment is niet (meer) beschikbaar. Kies een ander uur.', code: 'time_unavailable' }, 409);
       }
       // Never trust a client-side total
       total = items.reduce((sum, item) => sum + itemPrice(item), 0);
@@ -210,6 +214,7 @@ export const POST: APIRoute = async ({ request }) => {
       const label = items.length > 1 ? `Product ${i + 1}: ` : '';
       if (!itemCols.has('mini_type') && item.miniType) notes.push(`${label}type ${str(item.miniType, 40)}`);
       if (!itemCols.has('message') && str(item.message)) notes.push(`${label}${str(item.message, 1000)}`);
+      if (!itemCols.has('image') && item.image) notes.push(`${label}voorbeeldfoto: /admin/api/upload?key=${item.image}`);
     });
     const orderMessage = notes.filter(Boolean).join('\n');
 
@@ -235,6 +240,7 @@ export const POST: APIRoute = async ({ request }) => {
       ];
       if (itemCols.has('mini_type')) { cols.push('mini_type'); values.push(str(item.miniType, 40) || null); }
       if (itemCols.has('message')) { cols.push('message'); values.push(str(item.message, 1000) || null); }
+      if (itemCols.has('image')) { cols.push('image'); values.push(item.image && isUploadKey(item.image) ? item.image : null); }
       await d1Query(
         `INSERT INTO order_items (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
         values

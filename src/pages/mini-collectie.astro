@@ -4,168 +4,90 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import ContactCTA from '../components/ContactCTA.astro';
 import GalleryModal from '../components/GalleryModal.svelte';
-import fs from 'fs';
-import path from 'path';
+import CollectionHero from '../components/collection/CollectionHero.astro';
+import FeatureCard from '../components/collection/FeatureCard.astro';
+import { listMedia } from '../lib/r2';
 
-// Dynamically load all images from mini-collectie folder
-const imagesDir = path.join(process.cwd(), 'public', 'images', 'mini-collectie');
-const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm', '.mov'];
-const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
+const R2 = (import.meta.env.PUBLIC_R2_BASE_URL || '').replace(/\/$/, '');
+const mini = (key: string) => `${R2}/mini-collectie/images/${key}`;
 
-let galleryImages: Array<{src: string, alt: string, caption: string, type?: string}> = [];
+const galleryImages = await listMedia('mini-collectie');
 
-try {
-  const files = fs.readdirSync(imagesDir);
-  galleryImages = files
-    .filter(file => {
-      const ext = path.extname(file).toLowerCase();
-      return imageExtensions.includes(ext) && !file.includes(':Zone.Identifier');
-    })
-    .map(file => {
-      const ext = path.extname(file).toLowerCase();
-      const isVideo = ['.mp4', '.webm', '.mov'].includes(ext);
-      const name = path.basename(file, ext).replace(/[-_]/g, ' ').substring(0, 50);
-      const r2Path = `${R2_BASE}/mini-collectie/${file}`;
-      return {
-        src: r2Path,
-        alt: name,
-        caption: name,
-        type: isVideo ? 'video' : 'image'
-      };
-    })
-    .sort((a, b) => a.src.localeCompare(b.src));
-} catch (e) {
-  console.error('Error loading gallery images:', e);
-}
+const products = [
+  { title: 'Cupcakes', text: 'Prachtig versierd en vol smaak. Perfect voor feestjes, als traktatie of met je logo.', icon: 'fa-cake-candles', image: mini('sweetheart.taart_1617047349_2540299746153756543_8631104567.jpg') },
+  { title: 'Tartelettes', text: 'Mini-taartjes met een knapperig korstje en een heerlijke vulling.', icon: 'fa-chart-pie', image: `${R2}/koekjescollectie/images/pecanpeggy.jpg` },
+  { title: "Pavlova's", text: 'Luchtige schuimgebakjes met verse vruchten en room.', icon: 'fa-cloud', tone: 'lilac' as const },
+];
+
+const sweet = ['Chocolade', 'Noten', 'Karamel', 'Fruit', 'Vanille'];
+const special = ['Lavendel', 'Rozentoets', 'Koffielikeur', 'Amandellikeur'];
 ---
 
 <Layout title="Mini-collectie" description="Klein maar fijn! Cupcakes, tartelettes en kleine pavlova's. Op maat te maken met heerlijke smaken zoals lavendel, rozentoets of koffielikeur." bodyClass="collection-page">
   <Header />
 
-  <main id="mini-main">
-    <!-- Hero Section -->
-    <section id="mini-hero" class="pb-16" style="background-color: #f0c0c0;">
+  <main id="mini-main" class="collection">
+    <CollectionHero
+      id="mini-hero"
+      badge="Mini-collectie"
+      title="Klein maar fijn"
+      subtitle="Deze mini's worden naar smaak en afwerking gemaakt volgens jouw wens. Perfect voor een elegante traktatie of als bijzondere attentie."
+      product="mini-gebak"
+      ctaLabel="Bestellen"
+      photos={[mini('sweetheart.taart_1649007620_2808401931351114500_8631104567.jpg'), mini('mini_flamingos_thumb.jpg'), mini('sweetheart.taart_1643280926_2760362935501354155_8631104567.jpg')]}
+      highlights={[{ icon: 'fa-wand-magic-sparkles', label: 'Volledig op maat' }, { icon: 'fa-print', label: 'Met foto of logo' }, { icon: 'fa-euro-sign', label: 'Vanaf €9 per 12' }]}
+    />
+
+    <!-- Products -->
+    <section id="mini-producten" class="section c-section">
       <div class="container">
-        <div class="max-w-3xl mx-auto text-center">
-          <h1 id="mini-title" class="font-heading text-4xl md:text-5xl lg:text-6xl font-semibold text-[var(--color-text)] mb-6" data-split>
-            Klein maar fijn
-          </h1>
-          <p id="mini-subtitle" class="text-lg text-[var(--color-text-muted)] animate-on-scroll stagger-1">
-            Deze minis kunnen naar smaak en afwerking gemaakt worden volgens wens. Perfect voor een elegante traktatie of als bijzondere attentie.
-          </p>
+        <header class="c-head">
+          <span class="eyebrow animate-on-scroll">Wat we maken</span>
+          <h2 class="section-title" data-split>Mini's voor elk feest</h2>
+        </header>
+        <div class="c-grid-3">
+          {products.map((p, i) => <FeatureCard {...p} index={i} />)}
         </div>
       </div>
     </section>
 
-    <!-- Main Content -->
-    <section id="mini-content" class="section">
-      <div id="mini-content-inner" class="container">
-        <div id="mini-grid" class="grid lg:grid-cols-2 gap-16 items-start">
-          <!-- Products Column -->
-          <div id="mini-products">
-            <h2 id="mini-products-title" class="font-heading text-2xl md:text-3xl font-semibold text-[var(--color-text)] mb-6 animate-on-scroll">
-              Wat we maken
-            </h2>
+    <!-- Gallery -->
+    <section id="creaties" class="section c-section">
+      <div class="container">
+        <header class="c-head">
+          <span class="eyebrow animate-on-scroll">Inspiratie</span>
+          <h2 class="section-title" data-split>Bekijk onze mini's</h2>
+        </header>
+        <div class="animate-on-scroll">
+          <GalleryModal client:visible images={galleryImages} />
+        </div>
+      </div>
+    </section>
 
-            <div id="mini-products-list" class="grid grid-cols-1 gap-6">
-              <!-- Cupcakes -->
-              <div id="mini-cupcakes" class="card p-6 flex gap-4">
-                <div id="mini-cupcakes-icon" class="w-16 h-16 rounded-xl bg-gradient-to-br from-[#FFD93D] to-[#FF6B9D] flex items-center justify-center flex-shrink-0 shadow-md">
-                  <span id="mini-cupcakes-emoji">🧁</span>
-                </div>
-                <div id="mini-cupcakes-content">
-                  <h3 id="mini-cupcakes-title" class="font-heading text-xl font-semibold text-[var(--color-text)] mb-2">Cupcakes</h3>
-                  <p id="mini-cupcakes-text" class="text-[var(--color-text-muted)] text-sm">
-                    Prachtig versierd en vol smaak. Perfect voor feestjes of als attentie.
-                  </p>
-                </div>
-              </div>
-
-              <!-- Tartelettes -->
-              <div id="mini-tartelettes" class="card p-6 flex gap-4">
-                <div id="mini-tartelettes-icon" class="w-16 h-16 rounded-xl bg-gradient-to-br from-[#CD853F] to-[#DEB887] flex items-center justify-center flex-shrink-0 shadow-md">
-                  <span id="mini-tartelettes-emoji">🥧</span>
-                </div>
-                <div id="mini-tartelettes-content">
-                  <h3 id="mini-tartelettes-title" class="font-heading text-xl font-semibold text-[var(--color-text)] mb-2">Tartelettes</h3>
-                  <p id="mini-tartelettes-text" class="text-[var(--color-text-muted)] text-sm">
-                    Mini-taartjes met een knapperig korstje en heerlijke vulling.
-                  </p>
-                </div>
-              </div>
-
-              <!-- Pavlova's -->
-              <div id="mini-pavlova" class="card p-6 flex gap-4">
-                <div id="mini-pavlova-icon" class="w-16 h-16 rounded-xl bg-gradient-to-br from-[#F8BBC0] to-[#F5DEB3] flex items-center justify-center flex-shrink-0 shadow-md">
-                  <span id="mini-pavlova-emoji">🍰</span>
-                </div>
-                <div id="mini-pavlova-content">
-                  <h3 id="mini-pavlova-title" class="font-heading text-xl font-semibold text-[var(--color-text)] mb-2">Pavlova's</h3>
-                  <p id="mini-pavlova-text" class="text-[var(--color-text-muted)] text-sm">
-                    Luchtige schuimgebakjes met verse vruchten en room.
-                  </p>
-                </div>
-              </div>
-            </div>
+    <!-- Flavors -->
+    <section id="mini-smaken" class="section c-section">
+      <div class="container">
+        <div class="c-price-card animate-on-scroll" data-tilt="3">
+          <div class="c-price">
+            <span class="c-price-label">Smaken</span>
+            <span class="c-price-amount"><i class="fa-solid fa-wand-magic-sparkles" style="font-size:3.5rem" aria-hidden="true"></i></span>
+            <span class="c-price-unit">Alles op maat</span>
+            <small>Denk gerust mee met opties</small>
           </div>
-
-          <!-- Gallery & Flavors Column -->
-          <div id="mini-gallery-flavors">
-            <!-- Gallery Section -->
-            <div id="mini-gallery-wrapper">
-              <GalleryModal
-                client:load
-                images={galleryImages}
-                triggerText="Bekijk foto's"
-              />
+          <div class="c-price-body">
+            <h3>Smaakopties</h3>
+            <p class="mini-label">Zoet</p>
+            <div class="c-chips">
+              {sweet.map((s) => <span class="c-chip">{s}</span>)}
             </div>
-
-            <!-- Flavors Card -->
-            <div id="mini-flavors-card" class="card p-8 mt-8">
-              <h3 id="mini-flavors-title" class="font-heading text-xl font-semibold text-[var(--color-text)] mb-6 flex items-center gap-3">
-                <span id="mini-flavors-icon">✨</span>
-                Smaakopties
-              </h3>
-
-              <p id="mini-flavors-intro" class="text-[var(--color-text-muted)] mb-6">
-                Denk voor smaken aan opties. Alles is op maat te maken!
-              </p>
-
-              <div id="mini-flavors-list" class="space-y-4">
-                <div id="mini-flavors-sweet">
-                  <h4 id="mini-flavors-sweet-title" class="font-semibold text-[var(--color-text)] mb-2">Zoet</h4>
-                  <div id="mini-flavors-sweet-tags" class="flex flex-wrap gap-2">
-                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Chocolade</span>
-                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Noten</span>
-                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Karamel</span>
-                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Fruit</span>
-                    <span class="px-3 py-1 bg-[var(--color-secondary)] text-[var(--color-primary-dark)] text-sm rounded-full">Vanille</span>
-                  </div>
-                </div>
-
-                <div id="mini-flavors-special">
-                  <h4 id="mini-flavors-special-title" class="font-semibold text-[var(--color-text)] mb-2">Speciaal</h4>
-                  <div id="mini-flavors-special-tags" class="flex flex-wrap gap-2">
-                    <span class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Lavendel</span>
-                    <span class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Rozentoets</span>
-                    <span class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Koffielikeur</span>
-                    <span class="px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-primary-dark)] text-sm rounded-full border border-[var(--color-accent)]/30">Amandellikeur</span>
-                  </div>
-                </div>
-              </div>
-
-              <div id="mini-flavors-note" class="mt-8 p-4 bg-[var(--color-secondary)]/50 rounded-xl">
-                <p id="mini-flavors-note-text" class="text-sm text-[var(--color-text-muted)]">
-                  <strong id="mini-flavors-note-strong">Let op:</strong> De prijs hangt af van de gebruikte producten. Neem contact op voor een offerte.
-                </p>
-              </div>
-
-              <div id="mini-flavors-button-wrapper" class="mt-6">
-                <a id="mini-flavors-button" href="/aanvraag?product=mini-gebak" class="btn btn-primary btn-shine w-full justify-center">
-                  Vraag offerte aan
-                </a>
-              </div>
+            <p class="mini-label">Speciaal</p>
+            <div class="c-chips">
+              {special.map((s) => <span class="c-chip special">{s}</span>)}
             </div>
+            <p class="mini-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> De prijs hangt af van de gebruikte producten — je krijgt de definitieve prijs na je aanvraag.</p>
+            <a href="/aanvraag?product=mini-gebak" class="btn btn-primary btn-shine c-cta-wide" data-magnetic="0.15">
+              Vraag je mini's aan <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
           </div>
         </div>
       </div>
@@ -176,3 +98,9 @@ try {
 
   <Footer id="mini-footer" />
 </Layout>
+
+<style>
+  .mini-label { font-weight: 700; margin: 1.1rem 0 0.5rem; font-size: 0.9rem; }
+  .mini-note { margin: 1.5rem 0 1.25rem; padding: 0.9rem 1rem; border-radius: 0.9rem; background: var(--color-secondary); color: var(--color-text-muted); font-size: 0.88rem; }
+  .mini-note i { color: var(--color-primary); margin-right: 0.35rem; }
+</style>

@@ -1,24 +1,22 @@
 ---
-// Decorative interactive 3D layer (see src/scripts/sprinkles.ts).
+// Decorative interactive 3D layer with floating cupcakes and hearts (see src/scripts/sprinkles.ts).
 // Place inside a `position: relative` section; it fills it and sits behind content.
 interface Props {
-  sprinkles?: number;
-  pearls?: number;
-  donuts?: number;
+  cupcakes?: number;
+  hearts?: number;
   seed?: number;
-  /** Fade the particles out where text sits so copy stays readable */
+  /** Fade the 3D scene out where text sits so copy stays readable */
   mask?: 'none' | 'left' | 'center';
   class?: string;
 }
 
-const { sprinkles = 72, pearls = 40, donuts = 3, seed = 7, mask = 'none', class: className = '' } = Astro.props;
+const { cupcakes = 7, hearts = 18, seed = 7, mask = 'none', class: className = '' } = Astro.props;
 ---
 
 <canvas
   class:list={['sprinkle-field', `mask-${mask}`, className]}
-  data-sprinkles={sprinkles}
-  data-pearls={pearls}
-  data-donuts={donuts}
+  data-cupcakes={cupcakes}
+  data-hearts={hearts}
   data-seed={seed}
   aria-hidden="true"
 ></canvas>

@@ -13,6 +13,7 @@ export interface OrderItem {
   allergies?: string;
   message?: string;
   price?: number;
+  image?: string;
 }
 
 export interface OrderCustomer {
@@ -43,6 +44,21 @@ export function esc(value: unknown): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+const photoUrl = (key: string) => `/admin/api/upload?key=${encodeURIComponent(key)}`;
+
+function photoHtml(key: string): string {
+  return `<a class="example-photo" href="${esc(photoUrl(key))}" target="_blank" rel="noopener" title="Voorbeeldfoto openen">
+    <img src="${esc(photoUrl(key))}" alt="Voorbeeldfoto van de klant" loading="lazy"
+      style="width:100%;max-height:220px;object-fit:cover;border-radius:0.75rem;margin-top:0.5rem;display:block" />
+    <span style="font-size:0.75rem;color:#64748b">📷 Voorbeeldfoto — klik om te vergroten</span>
+  </a>`;
+}
+
+/** Notes stored before migrations/0006 contain the photo link as text — show it as a photo. */
+function linkPhotos(escapedText: string): string {
+  return escapedText.replace(/\/admin\/api\/upload\?key=(aanvragen\/[0-9]{4}-[0-9]{2}\/[0-9a-f-]{36}\.(?:jpg|png|webp))/g, (_m, key) => photoHtml(key));
 }
 
 export function formatPickup(order: Pick<Order, 'date' | 'time'>): string {
@@ -99,6 +115,7 @@ export function renderOrderDetail(order: Order): string {
             <i class="fa-solid fa-circle-exclamation"></i>
             <span>${esc(item.allergies)}</span>
           </div>` : ''}
+        ${item.image ? photoHtml(item.image) : ''}
         ${item.message ? `
           <div class="message-field">
             <label>Bericht</label>
@@ -125,7 +142,7 @@ export function renderOrderDetail(order: Order): string {
       ${order.message ? `
         <div class="info-row notes-row">
           <div class="info-label">Notitie</div>
-          <div class="info-value" style="white-space:pre-line">${esc(order.message)}</div>
+          <div class="info-value" style="white-space:pre-line">${linkPhotos(esc(order.message))}</div>
         </div>` : ''}
     </div>`;
 

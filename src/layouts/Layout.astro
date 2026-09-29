@@ -5,10 +5,9 @@ interface Props {
   title: string;
   description?: string;
   bodyClass?: string;
-  noFooter?: boolean;
 }
 
-const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelijke Belgische bakkerij in Oostende. Feesttaarten, koekjes, mini-gebak en meer.", bodyClass = "", noFooter = false } = Astro.props;
+const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelijke Belgische bakkerij in Oostende. Feesttaarten, koekjes, mini-gebak en meer.", bodyClass = "" } = Astro.props;
 const showFloatingCta = !Astro.url.pathname.startsWith('/aanvraag');
 ---
 
@@ -34,15 +33,6 @@ const showFloatingCta = !Astro.url.pathname.startsWith('/aanvraag');
     <div id="scroll-progress" aria-hidden="true"></div>
     <div id="toast-container"></div>
     <slot />
-    {noFooter ? null : (
-    <footer class="bg-white border-t border-gray-200 py-6 px-4 mt-auto">
-      <div class="max-w-4xl mx-auto text-center">
-        <a href="/tips" class="text-[#E8788A] hover:text-[#d66b7a] font-medium">
-          📋 Ophaalinfo & Tips
-        </a>
-      </div>
-    </footer>
-    )}
     {showFloatingCta && (
       <a href="/aanvraag" id="floating-cta" class="floating-cta btn-shine" aria-label="Start je aanvraag">
         <i class="fa-solid fa-cake-candles" aria-hidden="true"></i>
