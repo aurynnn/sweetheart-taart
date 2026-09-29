@@ -8,6 +8,8 @@ main = "./src/worker.ts"
 compatibility_date = "2026-09-01"
 # node:crypto, Buffer and process.env (vars + secrets) inside the Worker
 compatibility_flags = ["nodejs_compat"]
+# Keep the variables set in the dashboard (otherwise every deploy removes them)
+keep_vars = true
 
 [observability]
 enabled = true
