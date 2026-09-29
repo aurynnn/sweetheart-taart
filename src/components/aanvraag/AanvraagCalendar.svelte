@@ -1,3 +1,5 @@
+<!-- CSS injected by the component itself: Astro 7 (Rolldown) drops the CSS of components that are not in the server-rendered HTML -->
+<svelte:options css="injected" />
 <script lang="ts">
   // AanvraagCalendar.svelte — inline month calendar that shows live availability
   // from /api/availability. Unavailable days explain *why* on hover/focus.

@@ -1,3 +1,5 @@
+<!-- CSS injected by the component itself: Astro 7 (Rolldown) drops the CSS of components that are not in the server-rendered HTML -->
+<svelte:options css="injected" />
 <script lang="ts">
   // FeedbackForm.svelte — shown after a 1–4 star rating from the review e-mail.
   // The customer can adjust the stars; choosing 5 still sends them to Google.
