@@ -24,6 +24,11 @@ export const SCRIPT_FONT = `'Caveat', 'Segoe Script', 'Brush Script MT', cursive
 
 export const siteUrl = (path = '') => `${(env('SITE_URL') || SITE.url).replace(/\/$/, '')}${path}`;
 export const imageUrl = (key: string) => `${(env('PUBLIC_R2_BASE_URL') || '').replace(/\/$/, '')}/${key.split('/').map(encodeURIComponent).join('/')}`;
+/** Artwork from public/email/ (uploaded to R2 by `npm run upload:email-assets`).
+ *  Bump ASSET_VERSION after regenerating, so mail clients' image caches refresh. */
+const ASSET_VERSION = '3';
+export const emailAsset = (file: string) => `${imageUrl(`email-assets/${file}`)}?v=${ASSET_VERSION}`;
+
 export const productImage = (product: string) => imageUrl(EMAIL_IMAGES.products[product] ?? EMAIL_IMAGES.products.feesttaart);
 
 export function esc(value: unknown): string {
@@ -58,6 +63,22 @@ export const button = (href: string, label: string, variant: 'primary' | 'light'
     </td></tr>
   </table>`;
 };
+
+/** "Route plannen" with the Google Maps pin */
+export const mapsButton = (href: string, address: string) => `
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:4px auto 22px">
+    <tr><td style="border-radius:999px;background:#ffffff;border:1px solid ${COLORS.line};box-shadow:0 8px 20px -12px rgba(212,90,106,0.6)">
+      <a href="${esc(href)}" style="display:block;padding:8px 22px 8px 8px;text-decoration:none">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+          <td width="40" valign="middle"><img src="${esc(emailAsset('maps.png'))}" alt="Google Maps" width="36" height="36" style="display:block;width:36px;height:36px;border:0"></td>
+          <td valign="middle" style="padding-left:10px;font-family:${FONT};line-height:1.25">
+            <span style="display:block;font-size:15px;font-weight:800;color:${COLORS.ink}">Route plannen</span>
+            <span style="display:block;font-size:12px;color:${COLORS.muted}">${esc(address)}</span>
+          </td>
+        </tr></table>
+      </a>
+    </td></tr>
+  </table>`;
 
 /** Soft pink box with an icon, e.g. pickup details */
 export const callout = (icon: string, html: string) =>
@@ -97,7 +118,7 @@ export const hearts = () =>
 export const socialBlock = () => {
   const icon = (href: string, file: string, label: string) =>
     `<a href="${esc(href)}" style="display:inline-block;margin:0 8px;text-decoration:none" title="${esc(label)}">
-      <img src="${esc(imageUrl(`email-assets/${file}`))}" alt="${esc(label)}" width="40" height="40" style="display:block;width:40px;height:40px;border:0">
+      <img src="${esc(emailAsset(file))}" alt="${esc(label)}" width="40" height="40" style="display:block;width:40px;height:40px;border:0">
     </a>`;
   return table(`<tr><td align="center" style="padding:24px 20px;border-radius:18px;background:${COLORS.cream};border:1px dashed ${COLORS.pinkLight}">
     <p style="margin:0 0 4px;font-family:${SCRIPT_FONT};font-size:26px;font-weight:700;color:${COLORS.pinkDark}">Zin in meer inspiratie?</p>
@@ -106,28 +127,35 @@ export const socialBlock = () => {
   </td></tr>`, 'margin:8px 0 24px');
 };
 
+export type HeroArt = 'cupcake' | 'cake' | 'bell';
+
 interface HeroOptions {
   eyebrow: string;
   title: string;
   subtitle?: string;
-  image?: string;
-  imageAlt?: string;
+  /** Small looping animation in a white round "sticker" (see scripts/email-art) */
+  art?: HeroArt;
 }
 
-/** Pink gradient hero with a product photo, like the website's page headers */
-function hero({ eyebrow: eb, title, subtitle, image, imageAlt = '' }: HeroOptions) {
+const ART_ALT: Record<HeroArt, string> = { cupcake: 'Cupcake met hartjes', cake: 'Feesttaart met kaarsjes', bell: 'Herinneringsbelletje' };
+
+/** Pink header like the website, with a sprinkle pattern (falls back to plain pink in Outlook) */
+function hero({ eyebrow: eb, title, subtitle, art }: HeroOptions) {
+  const bg = `background-color:#DC9A9E;background-image:url('${emailAsset('pattern.png')}'),linear-gradient(160deg,#D48F93 0%,#E1A0A4 55%,#EDB4B7 100%);background-size:240px 240px,auto`;
   return `
-  <tr><td style="padding:0;border-radius:24px 24px 0 0;background:${COLORS.pink};background-image:linear-gradient(160deg,#D48F93 0%,#E1A0A4 55%,#EDB4B7 100%)">
+  <tr><td style="padding:0;border-radius:24px 24px 0 0;${bg}">
     ${table(`<tr><td align="center" style="padding:26px 24px 0">
       <a href="${esc(siteUrl('/'))}" style="text-decoration:none">
         <span style="font-family:${SCRIPT_FONT};font-size:34px;font-weight:700;color:#ffffff">${esc(SITE.name)}</span><br>
         <span style="font-family:${FONT};font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#FFE9EE">${esc(SITE.tagline)}</span>
       </a>
     </td></tr>
-    ${image ? `<tr><td align="center" style="padding:22px 24px 0">
-      <img src="${esc(image)}" alt="${esc(imageAlt)}" width="260" style="display:block;width:260px;max-width:80%;height:auto;border:6px solid #ffffff;border-radius:18px;box-shadow:0 20px 40px -20px rgba(90,30,40,0.6)">
+    ${art ? `<tr><td align="center" style="padding:20px 24px 0">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="width:180px;height:180px;border-radius:90px;background:#ffffff;box-shadow:0 18px 40px -18px rgba(90,30,40,0.55)">
+        <img src="${esc(emailAsset(`anim-${art}.gif`))}" alt="${esc(ART_ALT[art])}" width="170" height="170" style="display:block;width:170px;height:170px;margin:5px;border:0;border-radius:85px">
+      </td></tr></table>
     </td></tr>` : ''}
-    <tr><td align="center" style="padding:22px 28px 30px">
+    <tr><td align="center" style="padding:20px 28px 30px">
       <p style="margin:0 0 8px;font-family:${FONT};font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#ffffff;opacity:0.9">${esc(eb)}</p>
       <h1 style="margin:0;font-family:${SCRIPT_FONT};font-size:40px;line-height:1.1;font-weight:700;color:#ffffff">${esc(title)}</h1>
       ${subtitle ? `<p style="margin:10px 0 0;font-family:${FONT};font-size:16px;line-height:1.5;color:#3D272A">${esc(subtitle)}</p>` : ''}

@@ -30,11 +30,8 @@ export const fullAddress = `${SITE.address.street}, ${SITE.address.postalCode} $
 /** Opens turn-by-turn directions (Google Maps app on phones, maps.google.com on desktop) */
 export const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress)}`;
 
-/** Photos used in e-mails — keys in the public R2 bucket (e-mail images must be publicly hosted) */
+/** Product photos used in e-mails — keys in the public R2 bucket (e-mail images must be publicly hosted) */
 export const EMAIL_IMAGES = {
-  heroReceived: 'mini-collectie/images/sweetheart.taart_1649007620_2808401931351114500_8631104567.jpg',
-  heroConfirmed: 'feestcollectie/images/trouwtaargeknipt-e1668952116982.png',
-  heroReview: 'feestcollectie/images/sweetheart.taart_1760535866_3743968668565675516_8631104567.jpg',
   products: {
     feesttaart: 'feestcollectie/images/trouwtaargeknipt-e1668952116982.png',
     koekjes: 'koekjescollectie/images/koekejs.png',

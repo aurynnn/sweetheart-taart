@@ -68,14 +68,38 @@ if (progress) {
 
 // ── Reveal on scroll ─────────────────────────────────────────────────────────
 const reveals = gsap.utils.toArray<HTMLElement>('.animate-on-scroll');
+const reveal = (els: Element[]) => els.forEach((el) => el.classList.add('visible'));
+
+/**
+ * Anything already scrolled past (or in view) must be shown. Without this, a page that
+ * opens mid-way — reload, restored scroll position, #anchor link — leaves the elements
+ * above the viewport invisible, because they never get an "enter" moment.
+ */
+function revealPassed() {
+  const line = window.innerHeight * 0.92;
+  reveal(reveals.filter((el) => !el.classList.contains('visible') && el.getBoundingClientRect().top < line));
+}
+
 if (reduceMotion) {
-  reveals.forEach((el) => el.classList.add('visible'));
+  reveal(reveals);
 } else {
   ScrollTrigger.batch(reveals, {
     start: 'top 88%',
     once: true,
-    onEnter: (batch) => batch.forEach((el) => el.classList.add('visible')),
+    onEnter: reveal,
+    onEnterBack: reveal,
   });
+  revealPassed();
+  ScrollTrigger.addEventListener('refresh', revealPassed);
+  window.addEventListener('hashchange', () => requestAnimationFrame(revealPassed));
+  window.addEventListener('pageshow', revealPassed); // back/forward cache
+  // Safety net: never leave content hidden when scrolling jumps (anchors, restored position)
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { revealPassed(); ticking = false; });
+  }, { passive: true });
 }
 
 // ── Split-word headings ──────────────────────────────────────────────────────
