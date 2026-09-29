@@ -16,6 +16,7 @@ const {
   <!-- Background video -->
   <div class="absolute inset-0 z-0">
     <video
+      id="heroVideo"
       class="w-full h-full object-cover"
       autoplay
       muted
@@ -64,3 +65,27 @@ const {
     </div>
   </div>
 </section>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    const video = document.getElementById('heroVideo');
+    if (video) {
+      const frameRate = 30; // Assuming 30 frames per second. Adjust if your video has a different frame rate.
+      const framesToSkipStart = 9; // Number of frames to skip from the beginning
+      const framesToSkipEnd = 12; // Number of frames to skip from the end
+
+      const startTime = framesToSkipStart / frameRate;
+      const endTimeOffset = framesToSkipEnd / frameRate;
+
+      video.addEventListener('loadedmetadata', () => {
+        video.currentTime = startTime;
+      });
+
+      video.addEventListener('timeupdate', () => {
+        if (video.duration && video.currentTime >= video.duration - endTimeOffset) {
+          video.currentTime = startTime; // Loop back to startTime
+        }
+      });
+    }
+  });
+</script>
