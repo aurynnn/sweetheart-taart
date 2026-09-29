@@ -23,7 +23,8 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# Media files (hosted externally)
+# Media files: gallery photos live in R2. The few files the site itself uses
+# (hero video, portraits, collection cards) ARE committed — add new ones with `git add -f`.
 public/images/
 public/videos/
 *.mp4
