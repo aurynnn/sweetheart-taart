@@ -18,6 +18,15 @@
   --color-border: #F0E0E2;
   --color-border-light: #F8F0F2;
 
+  /* Page headers — matched to the pink of the home hero video */
+  --hero-pink-deep: #D48F93;
+  --hero-pink: #E1A0A4;
+  --hero-pink-light: #EDB4B7;
+  --hero-bg:
+    radial-gradient(55% 65% at 15% 15%, rgba(255, 228, 232, 0.55) 0%, transparent 60%),
+    radial-gradient(45% 60% at 95% 85%, rgba(255, 214, 190, 0.35) 0%, transparent 60%),
+    linear-gradient(180deg, var(--hero-pink-deep) 0%, var(--hero-pink) 55%, var(--hero-pink-light) 100%);
+
   /* Typography */
   --font-heading: 'Caveat', 'Patrick Hand', cursive;
   --font-body: 'Nunito Sans', system-ui, sans-serif;

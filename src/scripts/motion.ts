@@ -8,7 +8,6 @@
 //   [data-tilt]                  3D tilt + light glare following the pointer
 //   [data-magnetic]              element is gently pulled toward the pointer
 //   [data-marquee]               infinite marquee whose speed follows scroll velocity
-//   [data-scroll-steps]          pinned step-by-step story (see index.astro "Zo werkt het")
 //
 // Everything degrades gracefully: with prefers-reduced-motion the content is
 // simply shown, and without JS the CSS fallback in global.css shows it too.
@@ -229,45 +228,6 @@ document.querySelectorAll<HTMLElement>('[data-marquee]').forEach((track) => {
     const target = 1 + Math.min(Math.abs(scrollVelocity) / 8, 4);
     boost += (target - boost) * 0.08;
     tween.timeScale(boost);
-  });
-});
-
-// ── Pinned step story ────────────────────────────────────────────────────────
-document.querySelectorAll<HTMLElement>('[data-scroll-steps]').forEach((section) => {
-  const steps = gsap.utils.toArray<HTMLElement>(section.querySelectorAll('[data-step]'));
-  const dots = gsap.utils.toArray<HTMLElement>(section.querySelectorAll('[data-step-dot]'));
-  const fill = section.querySelector<HTMLElement>('[data-step-fill]');
-  const visuals = gsap.utils.toArray<HTMLElement>(section.querySelectorAll('[data-step-visual]'));
-  if (!steps.length) return;
-
-  const activate = (index: number) => {
-    steps.forEach((s, i) => s.classList.toggle('is-active', i === index));
-    dots.forEach((d, i) => d.classList.toggle('is-active', i <= index));
-    visuals.forEach((v, i) => v.classList.toggle('is-active', i === index));
-    section.dispatchEvent(new CustomEvent('step-change', { detail: { index } }));
-  };
-  activate(0);
-
-  const mm = gsap.matchMedia();
-  mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
-    const pinTarget = section.querySelector<HTMLElement>('[data-step-pin]') || section;
-    ScrollTrigger.create({
-      trigger: section,
-      start: 'top top',
-      end: () => `+=${window.innerHeight * (steps.length - 0.4)}`,
-      pin: pinTarget,
-      scrub: true,
-      onUpdate: (self) => {
-        const index = Math.min(steps.length - 1, Math.floor(self.progress * steps.length));
-        if (fill) fill.style.transform = `scaleY(${self.progress})`;
-        activate(index);
-      },
-    });
-  });
-  // Mobile / reduced motion: every step is simply visible in sequence
-  mm.add('(max-width: 1023px), (prefers-reduced-motion: reduce)', () => {
-    steps.forEach((s) => s.classList.add('is-active'));
-    if (fill) fill.style.transform = 'scaleY(1)';
   });
 });
 

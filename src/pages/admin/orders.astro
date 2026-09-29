@@ -128,6 +128,7 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
 <script>
   import { getOrders, setOrders, setCurrentOrderId, STATUS_CONFIG, renderOrderDetail } from '../../lib/orders';
   import { productName } from '../../lib/catalog';
+  import { updateStatus } from '../../scripts/admin/toast';
 
   // ── Config ─────────────────────────────────────────────────────────────────
   const PER_PAGE = 20;
@@ -400,20 +401,11 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
   }
 
   async function patchStatus(orderId: string, status: string, silent = false) {
-    try {
-      await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status }),
-      });
-      const orders = getOrders();
-      const o = orders.find((x: any) => x.id === orderId);
-      if (o) (o as any).status = status;
-      renderPage();
-      updateStats();
-    } catch (e) {
-      if (!silent) console.error('Status update failed:', e);
-    }
+    if (!(await updateStatus(orderId, status, { silent }))) return;
+    const o = getOrders().find((x: any) => x.id === orderId);
+    if (o) (o as any).status = status;
+    renderPage();
+    updateStats();
   }
 
   // ── Event delegation ───────────────────────────────────────────────────────

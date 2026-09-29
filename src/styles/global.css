@@ -311,10 +311,6 @@
 .c-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.75rem; }
 .c-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
 
-.c-occasions { overflow: hidden; background: var(--color-primary); color: #fff; padding: 1rem 0; rotate: -1deg; margin: 1rem 0; box-shadow: 0 20px 40px -20px rgba(212, 90, 106, 0.6); }
-.c-occasions-track { display: flex; width: max-content; }
-.c-occasion { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0 1.75rem; font-family: var(--font-heading); font-size: clamp(1.4rem, 2.6vw, 2rem); font-weight: 700; white-space: nowrap; }
-.c-occasion i { font-size: 1rem; opacity: 0.85; }
 
 .c-price-card {
   display: grid; grid-template-columns: 0.8fr 1.2fr; max-width: 56rem; margin: 0 auto;

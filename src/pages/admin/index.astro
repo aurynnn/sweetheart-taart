@@ -404,20 +404,10 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
 
 <script>
   import { STATUS_CONFIG, renderOrderDetail, esc } from '../../lib/orders';
+  import { updateStatus } from '../../scripts/admin/toast';
 
   let allOrders: any[] = [];
   const ordersReady = fetch('/api/orders').then((r) => r.json()).then((d) => (allOrders = d)).catch(() => []);
-
-  function toast(message: string, error = false) {
-    const c = document.getElementById('toast-container');
-    if (!c) return;
-    const t = document.createElement('div');
-    t.className = 'toast';
-    if (error) t.style.background = '#ef4444';
-    t.textContent = message;
-    c.appendChild(t);
-    setTimeout(() => { t.style.animation = 'toastOut 0.2s ease forwards'; setTimeout(() => t.remove(), 200); }, 3000);
-  }
 
   // ── Order detail modal ────────────────────────────────────────────────
   async function openModal(orderId: string) {
@@ -457,22 +447,14 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
     const status = act.dataset.statusAction!;
     const row = document.querySelector<HTMLElement>(`[data-order-row="${CSS.escape(orderId)}"]`);
     act.disabled = true;
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status }),
-      });
-      if (!res.ok) throw new Error();
+    if (await updateStatus(orderId, status)) {
       row?.classList.add(status === 'approved' ? 'leaving-ok' : 'leaving-no');
-      toast(status === 'approved' ? `Aanvraag ${orderId} goedgekeurd ✓` : `Aanvraag ${orderId} geweigerd`);
       setTimeout(() => {
         row?.remove();
         document.querySelectorAll('.count').forEach((el) => { el.textContent = String(Math.max(0, Number(el.textContent) - 1)); });
       }, 450);
-    } catch {
+    } else {
       act.disabled = false;
-      toast('Bijwerken mislukt. Probeer opnieuw.', true);
     }
   });
 

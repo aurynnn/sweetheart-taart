@@ -1,0 +1,41 @@
+---
+import CollectionCard from '../CollectionCard.astro';
+
+interface Props {
+  collections: Array<{ id: string; title: string; description: string; href: string; badge?: string }>;
+}
+const { collections } = Astro.props;
+---
+
+<section id="home-collections" class="section collections bg-[var(--color-surface)]">
+  <div class="container">
+    <div id="home-collections-header" class="text-center mb-14">
+      <span class="eyebrow animate-on-scroll">Ontdek</span>
+      <h2 id="home-collections-title" class="section-title" data-split>de collecties</h2>
+      <p id="home-collections-subtitle" class="section-subtitle mx-auto animate-on-scroll stagger-1">
+        Ontdek onze heerlijke selectie van taarten, koekjes en gebak, elk met dezelfde liefde en zorg gemaakt.
+      </p>
+    </div>
+
+    <div id="home-collections-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+      {collections.map((collection, index) => (
+        <div id={`home-collection-card-${collection.id}`} class={`animate-on-scroll stagger-${index + 1} flex`}>
+          <div class="tilt-wrap" data-tilt="7">
+            <CollectionCard
+              title={collection.title}
+              description={collection.description}
+              href={collection.href}
+              badge={collection.badge}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .tilt-wrap { display: flex; width: 100%; border-radius: var(--radius-xl); }
+  .tilt-wrap :global(.card) { width: 100%; }
+  .tilt-wrap :global(.card:hover) { transform: none; box-shadow: 0 30px 60px -25px rgba(212, 90, 106, 0.45); }
+</style>

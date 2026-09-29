@@ -1,9 +1,10 @@
 ---
+import { SITE } from '../config/site';
 const currentYear = new Date().getFullYear();
 
 const socialLinks = [
-  { href: 'https://www.facebook.com/pages/category/Product-Service/Sweetheart-koekjes-cake-en-taart-131377077490172/', label: 'Facebook', icon: 'facebook' },
-  { href: 'https://www.instagram.com/sweetheart.taart/', label: 'Instagram', icon: 'instagram' },
+  { href: SITE.social.facebook, label: 'Facebook', icon: 'facebook' },
+  { href: SITE.social.instagram, label: 'Instagram', icon: 'instagram' },
 ];
 
 const quickLinks = [
@@ -81,19 +82,19 @@ function getSocialIcon(icon: string) {
         <address class="not-italic text-sm text-[var(--color-text-muted)] space-y-3">
           <p>
             <strong>Adres:</strong><br />
-            Zwanenlaan 62<br />
-            8400 Oostende
+            {SITE.address.street}<br />
+            {SITE.address.postalCode} {SITE.address.city}
           </p>
           <p>
             <strong>Telefoon:</strong><br />
-            <a href="tel:+32486953210" class="hover:text-[var(--color-primary)] transition-colors">
-              +32 486 95 32 10
+            <a href={SITE.phone.href} class="hover:text-[var(--color-primary)] transition-colors">
+              {SITE.phone.international}
             </a>
           </p>
           <p>
             <strong>Email:</strong><br />
-            <a href="mailto:nathalie@sweetheart-taart.com" class="hover:text-[var(--color-primary)] transition-colors">
-              nathalie@sweetheart-taart.com
+            <a href={`mailto:${SITE.email}`} class="hover:text-[var(--color-primary)] transition-colors">
+              {SITE.email}
             </a>
           </p>
         </address>

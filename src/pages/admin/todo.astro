@@ -113,6 +113,7 @@ const isOverdue = (date: string) => date < new Date().toISOString().split('T')[0
 </AdminLayout>
 
 <script>
+  import { updateStatus } from '../../scripts/admin/toast';
   function showToast(message: string, type: 'success' | 'error' = 'success') {
     const container = document.getElementById('toast-container')!;
     const toast = document.createElement('div');
@@ -126,22 +127,7 @@ const isOverdue = (date: string) => date < new Date().toISOString().split('T')[0
   }
 
   (window as any).updateStatus = async function(orderId: string, status: string) {
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status })
-      });
-      if (res.ok) {
-        showToast(`Bestelling ${status === 'approved' ? 'goedgekeurd' : status === 'completed' ? 'voltooid' : 'geannuleerd'}`);
-        // Reload to reflect changes
-        setTimeout(() => window.location.reload(), 800);
-      } else {
-        showToast('Fout bij updaten', 'error');
-      }
-    } catch {
-      showToast('Fout bij updaten', 'error');
-    }
+    if (await updateStatus(orderId, status)) setTimeout(() => window.location.reload(), 900);
   };
 
   // --- Print selection (click-to-select) ---

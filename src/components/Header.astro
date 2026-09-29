@@ -1,4 +1,5 @@
 ---
+import { SITE } from '../config/site';
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/feestcollectie', label: 'Feestcollectie' },
@@ -121,13 +122,13 @@ const navLinks = [
       <!-- Contact Info -->
       <div class="mt-8 space-y-3 text-sm text-[var(--color-text-muted)]">
         <p>
-          <a href="tel:+32486953210" class="hover:text-[var(--color-primary)] transition-colors">
-            +32 486 95 32 10
+          <a href={SITE.phone.href} class="hover:text-[var(--color-primary)] transition-colors">
+            {SITE.phone.international}
           </a>
         </p>
         <p>
-          <a href="mailto:nathalie@sweetheart-taart.com" class="hover:text-[var(--color-primary)] transition-colors">
-            nathalie@sweetheart-taart.com
+          <a href={`mailto:${SITE.email}`} class="hover:text-[var(--color-primary)] transition-colors">
+            {SITE.email}
           </a>
         </p>
       </div>

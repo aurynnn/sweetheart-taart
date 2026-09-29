@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { SITE, fullAddress } from '../config/site';
 
 const tabs = [
   {
@@ -10,8 +11,8 @@ const tabs = [
     icon: 'fa-car-side',
     title: 'Ophaalinfo',
     tips: [
-      { icon: 'fa-clock', title: 'Kom op tijd', text: 'Ben je onverhoopt toch te laat? Geef me een seintje als het ophaaluur meer dan 10 minuten afwijkt.', link: { href: 'tel:+32486953210', label: 'Bel 0486 95 32 10' } },
-      { icon: 'fa-square-parking', title: 'Parkeren', text: 'Parkeer gerust voor de deur, op de oprit of voor mijn auto — Zwanenlaan 62, Oostende.', warn: 'Parkeer niet voor de garage van de buren' },
+      { icon: 'fa-clock', title: 'Kom op tijd', text: 'Ben je onverhoopt toch te laat? Geef me een seintje als het ophaaluur meer dan 10 minuten afwijkt.', link: { href: SITE.phone.href, label: `Bel ${SITE.phone.display}` } },
+      { icon: 'fa-square-parking', title: 'Parkeren', text: `Parkeer gerust voor de deur, op de oprit of voor mijn auto — ${fullAddress}.`, warn: 'Parkeer niet voor de garage van de buren' },
       { icon: 'fa-bell', title: 'De bel van het atelier', text: 'De bel hangt aan de carport, net naast het uithangbord. Duw wat langer op de bel, niet harder.' },
       { icon: 'fa-wallet', title: 'Betaling', text: 'Het resterende bedrag betaal je graag contant of met Payconiq bij het ophalen.' },
     ],
@@ -131,7 +132,7 @@ const tabs = [
           </div>
           <h2 class="on-dark">Vond je het lekker?</h2>
           <p>Laat een review achter en help anderen om te genieten van mijn taarten!</p>
-          <a href="https://search.google.com/local/writereview?placeid=ChIJ722oViGs3EcRQQq7hspVsDs" target="_blank" rel="noopener" class="btn btn-primary btn-shine review-btn" data-magnetic="0.2">
+          <a href={SITE.reviewUrl} target="_blank" rel="noopener" class="btn btn-primary btn-shine review-btn" data-magnetic="0.2">
             <i class="fa-brands fa-google" aria-hidden="true"></i> Laat een review
           </a>
         </div>
@@ -187,10 +188,10 @@ const tabs = [
 </script>
 
 <style>
-  .tips-hero { position: relative; overflow: hidden; padding: 8.5rem 0 6rem; background: radial-gradient(60% 70% at 20% 20%, #ffd9e0 0%, transparent 60%), linear-gradient(180deg, #f0c0c0, #f4c9cc); }
+  .tips-hero { position: relative; overflow: hidden; padding: 8.5rem 0 6rem; background: var(--hero-bg); }
   .c-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.8); color: var(--color-primary-dark); font-weight: 700; font-size: 0.85rem; }
   .tips-title { font-family: var(--font-heading); font-weight: 900; font-size: clamp(2.8rem, 7vw, 5rem); line-height: 1.05; margin: 1rem 0; }
-  .tips-sub { max-width: 36rem; margin: 0 auto; font-size: 1.1rem; color: #5b4346; }
+  .tips-sub { max-width: 36rem; margin: 0 auto; font-size: 1.1rem; color: #3d272a; }
   .c-wave { position: absolute; left: 0; bottom: -1px; width: 100%; height: 60px; color: var(--color-surface); }
 
   .tabs { position: relative; display: flex; gap: 0.25rem; width: fit-content; max-width: 100%; margin: 0 auto 2.5rem; padding: 0.35rem; border-radius: 999px; background: var(--color-secondary); overflow-x: auto; }

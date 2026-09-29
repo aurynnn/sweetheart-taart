@@ -12,6 +12,7 @@
   } from '../../lib/catalog';
   import AanvraagCalendar from './AanvraagCalendar.svelte';
   import Confetti from './Confetti.svelte';
+  import { SITE, fullAddress } from '../../config/site';
   import ImageDrop from './ImageDrop.svelte';
 
   const DRAFT_KEY = 'sweetheart-aanvraag-draft-v1';
@@ -276,14 +277,14 @@
       <ol class="next-steps">
         <li><span>1</span><div><strong>Nathalie bekijkt je aanvraag</strong><p>Meestal binnen 1 à 2 werkdagen.</p></div></li>
         <li><span>2</span><div><strong>Je krijgt een bevestiging</strong><p>Per mail of telefoon, met de definitieve prijs.</p></div></li>
-        <li><span>3</span><div><strong>Ophalen & smullen</strong><p>{formatDate(date)} om {time}, Zwanenlaan 62, Oostende.</p></div></li>
+        <li><span>3</span><div><strong>Ophalen & smullen</strong><p>{formatDate(date)} om {time}, {fullAddress}.</p></div></li>
       </ol>
 
       {#if !items.some((i) => i.image)}
       <p class="success-hint">
         <i class="fa-solid fa-image" aria-hidden="true"></i>
         Heb je een inspiratiefoto? Mail die gerust naar
-        <a href="mailto:nathalie@sweetheart-taart.com?subject=Aanvraag%20{result.orderId}">nathalie@sweetheart-taart.com</a>
+        <a href="mailto:{SITE.email}?subject=Aanvraag%20{result.orderId}">{SITE.email}</a>
         met je aanvraagnummer.
       </p>
       {/if}
@@ -611,7 +612,7 @@
               <div class="review-row">
                 <div class="review-block">
                   <div class="review-head"><h3><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> Ophalen</h3><button type="button" onclick={() => goTo(1)}>Wijzig</button></div>
-                  <p class="review-text">{formatDate(date)}<br />om {time}<br /><small>Zwanenlaan 62, Oostende</small></p>
+                  <p class="review-text">{formatDate(date)}<br />om {time}<br /><small>{fullAddress}</small></p>
                 </div>
                 <div class="review-block">
                   <div class="review-head"><h3><i class="fa-solid fa-user" aria-hidden="true"></i> Gegevens</h3><button type="button" onclick={() => goTo(2)}>Wijzig</button></div>

@@ -4,37 +4,91 @@ interface Props {
   author: string;
   role?: string;
   authorImage?: string;
+  rating?: number;
 }
 
-const { quote, author, role, authorImage } = Astro.props;
+const { quote, author, role, authorImage, rating = 5 } = Astro.props;
+const long = quote.length > 260;
 ---
 
-<figure class="relative bg-white rounded-xl p-8 shadow-sm">
-  <!-- Quote mark decoration -->
-  <svg class="absolute -top-4 -left-4 w-10 h-10 text-[var(--color-secondary)]/30" fill="currentColor" viewBox="0 0 24 24">
-    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
-  </svg>
+<figure class="t-card" data-tilt="5">
+  <span class="t-quote" aria-hidden="true">“</span>
 
-  <blockquote class="relative z-10">
-    <p class="text-[var(--color-text)] leading-relaxed mb-6 italic">
-      "{quote}"
-    </p>
-    <figcaption class="flex items-center gap-4">
-      {authorImage ? (
-        <img 
-          src={authorImage} 
-          alt={author}
-          class="w-14 h-14 rounded-full object-cover border-2 border-[var(--color-secondary)]"
-        />
-      ) : (
-        <div class="w-14 h-14 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white font-semibold text-xl">
-          {author.charAt(0)}
-        </div>
-      )}
-      <div>
-        <cite class="not-italic font-semibold text-[var(--color-text)]">{author}</cite>
-        {role && <p class="text-sm text-[var(--color-text-muted)]">{role}</p>}
-      </div>
-    </figcaption>
+  <div class="t-stars" role="img" aria-label={`${rating} op 5 sterren`}>
+    {Array.from({ length: 5 }, (_, i) => (
+      <i class={`fa-solid fa-star${i < rating ? '' : ' off'}`} style={`--s:${i}`} aria-hidden="true"></i>
+    ))}
+  </div>
+
+  <blockquote class:list={['t-text', { clamp: long }]}>
+    <p>{quote}</p>
   </blockquote>
+  {long && (
+    <button type="button" class="t-more" aria-expanded="false" data-more>
+      <span>Lees meer</span> <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+    </button>
+  )}
+
+  <figcaption class="t-author">
+    {authorImage ? (
+      <img src={authorImage} alt="" loading="lazy" width="52" height="52" />
+    ) : (
+      <span class="t-initial" aria-hidden="true">{author.charAt(0)}</span>
+    )}
+    <span>
+      <cite>{author}</cite>
+      {role && <small>{role}</small>}
+    </span>
+  </figcaption>
 </figure>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.t-card [data-more]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const text = btn.previousElementSibling as HTMLElement;
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      text.classList.toggle('clamp', !open);
+      btn.setAttribute('aria-expanded', String(open));
+      btn.querySelector('span')!.textContent = open ? 'Minder tonen' : 'Lees meer';
+    });
+  });
+</script>
+
+<style>
+  .t-card {
+    position: relative; margin: 0; height: 100%; display: flex; flex-direction: column;
+    padding: 2rem 1.75rem 1.75rem; border-radius: 1.5rem; background: #fff;
+    border: 1px solid var(--color-border-light); box-shadow: 0 20px 50px -30px rgba(212, 90, 106, 0.45);
+    transition: box-shadow 400ms ease;
+  }
+  .t-card:hover { box-shadow: 0 30px 60px -28px rgba(212, 90, 106, 0.6); }
+  .t-quote {
+    position: absolute; top: -1.4rem; right: 1.5rem; font-family: Georgia, serif; font-size: 6rem; line-height: 1;
+    color: var(--color-primary-light); opacity: 0; transform: scale(0.4) rotate(-20deg);
+    transition: opacity 600ms ease 300ms, transform 800ms var(--ease-spring) 300ms;
+  }
+  :global(.visible) .t-quote { opacity: 1; transform: none; }
+
+  .t-stars { display: flex; gap: 0.2rem; color: #F5B83D; margin-bottom: 1rem; }
+  .t-stars .off { color: var(--color-border); }
+  .t-stars i { opacity: 0; transform: scale(0); }
+  :global(.visible) .t-stars i { animation: starPop 500ms var(--ease-spring) forwards; animation-delay: calc(400ms + var(--s) * 90ms); }
+  @keyframes starPop { to { opacity: 1; transform: none; } }
+
+  .t-text { margin: 0; flex: 1; }
+  .t-text p { margin: 0; color: var(--color-text); line-height: 1.75; font-size: 0.98rem; }
+  .t-text.clamp p { display: -webkit-box; -webkit-line-clamp: 7; line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+  .t-more { align-self: flex-start; margin-top: 0.6rem; padding: 0; border: 0; background: none; font: inherit; font-weight: 700; font-size: 0.88rem; color: var(--color-primary-dark); cursor: pointer; }
+  .t-more i { font-size: 0.7rem; transition: transform 300ms ease; }
+  .t-more[aria-expanded='true'] i { transform: rotate(180deg); }
+
+  .t-author { display: flex; align-items: center; gap: 0.9rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px dashed var(--color-border); }
+  .t-author img, .t-initial { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 3px solid var(--color-secondary); }
+  .t-initial { display: grid; place-items: center; background: var(--color-primary); color: #fff; font-weight: 700; font-size: 1.3rem; }
+  .t-author cite { display: block; font-style: normal; font-weight: 700; color: var(--color-text); }
+  .t-author small { color: var(--color-text-muted); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-quote, .t-stars i { opacity: 1; transform: none; animation: none !important; }
+  }
+</style>

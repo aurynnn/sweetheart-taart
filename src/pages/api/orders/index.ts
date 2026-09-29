@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import { d1Query } from '../../../lib/d1';
-import { tableColumns, customerNameSql } from '../../../lib/schema';
+import { tableColumns } from '../../../lib/schema';
+import { listOrders } from '../../../lib/orderRepo';
+import { notifyNewAanvraag, notifyStatusChange } from '../../../lib/email';
 import { getDayAvailability } from '../../../lib/availability';
 import {
   type AanvraagItem,
@@ -20,88 +22,11 @@ const json = (data: unknown, status = 200) =>
 const str = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
 export const GET: APIRoute = async ({ url }) => {
-  const status = url.searchParams.get('status');
-  const dateFrom = url.searchParams.get('dateFrom');
-  const dateTo = url.searchParams.get('dateTo');
-  const name = await customerNameSql('c');
-
-  let query = `
-    SELECT
-      o.id, o.date, o.time, o.status, o.total, o.message, o.created_at,
-      c.id as customer_id, ${name.first} as firstname, ${name.last} as lastname,
-      c.email, c.phone, c.notes
-    FROM orders o
-    JOIN customers c ON o.customer_id = c.id
-    WHERE 1=1
-  `;
-  const bindings: any[] = [];
-
-  if (status) {
-    query += ' AND o.status = ?';
-    bindings.push(status);
-  }
-  if (dateFrom) {
-    query += ' AND o.date >= ?';
-    bindings.push(dateFrom);
-  }
-  if (dateTo) {
-    query += ' AND o.date <= ?';
-    bindings.push(dateTo);
-  }
-
-  query += ' ORDER BY o.created_at DESC';
-
-  const ordersResult = await d1Query(query, bindings);
-  const rows = ordersResult.results || [];
-
-  // One query for all items instead of one per order
-  const itemsByOrder = new Map<string, any[]>();
-  if (rows.length) {
-    const itemCols = await tableColumns('order_items');
-    const itemsResult = await d1Query(
-      `SELECT * FROM order_items WHERE order_id IN (${rows.map(() => '?').join(',')}) ORDER BY id`,
-      rows.map((r: any) => r.id)
-    );
-    for (const item of itemsResult.results || []) {
-      const list = itemsByOrder.get(item.order_id) ?? [];
-      list.push({
-        id: item.id,
-        product: item.product,
-        event: item.event,
-        persons: item.persons,
-        flavor: item.flavor,
-        topper: item.topper,
-        allergies: item.allergies,
-        price: item.price,
-        quantity: item.product === 'feesttaart' ? undefined : item.quantity,
-        miniType: itemCols.has('mini_type') ? item.mini_type : undefined,
-        message: itemCols.has('message') ? item.message : undefined,
-        image: itemCols.has('image') ? item.image : undefined,
-      });
-      itemsByOrder.set(item.order_id, list);
-    }
-  }
-
-  const orders = rows.map((row: any) => ({
-    id: row.id,
-    date: row.date,
-    time: row.time,
-    status: row.status,
-    total: formatEuro(parseEuro(row.total)),
-    totalValue: parseEuro(row.total),
-    message: row.message,
-    createdAt: row.created_at,
-    customer: {
-      id: row.customer_id,
-      firstname: row.firstname,
-      lastname: row.lastname,
-      email: row.email,
-      phone: row.phone,
-      notes: row.notes,
-    },
-    items: itemsByOrder.get(row.id) ?? [],
-  }));
-
+  const orders = await listOrders({
+    status: url.searchParams.get('status'),
+    dateFrom: url.searchParams.get('dateFrom'),
+    dateTo: url.searchParams.get('dateTo'),
+  });
   return json(orders);
 };
 
@@ -247,6 +172,9 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // Fire-and-forget: the customer shouldn't wait on (or be blocked by) the mail provider
+    if (!isAdmin) void notifyNewAanvraag(orderId).catch((err) => console.error('[api/orders] notify failed:', err));
+
     return json({ success: true, orderId, total: formatEuro(total) }, 201);
   } catch (error: any) {
     console.error('[api/orders] POST failed:', error);
@@ -257,7 +185,7 @@ export const POST: APIRoute = async ({ request }) => {
 export const PATCH: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { orderId, status } = body;
+    const { orderId, status, notify = true } = body;
 
     if (!orderId || !status) {
       return json({ success: false, error: 'orderId and status are required' }, 400);
@@ -268,9 +196,16 @@ export const PATCH: APIRoute = async ({ request }) => {
       return json({ success: false, error: 'Invalid status' }, 400);
     }
 
+    const current = await d1Query('SELECT status FROM orders WHERE id = ?', [orderId]);
+    const previous = current.results?.[0]?.status as string | undefined;
+    if (!previous) return json({ success: false, error: 'Aanvraag niet gevonden' }, 404);
+
     await d1Query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
 
-    return json({ success: true });
+    // Only e-mail the customer on a real change (not when re-saving the same status)
+    const emailed = notify !== false && previous !== status ? await notifyStatusChange(orderId, status) : false;
+
+    return json({ success: true, emailed });
   } catch (error: any) {
     return json({ success: false, error: error?.message }, 500);
   }

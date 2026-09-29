@@ -6,6 +6,7 @@ import ContactCTA from '../components/ContactCTA.astro';
 import GalleryModal from '../components/GalleryModal.svelte';
 import CollectionHero from '../components/collection/CollectionHero.astro';
 import FeatureCard from '../components/collection/FeatureCard.astro';
+import Marquee from '../components/ui/Marquee.astro';
 import { listMedia } from '../lib/r2';
 
 const R2 = (import.meta.env.PUBLIC_R2_BASE_URL || '').replace(/\/$/, '');
@@ -67,14 +68,7 @@ const priceFactors = [
       </div>
     </section>
 
-    <!-- Occasions marquee -->
-    <section class="c-occasions" aria-label="Gelegenheden">
-      <div class="c-occasions-track" data-marquee data-marquee-duration="32">
-        {occasions.map((o) => (
-          <span class="c-occasion" data-marquee-item><i class={`fa-solid ${o.icon}`} aria-hidden="true"></i>{o.label}</span>
-        ))}
-      </div>
-    </section>
+    <Marquee items={occasions} label="Gelegenheden" duration={32} />
 
     <!-- Gallery -->
     <section id="creaties" class="section c-section c-gallery">

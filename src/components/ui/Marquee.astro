@@ -1,0 +1,56 @@
+---
+// Tilted band of words that scrolls endlessly and speeds up with scroll velocity
+// (animation lives in src/scripts/motion.ts → [data-marquee]).
+// The wrapper has its own vertical padding + clipping, so the tilted band never
+// overlaps the sections around it.
+interface Props {
+  items: ReadonlyArray<{ label: string; icon?: string }>;
+  label: string;
+  duration?: number;
+  reverse?: boolean;
+}
+
+const { items, label, duration = 40, reverse = false } = Astro.props;
+---
+
+<section class="marquee-wrap" aria-label={label}>
+  <div class="marquee-band">
+    <div class="marquee-track" data-marquee={reverse ? 'reverse' : ''} data-marquee-duration={duration}>
+      {items.map((item) => (
+        <span class="marquee-item" data-marquee-item>
+          {item.label}
+          <i class={`fa-solid ${item.icon ?? 'fa-heart'}`} aria-hidden="true"></i>
+        </span>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .marquee-wrap {
+    position: relative;
+    overflow: hidden;
+    padding-block: 1.75rem;
+    background: var(--color-background);
+  }
+  .marquee-band {
+    margin-inline: -2rem;
+    padding: 1rem 0;
+    rotate: -1.2deg;
+    background: var(--color-primary);
+    color: #fff;
+    box-shadow: 0 20px 40px -20px rgba(212, 90, 106, 0.6);
+  }
+  .marquee-track { display: flex; width: max-content; will-change: transform; }
+  .marquee-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.75rem;
+    padding-right: 1.75rem;
+    font-family: var(--font-heading);
+    font-size: clamp(1.5rem, 3vw, 2.3rem);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .marquee-item i { font-size: 0.95rem; opacity: 0.8; }
+</style>

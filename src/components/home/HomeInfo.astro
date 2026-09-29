@@ -1,0 +1,80 @@
+---
+// Opening hours + allergies cards
+---
+
+<section id="home-info" class="section bg-[var(--color-surface)]">
+  <div class="container">
+    <div class="grid lg:grid-cols-2 gap-8 lg:gap-12">
+      <!-- Opening Hours -->
+      <div id="home-opening-hours" class="animate-on-scroll">
+        <div id="home-opening-hours-card" class="card p-8 h-full">
+          <div id="home-opening-hours-header" class="flex items-start gap-4 mb-6">
+            <div id="home-opening-hours-icon" class="info-icon w-12 h-12 rounded-lg bg-[var(--color-secondary)] flex items-center justify-center flex-shrink-0">
+              <svg id="home-opening-hours-icon-svg" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 id="home-opening-hours-title" class="font-heading text-xl font-semibold text-[var(--color-text)] mb-2">Openingsuren</h3>
+              <p id="home-opening-hours-subtitle" class="text-sm text-[var(--color-text-muted)]">
+                Kom langs om jouw taart te bespreken
+              </p>
+            </div>
+          </div>
+
+          <div id="home-opening-hours-details" class="space-y-3">
+            <div id="home-opening-hours-row" class="flex justify-between items-center py-2 border-b border-[var(--color-border-light)]">
+              <span id="home-opening-hours-day" class="text-[var(--color-text)]">Donderdag</span>
+              <span id="home-opening-hours-time" class="font-medium text-[var(--color-primary)]">17u - 20u</span>
+            </div>
+            <p id="home-opening-hours-note" class="text-sm text-[var(--color-text-muted)] italic">
+              * Niet tijdens schoolvakanties
+            </p>
+            <p id="home-opening-hours-extra" class="text-sm text-[var(--color-text-muted)]">
+              Andere momenten zijn mogelijk op afspraak. Mail of bel gerust!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Allergies Info -->
+      <div id="home-allergies" class="animate-on-scroll stagger-2">
+        <div id="home-allergies-card" class="card p-8 h-full">
+          <div id="home-allergies-header" class="flex items-start gap-4 mb-6">
+            <div id="home-allergies-icon" class="info-icon w-12 h-12 rounded-lg bg-[var(--color-accent)]/10 flex items-center justify-center flex-shrink-0">
+              <svg id="home-allergies-icon-svg" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+              </svg>
+            </div>
+            <div>
+              <h3 id="home-allergies-title" class="font-heading text-xl font-semibold text-[var(--color-text)] mb-2">Allergieën? Geen probleem!</h3>
+              <p id="home-allergies-subtitle" class="text-sm text-[var(--color-text-muted)]">
+                We denken graag mee
+              </p>
+            </div>
+          </div>
+
+          <p id="home-allergies-text" class="text-[var(--color-text-muted)] leading-relaxed">
+            Ik heb ervaring met het aanpassen van recepten voor diverse dieetwensen en allergieën. Lactose-intolerantie, glutenallergie, diabetes... neem gerust contact op om de mogelijkheden te bespreken.
+          </p>
+
+          <ul id="home-allergies-list" class="mt-4 space-y-2">
+            {['Lactose-intolerantie', 'Glutenallergie', 'Diabetes'].map((item, i) => (
+              <li id={`home-allergies-item-${i + 1}`} class="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+                <svg id={`home-allergies-check-${i + 1}`} xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[var(--color-accent)]" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .info-icon { transition: transform 500ms var(--ease-spring); }
+  .card:hover .info-icon { transform: rotate(-8deg) scale(1.1); }
+</style>
