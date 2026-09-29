@@ -6,7 +6,7 @@ import type { FullOrder } from '../orderRepo';
 import { occasionLabel } from '../reminders';
 import {
   COLORS, FONT, SCRIPT_FONT, button, callout, detailRows, emailAsset, esc, eyebrow, hearts, layout,
-  mapsButton, paragraph, productImage, siteUrl, timeline,
+  paragraph, pickupCard, productImage, siteUrl, timeline,
 } from './layout';
 
 export interface RenderedEmail { subject: string; html: string; text: string }
@@ -66,7 +66,7 @@ const phoneLink = () => `<a href="${esc(SITE.phone.href)}" style="color:${COLORS
 export function aanvraagOntvangen(order: FullOrder): RenderedEmail {
   const body = [
     paragraph(`Hoi ${esc(firstName(order))}! 💕 Wat leuk dat je aan ons denkt. Je aanvraag is goed ontvangen — hieronder vind je een overzicht.`),
-    callout('📅', `<strong>Ophalen</strong><br>${esc(pickup(order))}<br><span style="color:${COLORS.muted}">${esc(fullAddress)}</span>`),
+    pickupCard({ when: pickup(order), address: fullAddress, directionsHref: directionsUrl }),
     ticket(order),
     eyebrow('Wat gebeurt er nu?'),
     timeline([
@@ -121,8 +121,7 @@ export function nieuweAanvraag(order: FullOrder): RenderedEmail {
 export function aanvraagBevestigd(order: FullOrder): RenderedEmail {
   const body = [
     paragraph(`Hoi ${esc(firstName(order))}, goed nieuws: je aanvraag is <strong>bevestigd</strong>! ${esc(SITE.owner)} gaat met veel liefde voor je aan de slag. 🎉`),
-    callout('🗓️', `<strong>Tot ${esc(pickup(order))}</strong><br>${esc(fullAddress)}<br><span style="color:${COLORS.muted}">De bel van het atelier hangt aan de carport, naast het uithangbord.</span>`),
-    mapsButton(directionsUrl, fullAddress),
+    pickupCard({ when: pickup(order), address: fullAddress, note: 'De bel van het atelier hangt aan de carport, naast het uithangbord.', directionsHref: directionsUrl }),
     ticket(order),
     eyebrow('Handig om te weten'),
     timeline([
@@ -137,7 +136,7 @@ export function aanvraagBevestigd(order: FullOrder): RenderedEmail {
     subject: `Het is in orde! Je aanvraag is bevestigd 🎉 (#${order.id})`,
     html: layout({
       preheader: `Tot ${pickup(order)}!`,
-      hero: { eyebrow: 'Bevestigd', title: `Joepie, ${firstName(order)}!`, subtitle: `Ophalen: ${pickup(order)}`, art: 'cake' },
+      hero: { eyebrow: 'Bevestigd', title: `Joepie, ${firstName(order)}!`, subtitle: 'Je aanvraag is in orde — tot snel!', art: 'cake' },
       body,
     }),
     text: `Joepie ${firstName(order)}, het is in orde!\n\nJe aanvraag #${order.id} is bevestigd.\n\nOphalen: ${pickup(order)}\n${fullAddress}\nRoute: ${directionsUrl}\n\n${itemsText(order)}\n\nHet resterende bedrag betaal je bij het ophalen (contant of Payconiq).\nTips: ${siteUrl('/tips')}\n\n${contactText}`,
@@ -169,9 +168,10 @@ const STAR_LABELS = ['Niet goed', 'Matig', 'Oké', 'Lekker!', 'Geweldig!'];
 export interface ReviewLinks { rating: (stars: number) => string; unsubscribe: string }
 
 export function reviewVerzoek(order: FullOrder, links: ReviewLinks): RenderedEmail {
-  // One row of 5 stars; tapping star n gives n stars (5 → straight to Google reviews)
-  const stars = [1, 2, 3, 4, 5].map((n) => `
-    <td align="center" style="padding:0 2px">
+  // One row of 5 stars; tapping star n gives n stars (5 → straight to Google reviews).
+  // Written 5→1 inside a dir="rtl" row so CSS hover can light up 1…N (see layout <style>).
+  const stars = [5, 4, 3, 2, 1].map((n) => `
+    <td class="star" align="center" style="padding:0 3px">
       <a href="${esc(links.rating(n))}" title="${n} ster${n === 1 ? '' : 'ren'} — ${STAR_LABELS[n - 1]}" style="display:block;text-decoration:none">
         <img src="${esc(emailAsset(`star-${n}.gif`))}" alt="${n} ster${n === 1 ? '' : 'ren'}" width="52" height="52" style="display:block;width:52px;height:52px;border:0">
       </a>
@@ -180,7 +180,7 @@ export function reviewVerzoek(order: FullOrder, links: ReviewLinks): RenderedEma
     paragraph(`Hoi ${esc(firstName(order))}! We hopen dat je bestelling een echte blikvanger was en dat iedereen heeft gesmuld. 🎂`),
     paragraph(`Mogen we vragen hoe je het vond? <strong>Eén tik is genoeg:</strong>`, 'text-align:center'),
     `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px;border-radius:18px;background:${COLORS.blush}"><tr><td align="center" style="padding:18px 8px 16px">
-      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto"><tr>${stars}</tr></table>
+      <table role="presentation" class="rate" dir="rtl" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto"><tr>${stars}</tr></table>
       <p style="margin:10px 0 0;font-family:${FONT};font-size:12px;color:${COLORS.muted}">Tik op het aantal sterren · 1 = niet goed, 5 = geweldig</p>
     </td></tr></table>`,
     paragraph(`<span style="font-size:13px;color:${COLORS.muted}">Je feedback helpt ${esc(SITE.owner)} om elke creatie nog mooier te maken. Bedankt! 💕</span>`, 'text-align:center'),
@@ -190,7 +190,7 @@ export function reviewVerzoek(order: FullOrder, links: ReviewLinks): RenderedEma
     subject: `Hoe was je taart, ${firstName(order)}? ⭐`,
     html: layout({
       preheader: 'Eén tik op de sterren — het duurt maar 2 seconden.',
-      hero: { eyebrow: 'We zijn benieuwd!', title: 'Hoe was het?', subtitle: 'Vertel het ons in één tik', art: 'cupcake' },
+      hero: { eyebrow: 'We zijn benieuwd!', title: 'Hoe was het?', subtitle: 'Vertel het ons in één tik', art: 'slice' },
       body,
       footerNote: `Liever geen mails meer zoals deze? <a href="${esc(links.unsubscribe)}" style="color:${COLORS.muted}">Uitschrijven</a>`,
     }),

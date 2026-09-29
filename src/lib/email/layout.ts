@@ -26,7 +26,7 @@ export const siteUrl = (path = '') => `${(env('SITE_URL') || SITE.url).replace(/
 export const imageUrl = (key: string) => `${(env('PUBLIC_R2_BASE_URL') || '').replace(/\/$/, '')}/${key.split('/').map(encodeURIComponent).join('/')}`;
 /** Artwork from public/email/ (uploaded to R2 by `npm run upload:email-assets`).
  *  Bump ASSET_VERSION after regenerating, so mail clients' image caches refresh. */
-const ASSET_VERSION = '3';
+const ASSET_VERSION = '4';
 export const emailAsset = (file: string) => `${imageUrl(`email-assets/${file}`)}?v=${ASSET_VERSION}`;
 
 export const productImage = (product: string) => imageUrl(EMAIL_IMAGES.products[product] ?? EMAIL_IMAGES.products.feesttaart);
@@ -64,17 +64,23 @@ export const button = (href: string, label: string, variant: 'primary' | 'light'
   </table>`;
 };
 
-/** "Route plannen" with the Google Maps pin */
-export const mapsButton = (href: string, address: string) => `
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:4px auto 22px">
-    <tr><td style="border-radius:999px;background:#ffffff;border:1px solid ${COLORS.line};box-shadow:0 8px 20px -12px rgba(212,90,106,0.6)">
-      <a href="${esc(href)}" style="display:block;padding:8px 22px 8px 8px;text-decoration:none">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
-          <td width="40" valign="middle"><img src="${esc(emailAsset('maps.png'))}" alt="Google Maps" width="36" height="36" style="display:block;width:36px;height:36px;border:0"></td>
-          <td valign="middle" style="padding-left:10px;font-family:${FONT};line-height:1.25">
-            <span style="display:block;font-size:15px;font-weight:800;color:${COLORS.ink}">Route plannen</span>
-            <span style="display:block;font-size:12px;color:${COLORS.muted}">${esc(address)}</span>
-          </td>
+/**
+ * Pickup card: when + where, with a clear full-width "Route plannen" row.
+ * Text is allowed to wrap, so nothing overflows on small phones.
+ */
+export const pickupCard = (opts: { when: string; address: string; note?: string; directionsHref: string }) => `
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 22px;border-collapse:separate;border-radius:18px;background:${COLORS.blush};border:1px solid ${COLORS.line}">
+    <tr><td style="padding:18px 20px 14px;font-family:${FONT};color:${COLORS.ink}">
+      <p style="margin:0 0 2px;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:${COLORS.pink}">Ophalen</p>
+      <p style="margin:0 0 6px;font-size:17px;font-weight:800;line-height:1.35">${esc(opts.when)}</p>
+      <p style="margin:0;font-size:14px;line-height:1.5;color:${COLORS.muted}">${esc(opts.address)}${opts.note ? `<br>${esc(opts.note)}` : ''}</p>
+    </td></tr>
+    <tr><td style="padding:0 12px 12px">
+      <a href="${esc(opts.directionsHref)}" style="display:block;text-decoration:none;border-radius:12px;background:#ffffff;border:1px solid ${COLORS.line}">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
+          <td width="44" valign="middle" style="padding:8px 0 8px 10px"><img src="${esc(emailAsset('maps.png'))}" alt="" width="30" height="30" style="display:block;width:30px;height:30px;border:0"></td>
+          <td valign="middle" style="padding:8px 6px;font-family:${FONT};font-size:15px;font-weight:800;color:${COLORS.ink}">Route plannen <span style="font-weight:600;color:${COLORS.muted};font-size:13px">in Google Maps</span></td>
+          <td width="30" valign="middle" align="right" style="padding:8px 14px 8px 0;font-family:${FONT};font-size:18px;font-weight:800;color:${COLORS.pink}">&rarr;</td>
         </tr></table>
       </a>
     </td></tr>
@@ -127,7 +133,7 @@ export const socialBlock = () => {
   </td></tr>`, 'margin:8px 0 24px');
 };
 
-export type HeroArt = 'cupcake' | 'cake' | 'bell';
+export type HeroArt = 'cupcake' | 'cake' | 'bell' | 'slice';
 
 interface HeroOptions {
   eyebrow: string;
@@ -137,28 +143,29 @@ interface HeroOptions {
   art?: HeroArt;
 }
 
-const ART_ALT: Record<HeroArt, string> = { cupcake: 'Cupcake met hartjes', cake: 'Feesttaart met kaarsjes', bell: 'Herinneringsbelletje' };
+const ART_ALT: Record<HeroArt, string> = {
+  cupcake: 'Cupcake met hartjes', cake: 'Feesttaart met kaarsjes', bell: 'Herinneringsbelletje', slice: 'Stukje taart',
+};
 
-/** Pink header like the website, with a sprinkle pattern (falls back to plain pink in Outlook) */
+/** Compact pink header like the website: logo, small animated sticker, title */
 function hero({ eyebrow: eb, title, subtitle, art }: HeroOptions) {
   const bg = `background-color:#DC9A9E;background-image:url('${emailAsset('pattern.png')}'),linear-gradient(160deg,#D48F93 0%,#E1A0A4 55%,#EDB4B7 100%);background-size:240px 240px,auto`;
   return `
   <tr><td style="padding:0;border-radius:24px 24px 0 0;${bg}">
-    ${table(`<tr><td align="center" style="padding:26px 24px 0">
+    ${table(`<tr><td align="center" style="padding:18px 20px 0">
       <a href="${esc(siteUrl('/'))}" style="text-decoration:none">
-        <span style="font-family:${SCRIPT_FONT};font-size:34px;font-weight:700;color:#ffffff">${esc(SITE.name)}</span><br>
-        <span style="font-family:${FONT};font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#FFE9EE">${esc(SITE.tagline)}</span>
+        <span style="font-family:${SCRIPT_FONT};font-size:28px;font-weight:700;color:#ffffff">${esc(SITE.name)}</span>
       </a>
     </td></tr>
-    ${art ? `<tr><td align="center" style="padding:20px 24px 0">
-      <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="width:180px;height:180px;border-radius:90px;background:#ffffff;box-shadow:0 18px 40px -18px rgba(90,30,40,0.55)">
-        <img src="${esc(emailAsset(`anim-${art}.gif`))}" alt="${esc(ART_ALT[art])}" width="170" height="170" style="display:block;width:170px;height:170px;margin:5px;border:0;border-radius:85px">
+    ${art ? `<tr><td align="center" style="padding:12px 20px 0">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="width:120px;height:120px;border-radius:60px;background:#ffffff;box-shadow:0 14px 30px -14px rgba(90,30,40,0.55)">
+        <img src="${esc(emailAsset(`anim-${art}.gif`))}" alt="${esc(ART_ALT[art])}" width="112" height="112" style="display:block;width:112px;height:112px;margin:4px;border:0;border-radius:56px">
       </td></tr></table>
     </td></tr>` : ''}
-    <tr><td align="center" style="padding:20px 28px 30px">
-      <p style="margin:0 0 8px;font-family:${FONT};font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#ffffff;opacity:0.9">${esc(eb)}</p>
-      <h1 style="margin:0;font-family:${SCRIPT_FONT};font-size:40px;line-height:1.1;font-weight:700;color:#ffffff">${esc(title)}</h1>
-      ${subtitle ? `<p style="margin:10px 0 0;font-family:${FONT};font-size:16px;line-height:1.5;color:#3D272A">${esc(subtitle)}</p>` : ''}
+    <tr><td align="center" style="padding:12px 24px 20px">
+      <p style="margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#ffffff;opacity:0.9">${esc(eb)}</p>
+      <h1 style="margin:0;font-family:${SCRIPT_FONT};font-size:32px;line-height:1.1;font-weight:700;color:#ffffff">${esc(title)}</h1>
+      ${subtitle ? `<p style="margin:6px 0 0;font-family:${FONT};font-size:14px;line-height:1.45;color:#3D272A">${esc(subtitle)}</p>` : ''}
     </td></tr>`)}
   </td></tr>`;
 }
@@ -180,6 +187,15 @@ export function layout({ preheader, hero: heroOptions, body, signature = true, s
   <meta name="color-scheme" content="light only">
   <meta name="supported-color-schemes" content="light only">
   <title>${esc(SITE.name)}</title>
+  <style>
+    /* Star rating: the row is written right-to-left, so "hovered star + the ones after it in
+       the code" are the hovered star and everything to its left → highlights 1…N on hover.
+       Mail apps without support simply show 5 static stars. */
+    .rate:hover .star img { opacity: 0.35; }
+    .rate .star:hover img, .rate .star:hover ~ .star img { opacity: 1; }
+    .rate .star:hover img { transform: scale(1.18); }
+    .rate .star img { transition: opacity .15s ease, transform .15s ease; }
+  </style>
 </head>
 <body style="margin:0;padding:0;background:${COLORS.bg}">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>

@@ -59,9 +59,11 @@ def sparkle(d, cx, cy, r, fill):
     star(d, cx, cy, r, fill, points=4, inner=0.28, rot=0)
 
 
-def save_gif(frames, name, size, ms=70):
+def save_gif(frames, name, size, ms=70, loop=0):
+    """loop=0 → repeat forever; loop=None → play once and stay on the last frame"""
     small = [f.resize(size, Image.LANCZOS).convert('P', palette=Image.ADAPTIVE, colors=96) for f in frames]
-    small[0].save(OUT / name, save_all=True, append_images=small[1:], duration=ms, loop=0, optimize=True, disposal=2)
+    extra = {} if loop is None else {'loop': loop}
+    small[0].save(OUT / name, save_all=True, append_images=small[1:], duration=ms, optimize=True, disposal=2, **extra)
     print('✓', name, f'{(OUT / name).stat().st_size // 1024} KB')
 
 
@@ -156,29 +158,78 @@ def anim_cake():
 
 
 def anim_star_row():
-    """Review: 5 separate star GIFs (so each star can be its own link) that pop in one
-    after another, then twinkle once. Same frame count → they stay in sync."""
+    """Review: 5 separate star GIFs (so each star is its own link). They PLAY ONCE:
+    the stars are filled from the very first frame (Outlook only shows frame 1),
+    pop one after another, star 5 twinkles, and they stay filled — so there is never
+    an empty moment and people can tap whenever they like (also on phones)."""
     W = 120 * SS
-    n = 40
+    n = 30
     for idx in range(5):
         frames = []
         for f in range(n):
             t = f / n
             im = Image.new('RGB', (W, W), BLUSH)  # same pink as the rating row in the mail
             d = ImageDraw.Draw(im)
-            start = idx * 0.08
-            p = min(1, max(0, (t - start) / 0.16))
-            sc = ease_out_back(p) if p > 0 else 0
-            star(d, W / 2, W / 2 + 4 * SS, 48 * SS, (240, 214, 219))  # empty star underneath
-            if sc > 0:
-                star(d, W / 2, W / 2 + 4 * SS, 48 * SS * sc, GOLD)
-                star(d, W / 2 - 10 * SS * sc, W / 2 - 8 * SS, 12 * SS * sc, (255, 225, 150))
-            if idx == 4 and t > 0.6:
-                a = math.sin((t - 0.6) / 0.4 * math.pi)
+            start = 0.1 + idx * 0.1
+            p = min(1, max(0, (t - start) / 0.22))
+            sc = 0.72 + 0.28 * ease_out_back(p)          # filled throughout, grows with a bounce
+            star(d, W / 2, W / 2 + 4 * SS, 48 * SS * sc, GOLD)
+            star(d, W / 2 - 10 * SS * sc, W / 2 - 8 * SS, 12 * SS * sc, (255, 225, 150))
+            if idx == 4 and t > 0.72:
+                a = math.sin((t - 0.72) / 0.28 * math.pi)
                 sparkle(d, W / 2 + 40 * SS, W / 2 - 38 * SS, (4 + 10 * a) * SS, blend(GOLD, a, BLUSH))
             frames.append(im)
-        # hold the finished state longer on the last frame
-        save_gif(frames, f'star-{idx + 1}.gif', (60, 60), ms=55)
+        frames.append(frames[-1].copy())  # clean final frame (no sparkle) that stays
+        save_gif(frames, f'star-{idx + 1}.gif', (60, 60), ms=45, loop=None)
+
+
+def anim_slice():
+    """Hoe was je taart: a slice of layered cake on a plate, a fork taking a bite,
+    little hearts rising — "mmm!"."""
+    W = H = 360 * SS
+    frames, n = [], 28
+    for f in range(n):
+        t = f / n
+        im = Image.new('RGB', (W, H), BG)
+        d = ImageDraw.Draw(im)
+        cx, base = W / 2 - 4 * SS, H * 0.72
+        # plate
+        d.ellipse((cx - 140 * SS, base - 8 * SS, cx + 160 * SS, base + 40 * SS), fill=(238, 238, 243))
+        d.ellipse((cx - 115 * SS, base - 2 * SS, cx + 135 * SS, base + 28 * SS), fill=(250, 250, 252))
+        # slice (side view wedge): layers of sponge / cream / pink mousse, frosting on top
+        tip_x, back_x = cx - 110 * SS, cx + 95 * SS
+        layers = [(0, 34, (240, 205, 160)), (34, 46, WHITE), (46, 80, PINK_LIGHT), (80, 92, WHITE), (92, 126, (240, 205, 160))]
+        for y0, y1, col in layers:
+            y0p, y1p = base - y0 * SS, base - y1 * SS
+            d.polygon([(tip_x + y0 * 0.55 * SS, y0p), (back_x, y0p), (back_x, y1p), (tip_x + y1 * 0.55 * SS, y1p)], fill=col)
+        top_y = base - 126 * SS
+        d.polygon([(tip_x + 126 * 0.55 * SS, top_y), (back_x, top_y), (back_x + 10 * SS, top_y + 8 * SS), (back_x, top_y + 14 * SS), (tip_x + 130 * 0.55 * SS, top_y + 12 * SS)], fill=PINK)
+        d.rounded_rectangle((back_x - 4 * SS, top_y, back_x + 12 * SS, base), 6 * SS, fill=PINK)  # frosted back
+        # strawberry on top
+        sx, sy = cx + 40 * SS, top_y - 16 * SS
+        d.ellipse((sx - 20 * SS, sy - 16 * SS, sx + 20 * SS, sy + 18 * SS), fill=RED)
+        for k in range(5):
+            d.ellipse((sx - 12 * SS + k * 6 * SS, sy - 2 * SS + (k % 2) * 8 * SS, sx - 10 * SS + k * 6 * SS, sy + (k % 2) * 8 * SS), fill=(255, 220, 120))
+        d.polygon([(sx - 12 * SS, sy - 14 * SS), (sx, sy - 26 * SS), (sx + 12 * SS, sy - 14 * SS), (sx, sy - 10 * SS)], fill=(92, 160, 70))
+        # fork: comes in, dips into the tip, goes back out
+        dip = max(0.0, math.sin(t * math.pi * 2))
+        fx, fy = tip_x + 20 * SS + (1 - dip) * 60 * SS, base - (150 - 70 * dip) * SS
+        fork = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        fd = ImageDraw.Draw(fork)
+        fd.rounded_rectangle((fx - 5 * SS, fy - 120 * SS, fx + 5 * SS, fy - 30 * SS), 4 * SS, fill=(190, 196, 206, 255))
+        fd.rounded_rectangle((fx - 20 * SS, fy - 34 * SS, fx + 20 * SS, fy - 22 * SS), 5 * SS, fill=(190, 196, 206, 255))
+        for k in range(4):
+            fd.rounded_rectangle((fx - 20 * SS + k * 12 * SS, fy - 26 * SS, fx - 13 * SS + k * 12 * SS, fy + 6 * SS), 3 * SS, fill=(190, 196, 206, 255))
+        fork = fork.rotate(-28, center=(fx, fy), resample=Image.BICUBIC)
+        im.paste(fork, (0, 0), fork)
+        # hearts rising after the bite
+        for i, off in enumerate((0.0, 0.3, 0.6)):
+            p = (t + off) % 1
+            hx = cx + (60 + i * 38) * SS + math.sin(p * 6) * 6 * SS
+            hy = top_y - 40 * SS - p * 110 * SS
+            heart(d, hx, hy, (14 + 6 * p) * SS, blend([PINK, PINK_DARK, PINK_LIGHT][i], 1 - p ** 1.5))
+        frames.append(im)
+    save_gif(frames, 'anim-slice.gif', (180, 180))
 
 
 def pattern_tile():
@@ -264,6 +315,7 @@ if __name__ == '__main__':
     anim_cupcake()
     anim_cake()
     anim_star_row()
+    anim_slice()
     pattern_tile()
     anim_bell()
     icon_png(draw_facebook, 'facebook.png')
