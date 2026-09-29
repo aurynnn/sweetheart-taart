@@ -30,14 +30,17 @@ export function emailConfigured(): boolean {
   return env('MAIL_ENABLED') !== 'false' && !!env('MAILERSEND_API_KEY');
 }
 
-export async function sendEmail(message: EmailMessage): Promise<boolean> {
+export interface SendResult { ok: boolean; error?: string }
+
+export async function sendEmail(message: EmailMessage): Promise<SendResult> {
   const apiKey = env('MAILERSEND_API_KEY');
   if (env('MAIL_ENABLED') === 'false' || !apiKey) {
-    console.info(`[email] skipped (${!apiKey ? 'no MAILERSEND_API_KEY' : 'MAIL_ENABLED=false'}): ${message.tag}`);
-    return false;
+    const reason = !apiKey ? 'MAILERSEND_API_KEY ontbreekt' : 'MAIL_ENABLED=false';
+    console.info(`[email] skipped (${reason}): ${message.tag}`);
+    return { ok: false, error: reason };
   }
   const recipients = message.to.filter((r) => r.email && !r.email.endsWith('@sweetheart.local'));
-  if (!recipients.length) return false;
+  if (!recipients.length) return { ok: false, error: 'Geen geldige ontvanger' };
 
   const body = {
     from: { email: env('MAIL_FROM_EMAIL', SITE.email), name: env('MAIL_FROM_NAME', SITE.name) },
@@ -60,13 +63,16 @@ export async function sendEmail(message: EmailMessage): Promise<boolean> {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) {
-      console.error(`[email] ✗ ${message.tag} → ${recipients.map((r) => r.email).join(', ')}: ${res.status} ${await res.text()}`);
-      return false;
+      const detail = await res.text();
+      console.error(`[email] ✗ ${message.tag} → ${recipients.map((r) => r.email).join(', ')}: ${res.status} ${detail}`);
+      let error = `MailerSend ${res.status}`;
+      try { error += `: ${JSON.parse(detail).message}`; } catch { /* not JSON */ }
+      return { ok: false, error };
     }
     console.info(`[email] ✓ ${message.tag} → ${recipients.map((r) => r.email).join(', ')}`);
-    return true;
+    return { ok: true };
   } catch (err) {
     console.error(`[email] ✗ ${message.tag}: ${(err as Error).message}`);
-    return false;
+    return { ok: false, error: (err as Error).message };
   }
 }

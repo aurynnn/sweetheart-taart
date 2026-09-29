@@ -12,7 +12,7 @@
   } from '../../lib/catalog';
   import AanvraagCalendar from './AanvraagCalendar.svelte';
   import Confetti from './Confetti.svelte';
-  import { SITE, fullAddress } from '../../config/site';
+  import { SITE, fullAddress, directionsUrl } from '../../config/site';
   import ImageDrop from './ImageDrop.svelte';
 
   const DRAFT_KEY = 'sweetheart-aanvraag-draft-v1';
@@ -277,7 +277,7 @@
       <ol class="next-steps">
         <li><span>1</span><div><strong>Nathalie bekijkt je aanvraag</strong><p>Meestal binnen 1 à 2 werkdagen.</p></div></li>
         <li><span>2</span><div><strong>Je krijgt een bevestiging</strong><p>Per mail of telefoon, met de definitieve prijs.</p></div></li>
-        <li><span>3</span><div><strong>Ophalen & smullen</strong><p>{formatDate(date)} om {time}, {fullAddress}.</p></div></li>
+        <li><span>3</span><div><strong>Ophalen & smullen</strong><p>{formatDate(date)} om {time}, {fullAddress}.</p><a class="route" href={directionsUrl} target="_blank" rel="noopener"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Route plannen</a></div></li>
       </ol>
 
       {#if !items.some((i) => i.image)}
@@ -612,7 +612,7 @@
               <div class="review-row">
                 <div class="review-block">
                   <div class="review-head"><h3><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> Ophalen</h3><button type="button" onclick={() => goTo(1)}>Wijzig</button></div>
-                  <p class="review-text">{formatDate(date)}<br />om {time}<br /><small>{fullAddress}</small></p>
+                  <p class="review-text">{formatDate(date)}<br />om {time}<br /><small>{fullAddress}</small><br /><a class="route" href={directionsUrl} target="_blank" rel="noopener"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Route plannen</a></p>
                 </div>
                 <div class="review-block">
                   <div class="review-head"><h3><i class="fa-solid fa-user" aria-hidden="true"></i> Gegevens</h3><button type="button" onclick={() => goTo(2)}>Wijzig</button></div>
@@ -841,6 +841,8 @@
   .next-steps li { display: flex; gap: 0.9rem; align-items: flex-start; }
   .next-steps li > span { width: 2rem; height: 2rem; border-radius: 50%; background: var(--pink); color: white; display: grid; place-items: center; font-weight: 800; flex-shrink: 0; }
   .next-steps p { margin: 0.1rem 0 0; color: var(--muted); font-size: 0.9rem; }
+  .route { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.35rem; font-size: 0.85rem; font-weight: 700; color: var(--pink-dark); }
+  .route i { color: #EA4335; }
   .success-hint { font-size: 0.875rem; color: var(--muted); max-width: 30rem; margin: 0 auto 1.75rem; }
   .success-hint a { font-weight: 700; }
   .success-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }

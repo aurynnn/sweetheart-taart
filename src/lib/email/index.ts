@@ -38,5 +38,6 @@ export async function notifyStatusChange(orderId: string, status: string): Promi
   const order = await getOrder(orderId).catch(() => null);
   if (!order) return false;
   const mail = status === 'approved' ? aanvraagBevestigd(order) : aanvraagGeweigerd(order);
-  return toCustomer(order, mail, status === 'approved' ? 'aanvraag-bevestigd' : 'aanvraag-geweigerd');
+  const result = await toCustomer(order, mail, status === 'approved' ? 'aanvraag-bevestigd' : 'aanvraag-geweigerd');
+  return result.ok;
 }

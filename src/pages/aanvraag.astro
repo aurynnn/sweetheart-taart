@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import SprinkleField from '../components/SprinkleField.astro';
 import AanvraagWizard from '../components/aanvraag/AanvraagWizard.svelte';
 import { SITE } from '../config/site';
+import DirectionsButton from '../components/ui/DirectionsButton.astro';
 
 const faqs = [
   {
@@ -22,6 +23,7 @@ const faqs = [
   {
     q: 'Waar haal ik mijn bestelling op?',
     a: `In ons bakatelier aan de ${SITE.address.street} in ${SITE.address.city}, op het ophaalmoment dat je kiest. Levering is in overleg mogelijk.`,
+    directions: true,
   },
 ];
 ---
@@ -86,6 +88,7 @@ const faqs = [
                   <i class="fa-solid fa-plus" aria-hidden="true"></i>
                 </summary>
                 <p>{f.a}</p>
+                {f.directions && <div class="faq-action"><DirectionsButton /></div>}
               </details>
             ))}
           </div>
@@ -181,6 +184,7 @@ background: var(--hero-bg);
   .faq summary::-webkit-details-marker { display: none; }
   .faq summary i { color: var(--color-primary); transition: transform 400ms var(--ease-spring); }
   .faq[open] summary i { transform: rotate(135deg); }
+  .faq-action { margin: -0.25rem 0 1.25rem; }
   .faq p { margin: 0 0 1.1rem; color: var(--color-text-muted); line-height: 1.7; }
 
   @media (max-width: 860px) {

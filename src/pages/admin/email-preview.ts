@@ -25,7 +25,25 @@ export const GET: APIRoute = async ({ url }) => {
     return new Response(
       `<!doctype html><meta charset="utf-8"><title>E-mail voorbeelden</title>
        <body style="font-family:system-ui;padding:2rem;line-height:1.8"><h1>E-mail voorbeelden</h1>
-       <p>Gebaseerd op aanvraag <b>${order.id}</b>. Er wordt niets verstuurd.</p><ul>${links}</ul></body>`,
+       <p>Gebaseerd op aanvraag <b>${order.id}</b>. Bekijken verstuurt niets.</p><ul>${links}</ul>
+       <h2>Testmail versturen</h2>
+       <form id="t" style="display:flex;gap:.5rem;flex-wrap:wrap">
+         <input name="to" type="email" required placeholder="jij@voorbeeld.be" style="padding:.5rem">
+         <select name="template" style="padding:.5rem">${Object.entries(NAMES).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select>
+         <button style="padding:.5rem 1rem">Verstuur test</button>
+       </form>
+       <p id="r"></p>
+       <script>
+         document.getElementById('t').addEventListener('submit', async (e) => {
+           e.preventDefault();
+           const f = new FormData(e.target), r = document.getElementById('r');
+           r.textContent = 'Versturen…';
+           const res = await fetch('/admin/api/email-test', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ to: f.get('to'), template: f.get('template') }) });
+           const d = await res.json();
+           r.textContent = d.success ? '✓ Verstuurd — kijk ook in je spam.' : '✗ ' + d.error;
+         });
+       </script></body>`,
       { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
     );
   }

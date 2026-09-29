@@ -1,0 +1,42 @@
+---
+// "Route plannen" button that opens Google Maps navigation to the atelier.
+import { directionsUrl, fullAddress } from '../../config/site';
+
+interface Props { variant?: 'solid' | 'soft'; class?: string }
+const { variant = 'soft', class: className = '' } = Astro.props;
+---
+
+<a
+  href={directionsUrl}
+  target="_blank"
+  rel="noopener"
+  class:list={['directions', variant, className]}
+  aria-label={`Route plannen naar ${fullAddress} in Google Maps`}
+>
+  <span class="pin" aria-hidden="true"><i class="fa-solid fa-location-dot"></i></span>
+  <span class="copy">
+    <strong>Route plannen</strong>
+    <small>{fullAddress}</small>
+  </span>
+  <i class="fa-solid fa-diamond-turn-right go" aria-hidden="true"></i>
+</a>
+
+<style>
+  .directions {
+    display: inline-flex; align-items: center; gap: 0.8rem; max-width: 100%;
+    padding: 0.6rem 1.1rem 0.6rem 0.6rem; border-radius: 999px; text-decoration: none;
+    transition: transform 300ms var(--ease-spring), box-shadow 300ms ease, background 250ms ease;
+  }
+  .directions.soft { background: var(--color-secondary); color: var(--color-text); }
+  .directions.solid { background: var(--color-primary); color: #fff; box-shadow: 0 12px 24px -12px rgba(212, 90, 106, 0.7); }
+  .directions:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -14px rgba(212, 90, 106, 0.7); }
+  .pin { width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; background: #fff; color: #EA4335; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); }
+  .directions:hover .pin i { animation: drop 600ms var(--ease-spring); }
+  @keyframes drop { 30% { transform: translateY(-5px); } }
+  .copy { display: grid; line-height: 1.25; min-width: 0; }
+  .copy strong { font-size: 0.95rem; }
+  .copy small { font-size: 0.78rem; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .go { margin-left: 0.2rem; font-size: 1.1rem; }
+  .soft .go { color: var(--color-primary-dark); }
+  @media (prefers-reduced-motion: reduce) { .directions:hover .pin i { animation: none; } }
+</style>

@@ -1,6 +1,6 @@
 // src/lib/email/templates.ts — The e-mails Sweetheart sends. Each returns subject + HTML + plain text.
 
-import { SITE, fullAddress } from '../../config/site';
+import { SITE, fullAddress, directionsUrl } from '../../config/site';
 import { itemPrice, itemSummary, productName, formatEuro, type AanvraagItem } from '../catalog';
 import type { FullOrder } from '../orderRepo';
 import { COLORS, button, callout, detailRows, esc, heading, layout, paragraph, siteUrl, steps } from './layout';
@@ -111,13 +111,14 @@ export function aanvraagBevestigd(order: FullOrder): RenderedEmail {
     paragraph(`Je aanvraag <strong>#${esc(order.id)}</strong> is bevestigd. ${esc(SITE.owner)} gaat met veel liefde voor je aan de slag.`),
     callout(`<strong>Ophalen:</strong> ${esc(pickup(order))}<br>${esc(fullAddress)}<br><span style="color:${COLORS.muted}">De bel van het atelier hangt aan de carport, naast het uithangbord.</span>`),
     itemsTable(order),
+    button(directionsUrl, '📍 Route plannen in Google Maps'),
     paragraph(`Het resterende bedrag betaal je bij het ophalen, contant of met Payconiq. Te laat of verhinderd? Laat het even weten via ${esc(SITE.phone.display)}.`),
-    button(siteUrl('/tips#bewaren'), 'Tips om je taart mooi thuis te krijgen'),
+    paragraph(`<a href="${esc(siteUrl('/tips#bewaren'))}" style="color:${COLORS.pinkDark};font-weight:700">Tips om je taart mooi thuis te krijgen →</a>`),
   ].join('');
   return {
     subject: `Je aanvraag is bevestigd 🎉 (#${order.id})`,
     html: layout({ preheader: `Tot ${pickup(order)}!`, body }),
-    text: `Joepie ${name}, het is in orde!\n\nJe aanvraag #${order.id} is bevestigd.\n\nOphalen: ${pickup(order)}\n${fullAddress}\n\n${itemsText(order)}\n\nHet resterende bedrag betaal je bij het ophalen (contant of Payconiq).\nTips: ${siteUrl('/tips')}\n\n${contactText}`,
+    text: `Joepie ${name}, het is in orde!\n\nJe aanvraag #${order.id} is bevestigd.\n\nOphalen: ${pickup(order)}\n${fullAddress}\nRoute: ${directionsUrl}\n\n${itemsText(order)}\n\nHet resterende bedrag betaal je bij het ophalen (contant of Payconiq).\nTips: ${siteUrl('/tips')}\n\n${contactText}`,
   };
 }
 

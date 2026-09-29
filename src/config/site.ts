@@ -26,3 +26,6 @@ export const SITE = {
 } as const;
 
 export const fullAddress = `${SITE.address.street}, ${SITE.address.postalCode} ${SITE.address.city}`;
+
+/** Opens turn-by-turn directions (Google Maps app on phones, maps.google.com on desktop) */
+export const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress)}`;
