@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { randomUUID } from 'node:crypto';
 import { putObject } from '../../lib/r2';
+import { clientIp } from '../../lib/auth';
 
 // Example photos customers attach to a product in their aanvraag.
 // The browser already downsizes to ~1600px JPEG; this is the server-side guard.
@@ -30,7 +31,7 @@ function rateLimited(ip: string): boolean {
 }
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
-  const ip = request.headers.get('cf-connecting-ip') || clientAddress || 'unknown';
+  const ip = clientIp(request, clientAddress);
   if (rateLimited(ip)) return json({ success: false, error: 'Te veel uploads. Probeer het over enkele minuten opnieuw.' }, 429);
 
   const length = Number(request.headers.get('content-length') || 0);

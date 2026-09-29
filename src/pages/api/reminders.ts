@@ -4,6 +4,7 @@ import { verifyToken } from '../../lib/tokens';
 import { getCustomerById } from '../../lib/customers';
 import { createReminder, isOptedOut, optIn, OCCASIONS } from '../../lib/reminders';
 import { sendReminderCreatedMail } from '../../lib/email';
+import { clientIp } from '../../lib/auth';
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -19,7 +20,7 @@ function rateLimited(ip: string) {
 }
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
-  if (rateLimited(request.headers.get('cf-connecting-ip') || clientAddress || 'unknown')) {
+  if (rateLimited(clientIp(request, clientAddress))) {
     return json({ success: false, error: 'Te veel aanvragen. Probeer het later opnieuw.' }, 429);
   }
   const body = await request.json().catch(() => null);

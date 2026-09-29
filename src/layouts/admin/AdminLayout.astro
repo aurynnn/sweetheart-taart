@@ -10,6 +10,7 @@ interface Props {
 
 const { title, description = 'Admin Panel' } = Astro.props;
 const currentPath = Astro.url.pathname;
+const adminUser = (Astro.locals as any).admin?.username as string | undefined;
 
 // Badge on "Aanvragen" so new requests are visible from every admin page
 let pendingCount = 0;
@@ -110,6 +111,12 @@ try {
       </nav>
       
       <div class="sidebar-footer">
+        <form method="post" action="/admin/logout" class="logout-form">
+          <button type="submit" class="nav-item logout-btn" title="Uitloggen">
+            <i class="fa-solid fa-right-from-bracket nav-fa" aria-hidden="true"></i>
+            <span>Uitloggen{adminUser && <small class="who">{adminUser}</small>}</span>
+          </button>
+        </form>
         <a href="/" class="nav-item">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -225,6 +232,11 @@ try {
 .nav-item svg {
   flex-shrink: 0;
 }
+
+.logout-form { margin: 0 0 0.25rem; }
+.logout-btn { width: 100%; border: 0; background: none; font: inherit; cursor: pointer; text-align: left; }
+.logout-btn:hover { background: #fef2f2; color: #b91c1c; }
+.logout-btn .who { display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 500; }
 
 .nav-fa {
   width: 20px;
