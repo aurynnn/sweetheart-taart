@@ -7,6 +7,7 @@ import { getAvailability, toLocalDateStr } from '../../lib/availability';
 import { formatEuro, parseEuro, productName, PRODUCTS, itemSummary } from '../../lib/catalog';
 import { STATUS_CONFIG } from '../../lib/orders';
 import { reviewStats } from '../../lib/reviews';
+import { listReminders, occasionLabel, type Reminder } from '../../lib/reminders';
 
 interface Row {
   id: string; date: string; time: string | null; status: string; total: number;
@@ -127,6 +128,12 @@ const newThisWeek = orders.filter((o) => (Date.now() - new Date(o.createdAt.repl
 
 let reviews = { count: 0, average: 0, sent: 0, recent: [] as Awaited<ReturnType<typeof reviewStats>>['recent'] };
 try { reviews = await reviewStats(); } catch (e) { console.warn('[admin] review stats unavailable:', e); }
+let reminderList: Reminder[] = [];
+try { reminderList = await listReminders(); } catch (e) { console.warn('[admin] reminders unavailable:', e); }
+const activeReminders = reminderList.filter((r) => r.status === 'active').sort((a, b) => a.remind_at.localeCompare(b.remind_at));
+const in30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+const pendingReminders = reminderList.filter((r) => r.status === 'pending').length;
+
 const stars = (n: number) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
 
 const maxCap = Math.max(...capacity.map((c) => Math.max(c.maxOrders, c.orders)), 1);
@@ -395,6 +402,31 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
       <div><b data-count={returning}>{returning}</b><span>terugkerend</span></div>
       <div><b data-count={newThisWeek}>{newThisWeek}</b><span>nieuw deze week</span></div>
     </div>
+  </section>
+
+  <section class="panel reveal reminders-panel" aria-labelledby="reminders-title">
+    <header class="panel-head">
+      <h2 id="reminders-title">Herinneringen <small>mail 1 maand voor het feest</small></h2>
+      <a href="/admin/herinneringen" class="link">Alles bekijken →</a>
+    </header>
+    <div class="rm-stats">
+      <div><b>{activeReminders.length}</b><span>actief</span></div>
+      <div><b>{activeReminders.filter((r) => r.remind_at <= in30).length}</b><span>mail binnen 30 dagen</span></div>
+      <div><b>{pendingReminders}</b><span>wacht op bevestiging</span></div>
+    </div>
+    {activeReminders.length === 0 ? (
+      <p class="empty-small">Nog geen herinneringen. Klanten stellen die in via de review-mail of /volgende-taart.</p>
+    ) : (
+      <ul class="rm-list">
+        {activeReminders.slice(0, 4).map((r) => (
+          <li>
+            <i class="fa-solid fa-bell" aria-hidden="true"></i>
+            <span><strong>{occasionLabel(r.occasion)}{r.name ? ` · ${r.name}` : ''}</strong><small>{r.email}</small></span>
+            <span class="rm-date">mail op {new Date(r.remind_at + 'T00:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })}</span>
+          </li>
+        ))}
+      </ul>
+    )}
   </section>
 
   <section class="panel reveal reviews-panel" aria-labelledby="reviews-title">
@@ -713,6 +745,17 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
   }
 
   .reviews-panel { margin-top: 1.5rem; }
+  .reminders-panel { margin-top: 1.5rem; }
+  .rm-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
+  .rm-stats div { padding: 0.8rem; border-radius: 0.9rem; background: #f8fafc; text-align: center; display: grid; }
+  .rm-stats b { font-size: 1.5rem; color: #0f172a; }
+  .rm-stats span { font-size: 0.72rem; color: #64748b; }
+  .rm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .rm-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem; align-items: center; padding: 0.6rem 0.75rem; border-radius: 0.7rem; border: 1px solid #f1f5f9; font-size: 0.85rem; }
+  .rm-list i { color: #e8788a; }
+  .rm-list strong { display: block; color: #0f172a; }
+  .rm-list small { color: #94a3b8; font-size: 0.75rem; }
+  .rm-date { font-size: 0.78rem; color: #b45309; font-weight: 700; white-space: nowrap; }
   .rv-top { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
   .rv-score { display: grid; gap: 0.1rem; }
   .rv-score b { font-size: 2.2rem; line-height: 1; color: #0f172a; }

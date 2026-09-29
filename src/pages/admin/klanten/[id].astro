@@ -1,0 +1,210 @@
+---
+import AdminLayout from '../../../layouts/admin/AdminLayout.astro';
+import OrderModal from '../../../components/admin/orders/OrderModal.astro';
+import { getCustomerDetail, isAnonymized } from '../../../lib/customers';
+import { STATUS_CONFIG } from '../../../lib/orders';
+import { occasionLabel } from '../../../lib/reminders';
+import { formatEuro, productName } from '../../../lib/catalog';
+
+const detail = await getCustomerDetail(String(Astro.params.id)).catch(() => null);
+if (!detail) return Astro.redirect('/admin/klanten');
+
+const { customer, orders, reminders, reviews, optedOut } = detail;
+const name = [customer.firstname, customer.lastname].filter(Boolean).join(' ') || customer.email;
+const spent = orders.filter((o) => o.status !== 'cancelled').reduce((s, o) => s + o.totalValue, 0);
+const fmt = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+const REMINDER_STATUS: Record<string, { label: string; cls: string }> = {
+  pending: { label: 'Wacht op bevestiging', cls: 'warn' },
+  active: { label: 'Actief', cls: 'ok' },
+  sent: { label: 'Verstuurd', cls: 'muted' },
+  cancelled: { label: 'Gestopt', cls: 'off' },
+};
+const anonymized = isAnonymized(customer.email);
+---
+
+<AdminLayout title="Klant">
+  <a href="/admin/klanten" class="back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Alle klanten</a>
+
+  <section class="profile">
+    <span class="avatar">{name.charAt(0).toUpperCase()}</span>
+    <div class="who">
+      <h2>{name}</h2>
+      <p>
+        <a href={`mailto:${customer.email}`}><i class="fa-regular fa-envelope" aria-hidden="true"></i> {customer.email}</a>
+        {customer.phone && <a href={`tel:${customer.phone.replace(/[^0-9+]/g, '')}`}><i class="fa-solid fa-phone" aria-hidden="true"></i> {customer.phone}</a>}
+      </p>
+      <p class="meta">
+        Klant sinds {new Date(customer.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })} ·
+        {optedOut ? <span class="pill off">uitgeschreven voor marketingmails</span> : <span class="pill ok">ontvangt review-vragen & herinneringen</span>}
+      </p>
+    </div>
+    <div class="kpis">
+      <div><b>{orders.length}</b><span>aanvragen</span></div>
+      <div><b>{formatEuro(spent)}</b><span>besteed</span></div>
+      <div><b>{reminders.filter((r) => r.status === 'active' || r.status === 'pending').length}</b><span>herinneringen</span></div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h3>Aanvragen</h3>
+      {orders.length === 0 ? <p class="empty">Geen aanvragen.</p> : (
+        <ul class="list">
+          {orders.map((o) => {
+            const sc = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.pending;
+            return (
+              <li>
+                <button type="button" data-open={o.id}>
+                  <span class="date">{fmt(o.date)}{o.time ? ` · ${o.time}` : ''}</span>
+                  <span class="what">{o.items.map((i) => productName(i.product)).join(', ')} · {o.total}</span>
+                  <span class="status" style={`background:${sc.bg};color:${sc.color}`}>{sc.label}</span>
+                  <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+
+    <section class="panel">
+      <h3>Herinneringen</h3>
+      {reminders.length === 0 ? <p class="empty">Geen herinneringen ingesteld.</p> : (
+        <ul class="list">
+          {reminders.map((r) => {
+            const st = REMINDER_STATUS[r.status];
+            return (
+              <li class="reminder" data-reminder={r.id}>
+                <span class="what"><i class="fa-solid fa-bell" aria-hidden="true"></i> {occasionLabel(r.occasion)}{r.name ? ` · ${r.name}` : ''}</span>
+                <span class="date">{fmt(r.event_date)}{r.yearly ? ' · jaarlijks' : ''}<br /><small>mail op {fmt(r.remind_at)}</small></span>
+                <span class={`pill ${st.cls}`}>{st.label}</span>
+                {(r.status === 'active' || r.status === 'pending') && <button type="button" class="link-btn" data-cancel={r.id}>Stoppen</button>}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <h3 class="mt">Beoordelingen</h3>
+      {reviews.filter((r) => r.rating).length === 0 ? <p class="empty">Nog geen score gegeven.</p> : (
+        <ul class="list">
+          {reviews.filter((r) => r.rating).map((r) => (
+            <li class="review">
+              <span class="stars">{'★'.repeat(r.rating ?? 0)}{'☆'.repeat(5 - (r.rating ?? 0))}</span>
+              <span class="what">{r.feedback ? `“${r.feedback}”` : 'Geen toelichting'}{r.liked && <small>{r.liked}</small>}</span>
+              <span class="date">#{r.order_id}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  </div>
+
+  <section class="panel gdpr">
+    <h3><i class="fa-solid fa-shield-heart" aria-hidden="true"></i> Privacy (GDPR)</h3>
+    <p>Vraagt de klant om inzage of verwijdering? Dat regel je hier. Verwijderen wist naam, contactgegevens, notities, allergieën, foto's en herinneringen; de bedragen van bestellingen blijven anoniem bewaard voor de boekhouding.</p>
+    <div class="gdpr-actions">
+      <a class="btn-ghost" href={`/admin/api/customers/${customer.id}/export`}><i class="fa-solid fa-download" aria-hidden="true"></i> Gegevens exporteren (JSON)</a>
+      {!anonymized && <button type="button" class="btn-danger" id="eraseOpen"><i class="fa-solid fa-user-slash" aria-hidden="true"></i> Klant verwijderen</button>}
+    </div>
+    <form class="erase" id="eraseForm" hidden>
+      <label>Typ <strong>{customer.email}</strong> om te bevestigen dat je deze klant wil verwijderen. Dit kan niet ongedaan gemaakt worden.
+        <input type="email" name="confirmEmail" autocomplete="off" required />
+      </label>
+      <div class="gdpr-actions">
+        <button type="button" class="btn-ghost" id="eraseCancel">Annuleren</button>
+        <button type="submit" class="btn-danger">Definitief verwijderen</button>
+      </div>
+    </form>
+  </section>
+
+  <script type="application/json" id="customer-orders" set:html={JSON.stringify(orders).replace(/</g, '\\u003c')} />
+  <input type="hidden" id="customerId" value={customer.id} />
+</AdminLayout>
+
+<OrderModal />
+
+<script>
+  import { initOrderModal, openOrderModal } from '../../../scripts/admin/orderModal';
+  import { toast } from '../../../scripts/admin/toast';
+
+  const orders: any[] = JSON.parse(document.getElementById('customer-orders')?.textContent || '[]');
+  initOrderModal({ onStatusChanged: () => setTimeout(() => location.reload(), 800) });
+  const customerId = (document.getElementById('customerId') as HTMLInputElement).value;
+
+  document.addEventListener('click', async (e) => {
+    const t = e.target as Element;
+    const open = t.closest<HTMLElement>('[data-open]');
+    if (open) { const o = orders.find((x) => x.id === open.dataset.open); if (o) openOrderModal(o); return; }
+    const cancel = t.closest<HTMLButtonElement>('[data-cancel]');
+    if (cancel) {
+      cancel.disabled = true;
+      const res = await fetch(`/admin/api/reminders/${encodeURIComponent(cancel.dataset.cancel!)}/cancel`, { method: 'POST' });
+      if (res.ok) { toast('Herinnering gestopt'); setTimeout(() => location.reload(), 600); }
+      else { toast('Stoppen mislukt', 'error'); cancel.disabled = false; }
+    }
+  });
+
+  const form = document.getElementById('eraseForm') as HTMLFormElement | null;
+  document.getElementById('eraseOpen')?.addEventListener('click', () => { if (form) { form.hidden = false; form.querySelector('input')?.focus(); } });
+  document.getElementById('eraseCancel')?.addEventListener('click', () => { if (form) form.hidden = true; });
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const confirmEmail = new FormData(form).get('confirmEmail');
+    const res = await fetch(`/admin/api/customers/${encodeURIComponent(customerId)}/erase`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirmEmail }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success) { toast('Klantgegevens verwijderd'); setTimeout(() => (location.href = '/admin/klanten'), 900); }
+    else toast(data.error || 'Verwijderen mislukt', 'error');
+  });
+</script>
+
+<style>
+  .back { display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 1rem; color: #64748b; font-weight: 600; font-size: 0.875rem; text-decoration: none; }
+  .back:hover { color: #d45a6a; }
+  .profile { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 1.1rem; background: #fff; border: 1px solid #e2e8f0; }
+  .avatar { width: 4rem; height: 4rem; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #f2a0aa, #e8788a); color: #fff; font-size: 1.6rem; font-weight: 800; }
+  .who { flex: 1; min-width: 16rem; }
+  .who h2 { margin: 0 0 0.3rem; font-size: 1.4rem; color: #0f172a; }
+  .who p { margin: 0 0 0.25rem; display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.875rem; }
+  .who a { color: #d45a6a; text-decoration: none; }
+  .meta { color: #64748b; align-items: center; }
+  .kpis { display: flex; gap: 0.75rem; }
+  .kpis div { padding: 0.75rem 1rem; border-radius: 0.8rem; background: #f8fafc; display: grid; text-align: center; min-width: 6rem; }
+  .kpis b { font-size: 1.2rem; color: #0f172a; }
+  .kpis span { font-size: 0.72rem; color: #64748b; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  .panel { padding: 1.25rem 1.35rem; border-radius: 1.1rem; background: #fff; border: 1px solid #e2e8f0; }
+  .panel h3 { margin: 0 0 0.9rem; font-size: 1rem; color: #0f172a; }
+  .panel h3.mt { margin-top: 1.5rem; }
+  .empty { margin: 0; color: #94a3b8; font-size: 0.875rem; }
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  .list button[data-open] { width: 100%; display: grid; grid-template-columns: 9.5rem 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.7rem 0.8rem; border-radius: 0.8rem; border: 1px solid #f1f5f9; background: #fff; font: inherit; text-align: left; cursor: pointer; color: #334155; font-size: 0.85rem; }
+  .list button[data-open]:hover { border-color: #fbd5db; background: #fffafb; }
+  .list button[data-open] i { color: #94a3b8; }
+  .reminder, .review { display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.75rem; align-items: center; padding: 0.7rem 0.8rem; border-radius: 0.8rem; border: 1px solid #f1f5f9; font-size: 0.85rem; color: #334155; }
+  .review { grid-template-columns: auto 1fr auto; }
+  .date { color: #64748b; font-size: 0.8rem; }
+  .date small { color: #94a3b8; }
+  .what small { display: block; color: #94a3b8; font-size: 0.72rem; }
+  .what i { color: #e8788a; margin-right: 0.3rem; }
+  .status, .pill { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+  .pill.ok { background: #f0fdf4; color: #15803d; }
+  .pill.warn { background: #fffbeb; color: #b45309; }
+  .pill.muted { background: #f1f5f9; color: #64748b; }
+  .pill.off { background: #fef2f2; color: #b91c1c; }
+  .stars { color: #f5b83d; letter-spacing: 0.05em; }
+  .link-btn { border: 0; background: none; color: #b91c1c; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+  .gdpr p { margin: 0 0 1rem; color: #64748b; font-size: 0.875rem; line-height: 1.6; }
+  .gdpr h3 i { color: #e8788a; margin-right: 0.35rem; }
+  .gdpr-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .btn-ghost, .btn-danger { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.6rem 1rem; border-radius: 0.7rem; font: inherit; font-weight: 700; font-size: 0.875rem; cursor: pointer; text-decoration: none; }
+  .btn-ghost { background: #fff; border: 1px solid #e2e8f0; color: #334155; }
+  .btn-danger { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+  .btn-danger:hover { background: #ef4444; border-color: #ef4444; color: #fff; }
+  .erase { margin-top: 1rem; padding: 1rem; border-radius: 0.9rem; background: #fef2f2; display: grid; gap: 0.8rem; font-size: 0.875rem; color: #7f1d1d; }
+  .erase[hidden] { display: none; }
+  .erase input { display: block; width: 100%; margin-top: 0.5rem; padding: 0.6rem 0.8rem; border-radius: 0.6rem; border: 1px solid #fecaca; font: inherit; }
+  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } .list button[data-open] { grid-template-columns: 1fr auto; } }
+</style>

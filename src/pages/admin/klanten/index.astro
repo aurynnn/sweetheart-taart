@@ -1,0 +1,129 @@
+---
+import AdminLayout from '../../../layouts/admin/AdminLayout.astro';
+import { listCustomers, type CustomerSummary } from '../../../lib/customers';
+import { formatEuro } from '../../../lib/catalog';
+
+let customers: CustomerSummary[] = [];
+let loadError = false;
+try {
+  customers = (await listCustomers()).filter((c) => !c.anonymized);
+} catch (e) {
+  console.error('[admin/klanten] failed:', e);
+  loadError = true;
+}
+
+const fmt = (iso: string | null) => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const totals = {
+  customers: customers.length,
+  returning: customers.filter((c) => c.orders > 1).length,
+  reminders: customers.reduce((s, c) => s + c.reminders, 0),
+  optedOut: customers.filter((c) => c.optedOut).length,
+};
+---
+
+<AdminLayout title="Klanten">
+  <div class="stats">
+    <div><b>{totals.customers}</b><span>klanten</span></div>
+    <div><b>{totals.returning}</b><span>terugkerend</span></div>
+    <div><b>{totals.reminders}</b><span>herinneringen</span></div>
+    <div><b>{totals.optedOut}</b><span>uitgeschreven</span></div>
+  </div>
+
+  <div class="toolbar">
+    <label class="search">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input type="search" id="q" placeholder="Zoek op naam, e-mail of telefoon…" aria-label="Zoek klanten" />
+    </label>
+    <p class="hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Eén klant = één e-mailadres.</p>
+  </div>
+
+  {loadError && <div class="alert">Klanten konden niet geladen worden.</div>}
+
+  <div class="table-wrap">
+    <table class="customers">
+      <thead>
+        <tr>
+          <th>Klant</th>
+          <th>Telefoon</th>
+          <th class="num">Aanvragen</th>
+          <th class="num">Besteed</th>
+          <th>Laatste / volgende</th>
+          <th class="num">Herinneringen</th>
+          <th>Score</th>
+          <th>Mails</th>
+        </tr>
+      </thead>
+      <tbody>
+        {customers.map((c) => (
+          <tr data-href={`/admin/klanten/${c.id}`} data-search={`${c.name} ${c.email} ${c.phone}`.toLowerCase()} tabindex="0">
+            <td>
+              <a href={`/admin/klanten/${c.id}`} class="who">
+                <span class="avatar">{c.name.charAt(0).toUpperCase()}</span>
+                <span><strong>{c.name}</strong><small>{c.email}</small></span>
+              </a>
+            </td>
+            <td>{c.phone || '—'}</td>
+            <td class="num">{c.orders}{c.orders > 1 && <span class="pill">vast</span>}</td>
+            <td class="num">{formatEuro(c.spent)}</td>
+            <td>
+              {fmt(c.lastOrder)}
+              {c.nextPickup && <small class="next">volgende: {fmt(c.nextPickup)}</small>}
+            </td>
+            <td class="num">{c.reminders ? <span class="pill bell"><i class="fa-solid fa-bell" aria-hidden="true"></i> {c.reminders}</span> : '—'}</td>
+            <td>{c.rating ? <span class="stars">{'★'.repeat(Math.round(c.rating))}</span> : '—'}</td>
+            <td>{c.optedOut ? <span class="pill off">uitgeschreven</span> : <span class="pill on">actief</span>}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    {customers.length === 0 && !loadError && <p class="empty">Nog geen klanten.</p>}
+    <p class="empty" id="noResults" hidden>Geen klanten gevonden.</p>
+  </div>
+</AdminLayout>
+
+<script>
+  const rows = Array.from(document.querySelectorAll<HTMLTableRowElement>('tr[data-search]'));
+  const q = document.getElementById('q') as HTMLInputElement | null;
+  q?.addEventListener('input', () => {
+    const term = q.value.trim().toLowerCase();
+    let shown = 0;
+    rows.forEach((r) => { const match = !term || r.dataset.search!.includes(term); r.hidden = !match; if (match) shown++; });
+    (document.getElementById('noResults') as HTMLElement).hidden = shown > 0 || rows.length === 0;
+  });
+  rows.forEach((r) => {
+    r.addEventListener('click', (e) => { if (!(e.target as Element).closest('a')) location.href = r.dataset.href!; });
+    r.addEventListener('keydown', (e) => { if (e.key === 'Enter') location.href = r.dataset.href!; });
+  });
+</script>
+
+<style>
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stats div { padding: 1.1rem 1.25rem; border-radius: 1rem; background: #fff; border: 1px solid #e2e8f0; display: grid; }
+  .stats b { font-size: 1.8rem; color: #0f172a; line-height: 1.1; }
+  .stats span { font-size: 0.8rem; color: #64748b; font-weight: 600; }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .search { display: flex; align-items: center; gap: 0.6rem; padding: 0 0.9rem; border-radius: 0.8rem; background: #fff; border: 1px solid #e2e8f0; min-width: min(26rem, 100%); color: #94a3b8; }
+  .search input { border: 0; outline: none; padding: 0.7rem 0; font: inherit; width: 100%; color: #0f172a; }
+  .search:focus-within { border-color: #e8788a; box-shadow: 0 0 0 3px rgba(232, 120, 138, 0.15); }
+  .hint { margin: 0; font-size: 0.8rem; color: #94a3b8; }
+  .alert { padding: 1rem; border-radius: 0.8rem; background: #fef2f2; color: #991b1b; margin-bottom: 1rem; }
+  .table-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; overflow-x: auto; }
+  .customers { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .customers th { text-align: left; padding: 0.8rem 1rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+  .customers td { padding: 0.8rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+  .customers tbody tr { cursor: pointer; transition: background 150ms; }
+  .customers tbody tr:hover, .customers tbody tr:focus-visible { background: #fffafb; outline: none; }
+  .num { text-align: right; }
+  th.num { text-align: right; }
+  .who { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit; }
+  .who strong { display: block; color: #0f172a; }
+  .who small, .next { display: block; color: #94a3b8; font-size: 0.75rem; }
+  .avatar { width: 2.2rem; height: 2.2rem; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; background: #fdf2f4; color: #d45a6a; font-weight: 700; }
+  .pill { display: inline-flex; align-items: center; gap: 0.25rem; margin-left: 0.35rem; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; background: #f1f5f9; color: #475569; }
+  .pill.bell { background: #fdf2f4; color: #be3455; margin: 0; }
+  .pill.on { background: #f0fdf4; color: #15803d; margin: 0; }
+  .pill.off { background: #fef2f2; color: #b91c1c; margin: 0; }
+  .stars { color: #f5b83d; letter-spacing: 0.05em; }
+  .empty { padding: 2rem; text-align: center; color: #94a3b8; margin: 0; }
+  @media (max-width: 900px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+</style>

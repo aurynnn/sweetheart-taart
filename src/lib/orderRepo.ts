@@ -9,6 +9,7 @@ import { attachNotePhotos } from './orders';
 export interface OrderFilters {
   id?: string;
   ids?: string[];
+  customerId?: string;
   status?: string | null;
   dateFrom?: string | null;
   dateTo?: string | null;
@@ -44,6 +45,7 @@ export async function listOrders(filters: OrderFilters = {}): Promise<FullOrder[
   const bindings: unknown[] = [];
   if (filters.id) { query += ' AND o.id = ?'; bindings.push(filters.id); }
   if (filters.ids?.length) { query += ` AND o.id IN (${filters.ids.map(() => '?').join(',')})`; bindings.push(...filters.ids); }
+  if (filters.customerId) { query += ' AND o.customer_id = ?'; bindings.push(filters.customerId); }
   if (filters.status) { query += ' AND o.status = ?'; bindings.push(filters.status); }
   if (filters.dateFrom) { query += ' AND o.date >= ?'; bindings.push(filters.dateFrom); }
   if (filters.dateTo) { query += ' AND o.date <= ?'; bindings.push(filters.dateTo); }

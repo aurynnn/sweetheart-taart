@@ -48,7 +48,7 @@ const itemLine = (i: FullOrder['items'][number]) => {
 <AdminLayout title="Te maken">
   <div class="todo-toolbar">
     <p class="subtitle">
-      {orders.length === 0 ? 'Niets te maken — alles is klaar!' : `${orders.length} bevestigde aanvra${orders.length === 1 ? 'ag' : 'gen'} om te maken. Klik op een aanvraag voor alle details.`}
+      {orders.length === 0 ? 'Niets te maken — alles is klaar!' : `${orders.length} bevestigde aanvra${orders.length === 1 ? 'ag' : 'gen'} om te maken. Klik om te selecteren, 👁 voor alle details.`}
     </p>
     {orders.length > 0 && (
       <div class="toolbar-actions">
@@ -77,7 +77,7 @@ const itemLine = (i: FullOrder['items'][number]) => {
               <label class="pick" title="Selecteer voor PDF">
                 <input type="checkbox" class="pick-box" value={o.id} aria-label={`Selecteer ${o.id} voor PDF`} />
               </label>
-              <button type="button" class="card-main" data-open={o.id}>
+              <button type="button" class="card-main" data-toggle={o.id} aria-label={`Selecteer ${o.id}`}>
                 <span class="time">
                   <b>{o.time ?? '—'}</b>
                   {g.key === 'overdue' && <small>{new Date(o.date + 'T00:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })}</small>}
@@ -96,7 +96,10 @@ const itemLine = (i: FullOrder['items'][number]) => {
                   <img class="thumb" src={`/admin/api/upload?key=${encodeURIComponent(photo)}`} alt="Voorbeeldfoto" loading="lazy" />
                 )}
               </button>
-              <button type="button" class="done-btn" data-done={o.id} title="Markeer als voltooid" aria-label={`Markeer ${o.id} als voltooid`}>
+              <button type="button" class="icon-btn view-btn" data-open={o.id} title="Details bekijken" aria-label={`Details van ${o.id} bekijken`}>
+                <i class="fa-regular fa-eye" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="icon-btn done-btn" data-done={o.id} title="Markeer als voltooid" aria-label={`Markeer ${o.id} als voltooid`}>
                 <i class="fa-solid fa-check" aria-hidden="true"></i>
               </button>
             </article>
@@ -130,6 +133,12 @@ const itemLine = (i: FullOrder['items'][number]) => {
     const t = e.target as Element;
     const open = t.closest<HTMLElement>('[data-open]');
     if (open) { const o = byId.get(open.dataset.open!); if (o) openOrderModal(o); return; }
+    const toggle = t.closest<HTMLElement>('[data-toggle]');
+    if (toggle) {
+      const box = document.querySelector<HTMLInputElement>(`.pick-box[value="${CSS.escape(toggle.dataset.toggle!)}"]`);
+      if (box) { box.checked = !box.checked; syncSelection(); }
+      return;
+    }
     const done = t.closest<HTMLButtonElement>('[data-done]');
     if (done) {
       done.disabled = true;
@@ -222,7 +231,10 @@ const itemLine = (i: FullOrder['items'][number]) => {
   .flag.allergy { background: #fffbeb; color: #b45309; }
   .flag.note { background: #f1f5f9; color: #475569; }
   .thumb { width: 4.5rem; height: 4.5rem; flex-shrink: 0; border-radius: 0.7rem; object-fit: cover; border: 2px solid #fdf2f4; }
-  .done-btn { width: 3.5rem; flex-shrink: 0; border: 0; border-left: 1px solid #f1f5f9; background: #fff; color: #15803d; font-size: 1.1rem; cursor: pointer; transition: background 200ms, color 200ms; }
+  .icon-btn { width: 3.25rem; flex-shrink: 0; border: 0; border-left: 1px solid #f1f5f9; background: #fff; font-size: 1.05rem; cursor: pointer; transition: background 200ms, color 200ms; }
+  .view-btn { color: #64748b; }
+  .view-btn:hover { background: #fdf2f4; color: #d45a6a; }
+  .done-btn { color: #15803d; }
   .done-btn:hover { background: #22c55e; color: #fff; }
   .done-btn:disabled { opacity: 0.4; cursor: wait; }
 

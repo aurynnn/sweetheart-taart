@@ -1,0 +1,72 @@
+---
+// Confirm (double opt-in) or cancel a reminder. Nothing changes on page load —
+// only the button (POST) acts, so e-mail link scanners can't confirm/cancel anything.
+import MessagePage from '../components/ui/MessagePage.astro';
+import { verifyToken } from '../lib/tokens';
+import { getReminder, confirmReminder, cancelReminder, occasionLabel } from '../lib/reminders';
+import { sendReminderCreatedMail } from '../lib/email';
+
+const params = Astro.url.searchParams;
+const id = params.get('id') ?? '';
+const action = params.get('actie') === 'annuleer' ? 'annuleer' : 'bevestig';
+const valid = verifyToken('reminder', id, params.get('t'));
+let reminder = valid ? await getReminder(id).catch(() => null) : null;
+let done = false;
+
+if (Astro.request.method === 'POST' && reminder) {
+  if (action === 'bevestig' && reminder.status === 'pending') {
+    await confirmReminder(id);
+    reminder = await getReminder(id);
+    if (reminder) await sendReminderCreatedMail(reminder);
+  } else if (action === 'annuleer' && reminder.status !== 'cancelled') {
+    await cancelReminder(id);
+  }
+  done = true;
+  reminder = await getReminder(id);
+}
+
+const what = reminder ? `${occasionLabel(reminder.occasion).toLowerCase()}${reminder.name ? ` van ${reminder.name}` : ''}` : '';
+const date = reminder ? new Date(reminder.event_date + 'T00:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+Astro.response.headers.set('X-Robots-Tag', 'noindex');
+---
+
+<MessagePage title="Herinnering" badge="Herinnering" icon="fa-bell"
+  heading={!reminder ? 'Deze link werkt niet' : done ? (action === 'bevestig' ? 'Bevestigd!' : 'Geannuleerd') : action === 'bevestig' ? 'Bevestig je herinnering' : 'Herinnering stoppen?'}>
+  {!reminder ? (
+    <>
+      <p>Deze link is ongeldig of de herinnering bestaat niet meer.</p>
+      <a href="/volgende-taart" class="btn btn-primary">Nieuwe herinnering instellen</a>
+    </>
+  ) : done ? (
+    action === 'bevestig' ? (
+      <>
+        <p>Top! We mailen je een maand voor de <strong>{what}</strong> ({date}).</p>
+        <a href="/aanvraag" class="btn btn-primary">Of vraag nu al aan</a>
+      </>
+    ) : (
+      <>
+        <p>Je herinnering voor de <strong>{what}</strong> is gestopt. Je krijgt hierover geen mails meer.</p>
+        <a href="/" class="btn btn-secondary">Naar de website</a>
+      </>
+    )
+  ) : action === 'bevestig' ? (
+    reminder.status === 'pending' ? (
+      <>
+        <p>Wil je een herinnering ontvangen, een maand voor de <strong>{what}</strong> ({date})?</p>
+        <form method="post"><button type="submit" class="btn btn-primary">✓ Ja, herinner me</button></form>
+      </>
+    ) : (
+      <p>Deze herinnering is al {reminder.status === 'cancelled' ? 'geannuleerd' : 'bevestigd'}.</p>
+    )
+  ) : reminder.status === 'cancelled' ? (
+    <p>Deze herinnering is al gestopt.</p>
+  ) : (
+    <>
+      <p>Wil je de herinnering voor de <strong>{what}</strong> ({date}) stoppen?</p>
+      <form method="post">
+        <button type="submit" class="btn btn-primary">Ja, stop de herinnering</button>
+        <a href="/" class="btn btn-secondary">Nee, laat maar</a>
+      </form>
+    </>
+  )}
+</MessagePage>

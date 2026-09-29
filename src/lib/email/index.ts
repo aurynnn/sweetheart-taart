@@ -8,10 +8,12 @@
 import { SITE } from '../../config/site';
 import { getOrder, type FullOrder } from '../orderRepo';
 import { getEmailSettings } from '../emailSettings';
-import { claimReviewRequest, releaseReviewRequest, reviewToken } from '../reviews';
+import { claimReviewRequest, releaseReviewRequest } from '../reviews';
 import { sendEmail, type SendResult } from './mailer';
 import { siteUrl } from './layout';
-import { aanvraagBevestigd, aanvraagGeweigerd, aanvraagOntvangen, nieuweAanvraag, reviewVerzoek, type RenderedEmail } from './templates';
+import { aanvraagBevestigd, aanvraagGeweigerd, aanvraagOntvangen, nieuweAanvraag, reviewVerzoek, herinnering, herinneringBevestigen, herinneringIngesteld, type RenderedEmail } from './templates';
+import { ratingUrl, nextCakeUrl, unsubscribeUrlForCustomer, unsubscribeUrlForReminder, reminderUrl } from './links';
+import { isOptedOut, dueReminders, markReminderSent, type Reminder } from '../reminders';
 
 export { emailConfigured } from './mailer';
 
@@ -53,8 +55,7 @@ export async function notifyStatusChange(orderId: string, status: string): Promi
   return result.ok;
 }
 
-export const ratingUrl = (orderId: string) => (stars: number) =>
-  siteUrl(`/beoordeling?o=${encodeURIComponent(orderId)}&r=${stars}&t=${reviewToken(orderId)}`);
+export { ratingUrl } from './links';
 
 /** Sends the "hoe was het?" mail once per order. Returns whether it was sent now. */
 export async function sendReviewRequest(orderId: string): Promise<boolean> {
@@ -62,8 +63,41 @@ export async function sendReviewRequest(orderId: string): Promise<boolean> {
   if (!settings.reviewRequests) return false;
   const order = await getOrder(orderId).catch(() => null);
   if (!order || order.status === 'cancelled' || order.status === 'pending') return false;
+  if (await isOptedOut(order.customer.email)) return false; // marketing opt-out respected
   if (!(await claimReviewRequest(orderId))) return false; // already sent before
-  const result = await toCustomer(order, reviewVerzoek(order, ratingUrl(orderId)), 'review-verzoek');
+  const links = { rating: ratingUrl(orderId), nextCake: nextCakeUrl(order.customer.id), unsubscribe: unsubscribeUrlForCustomer(order.customer.id) };
+  const result = await toCustomer(order, reviewVerzoek(order, links), 'review-verzoek');
   if (!result.ok) await releaseReviewRequest(orderId); // try again on the next run
   return result.ok;
+}
+
+// ── Reminders ──────────────────────────────────────────────────────────────
+async function toReminderOwner(r: Reminder, mail: RenderedEmail, tag: string) {
+  const [replyTo] = await ownerAddresses();
+  return sendEmail({ ...mail, to: [{ email: r.email }], replyTo: replyTo ?? { email: SITE.email }, tag: `${tag} ${r.id.slice(0, 8)}` });
+}
+
+/** Right after a reminder was created: confirmation (verified) or a confirm-link (double opt-in) */
+export async function sendReminderCreatedMail(r: Reminder) {
+  const cancel = reminderUrl(r.id, 'annuleer');
+  const mail = r.status === 'active'
+    ? herinneringIngesteld(r, { cancel })
+    : herinneringBevestigen(r, { confirm: reminderUrl(r.id, 'bevestig'), cancel });
+  return toReminderOwner(r, mail, r.status === 'active' ? 'herinnering-ingesteld' : 'herinnering-bevestigen');
+}
+
+/** Scheduler job: send reminders whose date has come (opted-out addresses are skipped in the query) */
+export async function sendDueReminders(): Promise<number> {
+  const due = await dueReminders();
+  let sent = 0;
+  for (const r of due) {
+    const mail = herinnering(r, {
+      order: siteUrl('/aanvraag'),
+      cancel: reminderUrl(r.id, 'annuleer'),
+      unsubscribe: unsubscribeUrlForReminder(r.id),
+    });
+    const result = await toReminderOwner(r, mail, 'herinnering');
+    if (result.ok) { await markReminderSent(r); sent++; }
+  }
+  return sent;
 }

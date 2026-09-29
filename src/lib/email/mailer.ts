@@ -30,6 +30,9 @@ export function emailConfigured(): boolean {
   return env('MAIL_ENABLED') !== 'false' && !!env('MAILERSEND_API_KEY');
 }
 
+/** Logs must not contain full personal data: "jo•••@gmail.com" */
+const mask = (email: string) => email.replace(/^(.{2})[^@]*(@.*)$/, '$1•••$2');
+
 export interface SendResult { ok: boolean; error?: string }
 
 export async function sendEmail(message: EmailMessage): Promise<SendResult> {
@@ -64,12 +67,12 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
     });
     if (!res.ok) {
       const detail = await res.text();
-      console.error(`[email] ✗ ${message.tag} → ${recipients.map((r) => r.email).join(', ')}: ${res.status} ${detail}`);
+      console.error(`[email] ✗ ${message.tag} → ${recipients.map((r) => mask(r.email)).join(', ')}: ${res.status} ${detail}`);
       let error = `MailerSend ${res.status}`;
       try { error += `: ${JSON.parse(detail).message}`; } catch { /* not JSON */ }
       return { ok: false, error };
     }
-    console.info(`[email] ✓ ${message.tag} → ${recipients.map((r) => r.email).join(', ')}`);
+    console.info(`[email] ✓ ${message.tag} → ${recipients.map((r) => mask(r.email)).join(', ')}`);
     return { ok: true };
   } catch (err) {
     console.error(`[email] ✗ ${message.tag}: ${(err as Error).message}`);

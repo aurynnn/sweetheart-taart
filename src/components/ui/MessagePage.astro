@@ -1,0 +1,37 @@
+---
+// Small centered card page (hero + card) for confirmations like unsubscribe / reminders.
+import Layout from '../../layouts/Layout.astro';
+import Header from '../Header.astro';
+import Footer from '../Footer.astro';
+
+interface Props { title: string; badge: string; icon: string; heading: string }
+const { title, badge, icon, heading } = Astro.props;
+---
+
+<Layout title={title}>
+  <Header />
+  <main class="collection">
+    <section class="mp-hero grain">
+      <div class="container relative z-10 text-center">
+        <span class="mp-badge"><i class={`fa-solid ${icon}`} aria-hidden="true"></i> {badge}</span>
+        <h1 class="mp-title" data-split>{heading}</h1>
+      </div>
+    </section>
+    <div class="container mp-body">
+      <div class="mp-card animate-on-scroll"><slot /></div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .mp-hero { position: relative; overflow: hidden; padding: 8.5rem 0 6rem; background: var(--hero-bg); }
+  .mp-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.8); color: var(--color-primary-dark); font-weight: 700; font-size: 0.85rem; }
+  .mp-title { font-family: var(--font-heading); font-weight: 900; font-size: clamp(2.4rem, 6vw, 4rem); margin: 1rem 0 0; }
+  .mp-body { position: relative; z-index: 2; margin-top: -3rem; padding-bottom: 5rem; }
+  .mp-card { max-width: 36rem; margin: 0 auto; padding: clamp(1.5rem, 4vw, 2.5rem); border-radius: 1.75rem; background: #fff; border: 1px solid var(--color-border-light); box-shadow: 0 40px 80px -40px rgba(212, 90, 106, 0.45); text-align: center; display: grid; gap: 1rem; justify-items: center; color: var(--color-text-muted); }
+  .mp-card :global(p) { margin: 0; line-height: 1.7; }
+  .mp-card :global(strong) { color: var(--color-text); }
+  .mp-card :global(form) { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+  .mp-card :global(.btn) { border-radius: 999px; }
+</style>

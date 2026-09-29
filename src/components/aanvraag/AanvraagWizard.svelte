@@ -631,7 +631,7 @@
 
               <label class="agree" class:needs-attention={stepAttempted && !agreed}>
                 <input type="checkbox" bind:checked={agreed} />
-                <span>Ik ga akkoord met de <a href="/algemene-voorwaarden" target="_blank" rel="noopener">algemene voorwaarden</a>.</span>
+                <span>Ik ga akkoord met de <a href="/algemene-voorwaarden" target="_blank" rel="noopener">algemene voorwaarden</a> en de <a href="/privacy" target="_blank" rel="noopener">privacyverklaring</a>. Eventuele allergieën gebruiken we enkel om je bestelling veilig te maken.</span>
               </label>
 
               {#if submitError}

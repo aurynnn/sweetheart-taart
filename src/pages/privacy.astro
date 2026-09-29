@@ -1,0 +1,49 @@
+---
+import MessagePage from '../components/ui/MessagePage.astro';
+import { SITE, fullAddress } from '../config/site';
+import { REMIND_DAYS_BEFORE } from '../lib/reminders';
+import { PHOTO_RETENTION_MONTHS, CUSTOMER_RETENTION_YEARS } from '../lib/retention';
+
+const updated = '29 september 2026';
+---
+
+<MessagePage title="Privacyverklaring" badge="Privacy" icon="fa-shield-heart" heading="Privacyverklaring">
+  <article class="privacy">
+    <p class="lead">We gaan zorgvuldig om met je gegevens. Hieronder lees je in gewone taal wat we bewaren, waarom, hoe lang, en welke rechten je hebt. <em>Laatst bijgewerkt: {updated}.</em></p>
+
+    <h2>Wie zijn we?</h2>
+    <p>{SITE.name} ({SITE.tagline}), {SITE.owner}, {fullAddress}. Contact: <a href={`mailto:${SITE.email}`}>{SITE.email}</a> · <a href={SITE.phone.href}>{SITE.phone.display}</a>. Wij zijn verantwoordelijk voor de verwerking van je gegevens.</p>
+
+    <h2>Welke gegevens en waarom?</h2>
+    <ul>
+      <li><strong>Je aanvraag</strong> — naam, e-mailadres, telefoonnummer, ophaalmoment, producten, wensen en eventuele voorbeeldfoto. Nodig om je aanvraag te beantwoorden en je bestelling te maken <em>(uitvoering van de overeenkomst)</em>.</li>
+      <li><strong>Allergieën</strong> — enkel als je ze zelf opgeeft, en enkel gebruikt om je bestelling veilig te bereiden <em>(jouw uitdrukkelijke toestemming)</em>.</li>
+      <li><strong>Review-vraag na het ophalen</strong> — één mail om te vragen hoe het was. Je score en eventuele feedback helpen ons verbeteren <em>(gerechtvaardigd belang; uitschrijven kan met één klik)</em>.</li>
+      <li><strong>Herinneringen</strong> — enkel als je daar zelf om vraagt: we bewaren je e-mailadres, het feest en de datum, en mailen je {REMIND_DAYS_BEFORE} dagen op voorhand <em>(toestemming; stoppen kan altijd)</em>.</li>
+    </ul>
+
+    <h2>Hoe lang bewaren we ze?</h2>
+    <ul>
+      <li>Voorbeeldfoto's: automatisch verwijderd {PHOTO_RETENTION_MONTHS} maanden na de ophaaldatum.</li>
+      <li>Klant- en aanvraaggegevens: tot {CUSTOMER_RETENTION_YEARS} jaar na je laatste aanvraag. Bedragen en data van bestellingen kunnen we langer (anoniem) bewaren voor onze boekhouding.</li>
+      <li>Herinneringen: tot je ze stopt of je uitschrijft.</li>
+    </ul>
+
+    <h2>Met wie delen we ze?</h2>
+    <p>We verkopen je gegevens nooit. We werken enkel met dienstverleners die ze voor ons verwerken: <strong>Cloudflare</strong> (website, database en opslag van foto's) en <strong>MailerSend</strong> (versturen van e-mails). Klik je op 5 sterren, dan kom je op <strong>Google</strong> terecht, waar Google's eigen privacybeleid geldt.</p>
+
+    <h2>Cookies</h2>
+    <p>We gebruiken geen tracking- of advertentiecookies. Tijdens het invullen van een aanvraag bewaren we een tussentijdse versie enkel lokaal in je eigen browser, zodat je niets kwijt bent als je de pagina herlaadt.</p>
+
+    <h2>Jouw rechten</h2>
+    <p>Je mag altijd je gegevens <strong>inkijken, laten verbeteren of laten verwijderen</strong>, een kopie vragen (overdraagbaarheid), of bezwaar maken tegen een verwerking. Stuur een mailtje naar <a href={`mailto:${SITE.email}`}>{SITE.email}</a> — we reageren binnen 30 dagen. Niet tevreden? Je kan klacht indienen bij de <a href="https://www.gegevensbeschermingsautoriteit.be" target="_blank" rel="noopener">Gegevensbeschermingsautoriteit</a>.</p>
+  </article>
+</MessagePage>
+
+<style>
+  .privacy { text-align: left; display: grid; gap: 0.5rem; color: var(--color-text-muted); line-height: 1.75; }
+  .privacy .lead { font-size: 1.05rem; }
+  .privacy h2 { font-family: var(--font-heading); font-size: 1.8rem; margin: 1.25rem 0 0.25rem; color: var(--color-text) !important; text-shadow: none !important; }
+  .privacy ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.5rem; }
+  .privacy a { font-weight: 700; }
+</style>

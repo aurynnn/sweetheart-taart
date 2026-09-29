@@ -1,0 +1,59 @@
+---
+// Unsubscribe from marketing mails (review requests, reminders). Service mails about an
+// aanvraag keep coming. Acts only on the button (POST), never on page load.
+import MessagePage from '../components/ui/MessagePage.astro';
+import { verifyToken } from '../lib/tokens';
+import { getCustomerById } from '../lib/customers';
+import { getReminder, optOut, optIn, isOptedOut } from '../lib/reminders';
+
+const params = Astro.url.searchParams;
+const c = params.get('c');
+const r = params.get('r');
+const t = params.get('t');
+
+let email: string | null = null;
+if (c && verifyToken('optout', `c:${c}`, t)) email = (await getCustomerById(c).catch(() => null))?.email ?? null;
+else if (r && verifyToken('optout', `r:${r}`, t)) email = (await getReminder(r).catch(() => null))?.email ?? null;
+
+let state: 'invalid' | 'ask' | 'out' | 'back' = email ? 'ask' : 'invalid';
+if (email && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  if (form.get('actie') === 'terug') { await optIn(email); state = 'back'; }
+  else { await optOut(email); state = 'out'; }
+} else if (email && (await isOptedOut(email))) {
+  state = 'out';
+}
+
+// Show the address partially only (the link could be forwarded)
+const masked = email ? email.replace(/^(.{2}).*(@.*)$/, '$1•••$2') : '';
+Astro.response.headers.set('X-Robots-Tag', 'noindex');
+---
+
+<MessagePage title="Uitschrijven" badge="E-mailvoorkeuren" icon="fa-envelope"
+  heading={state === 'invalid' ? 'Deze link werkt niet' : state === 'out' ? 'Je bent uitgeschreven' : state === 'back' ? 'Welkom terug!' : 'Uitschrijven?'}>
+  {state === 'invalid' && (
+    <p>Deze link is ongeldig. Wil je je uitschrijven? Stuur een mailtje en we regelen het meteen.</p>
+  )}
+  {state === 'ask' && (
+    <>
+      <p>Wil je geen review-vragen en herinneringen meer ontvangen op <strong>{masked}</strong>? Mails over een lopende aanvraag blijf je wel krijgen.</p>
+      <form method="post">
+        <input type="hidden" name="actie" value="uit" />
+        <button type="submit" class="btn btn-primary">Ja, schrijf me uit</button>
+        <a href="/" class="btn btn-secondary">Nee, toch niet</a>
+      </form>
+    </>
+  )}
+  {state === 'out' && (
+    <>
+      <p><strong>{masked}</strong> ontvangt geen review-vragen of herinneringen meer. Per ongeluk?</p>
+      <form method="post">
+        <input type="hidden" name="actie" value="terug" />
+        <button type="submit" class="btn btn-secondary">Toch weer inschrijven</button>
+      </form>
+    </>
+  )}
+  {state === 'back' && (
+    <p>Je ontvangt weer onze review-vragen en herinneringen. Fijn dat je er weer bij bent! 💕</p>
+  )}
+</MessagePage>

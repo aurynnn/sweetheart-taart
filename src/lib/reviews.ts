@@ -5,9 +5,8 @@
 // with a signed token. 5 stars → thank you + Google review; 1–4 stars → a short
 // feedback form on our own site so we can improve.
 
-import { createHmac, createHash, timingSafeEqual } from 'node:crypto';
 import { d1Query } from './d1';
-import { env } from './env';
+import { signToken, verifyToken } from './tokens';
 import { toLocalDateStr } from './availability';
 
 // Same DDL as migrations/0007_review_requests.sql — additive, safe to run repeatedly
@@ -27,20 +26,8 @@ export async function ensureReviewTable() {
   ensured = true;
 }
 
-function secret(): string {
-  // APP_SECRET is preferred; otherwise derive a stable secret from an existing server-only key
-  return env('APP_SECRET') || createHash('sha256').update(`reviews:${env('CLOUDFLARE_API_TOKEN') ?? 'dev'}`).digest('hex');
-}
-
-export function reviewToken(orderId: string): string {
-  return createHmac('sha256', secret()).update(orderId).digest('base64url').slice(0, 22);
-}
-
-export function verifyReviewToken(orderId: string, token: string): boolean {
-  const expected = Buffer.from(reviewToken(orderId));
-  const given = Buffer.from(token || '');
-  return expected.length === given.length && timingSafeEqual(expected, given);
-}
+export const reviewToken = (orderId: string) => signToken('review', orderId);
+export const verifyReviewToken = (orderId: string, token: string) => verifyToken('review', orderId, token);
 
 export interface ReviewRow { order_id: string; sent_at: string | null; rating: number | null; liked: string | null; feedback: string | null; rated_at: string | null }
 

@@ -93,14 +93,18 @@ export const timeline = (items: Array<{ title: string; text: string; state: 'don
 export const hearts = () =>
   `<p style="margin:6px 0 22px;text-align:center;font-size:14px;letter-spacing:10px;color:${COLORS.pinkLight}">♥ ♥ ♥</p>`;
 
-/** Instagram / Facebook invitation */
-export const socialBlock = () =>
-  table(`<tr><td align="center" style="padding:24px 20px;border-radius:18px;background:${COLORS.cream};border:1px dashed ${COLORS.pinkLight}">
+/** Instagram / Facebook invitation with the real logos (hosted PNGs — e-mail clients don't render SVG) */
+export const socialBlock = () => {
+  const icon = (href: string, file: string, label: string) =>
+    `<a href="${esc(href)}" style="display:inline-block;margin:0 8px;text-decoration:none" title="${esc(label)}">
+      <img src="${esc(imageUrl(`email-assets/${file}`))}" alt="${esc(label)}" width="40" height="40" style="display:block;width:40px;height:40px;border:0">
+    </a>`;
+  return table(`<tr><td align="center" style="padding:24px 20px;border-radius:18px;background:${COLORS.cream};border:1px dashed ${COLORS.pinkLight}">
     <p style="margin:0 0 4px;font-family:${SCRIPT_FONT};font-size:26px;font-weight:700;color:${COLORS.pinkDark}">Zin in meer inspiratie?</p>
-    <p style="margin:0 0 14px;font-family:${FONT};font-size:14px;color:${COLORS.muted}">Volg ons voor de nieuwste taarten, koekjes en mini's.</p>
-    <a href="${esc(SITE.social.instagram)}" style="display:inline-block;margin:0 4px;padding:10px 18px;border-radius:999px;background:#ffffff;border:1px solid ${COLORS.line};font-family:${FONT};font-size:14px;font-weight:700;color:${COLORS.pinkDark};text-decoration:none">📸 Instagram</a>
-    <a href="${esc(SITE.social.facebook)}" style="display:inline-block;margin:0 4px;padding:10px 18px;border-radius:999px;background:#ffffff;border:1px solid ${COLORS.line};font-family:${FONT};font-size:14px;font-weight:700;color:${COLORS.pinkDark};text-decoration:none">👍 Facebook</a>
+    <p style="margin:0 0 16px;font-family:${FONT};font-size:14px;color:${COLORS.muted}">Volg ons voor de nieuwste taarten, koekjes en mini's.</p>
+    ${icon(SITE.social.instagram, 'instagram.png', 'Instagram')}${icon(SITE.social.facebook, 'facebook.png', 'Facebook')}
   </td></tr>`, 'margin:8px 0 24px');
+};
 
 interface HeroOptions {
   eyebrow: string;
@@ -131,12 +135,14 @@ function hero({ eyebrow: eb, title, subtitle, image, imageAlt = '' }: HeroOption
   </td></tr>`;
 }
 
-export function layout({ preheader, hero: heroOptions, body, signature = true, social = true }: {
+export function layout({ preheader, hero: heroOptions, body, signature = true, social = true, footerNote }: {
   preheader: string;
   hero: HeroOptions;
   body: string;
   signature?: boolean;
   social?: boolean;
+  /** Extra small print, e.g. an unsubscribe link for marketing mails */
+  footerNote?: string;
 }): string {
   return `<!DOCTYPE html>
 <html lang="nl">
@@ -160,7 +166,9 @@ export function layout({ preheader, hero: heroOptions, body, signature = true, s
         ${signature ? `<span style="font-family:${SCRIPT_FONT};font-size:22px;color:${COLORS.pinkDark}">Met lieve groetjes, ${esc(SITE.owner)}</span><br>` : ''}
         ${esc(fullAddress)} · <a href="${esc(SITE.phone.href)}" style="color:${COLORS.pinkDark};text-decoration:none">${esc(SITE.phone.display)}</a><br>
         <a href="${esc(siteUrl('/tips'))}" style="color:${COLORS.pinkDark}">Ophaalinfo & tips</a> ·
-        <a href="${esc(siteUrl('/algemene-voorwaarden'))}" style="color:${COLORS.pinkDark}">Algemene voorwaarden</a>
+        <a href="${esc(siteUrl('/algemene-voorwaarden'))}" style="color:${COLORS.pinkDark}">Algemene voorwaarden</a> ·
+        <a href="${esc(siteUrl('/privacy'))}" style="color:${COLORS.pinkDark}">Privacy</a>
+        ${footerNote ? `<br><span style="font-size:12px">${footerNote}</span>` : ''}
       </td></tr>
       <tr><td align="center" style="padding:16px;font-family:${FONT};font-size:11px;color:${COLORS.muted}">
         Met liefde gebakken in ${esc(SITE.address.city)} ♥

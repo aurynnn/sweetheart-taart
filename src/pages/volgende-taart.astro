@@ -1,0 +1,82 @@
+---
+// "Plan je volgende taart": order now, or get a reminder a month before the occasion.
+// Opened from the review mail with a signed customer link → e-mail address pre-filled.
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ReminderForm from '../components/reminders/ReminderForm.svelte';
+import { verifyToken } from '../lib/tokens';
+import { getCustomerById } from '../lib/customers';
+import { OCCASIONS } from '../lib/reminders';
+
+const c = Astro.url.searchParams.get('c') ?? '';
+const t = Astro.url.searchParams.get('t') ?? '';
+let customer: { id: string; email: string; firstname: string } | null = null;
+if (c && verifyToken('customer', c, t)) {
+  customer = await getCustomerById(c).catch(() => null);
+}
+// Personal links must not end up in search engines or other sites' referrer logs
+Astro.response.headers.set('X-Robots-Tag', 'noindex');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+---
+
+<Layout title="Plan je volgende taart" description="Vraag meteen je volgende taart aan of laat je een maand op voorhand herinneren aan een verjaardag of feest.">
+  <Header />
+  <main class="collection">
+    <section class="nt-hero grain">
+      <div class="container relative z-10 text-center">
+        <span class="nt-badge"><i class="fa-solid fa-cake-candles" aria-hidden="true"></i> Volgende feestje</span>
+        <h1 class="nt-title" data-split>{customer?.firstname ? `Klaar voor het volgende feest, ${customer.firstname}?` : 'Plan je volgende taart'}</h1>
+        <p class="nt-sub animate-on-scroll stagger-2">Vraag meteen aan, of laat ons je een maand op voorhand een seintje geven.</p>
+      </div>
+    </section>
+
+    <div class="container nt-body">
+      <div class="nt-grid">
+        <a href="/aanvraag" class="nt-card nt-now animate-on-scroll" data-tilt="4">
+          <span class="nt-icon"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i></span>
+          <h2 class="on-dark">Nu een aanvraag doen</h2>
+          <p>Stel je taart samen, kies een ophaalmoment en Nathalie bevestigt je aanvraag.</p>
+          <span class="nt-cta">Start je aanvraag <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+
+        <div class="nt-card nt-remind animate-on-scroll stagger-1">
+          <span class="nt-icon soft"><i class="fa-solid fa-bell" aria-hidden="true"></i></span>
+          <h2>Herinner me een maand op voorhand</h2>
+          <p class="nt-lead">Nooit meer te laat voor die verjaardag: we mailen je een maand voor de datum, zodat je je taart op tijd aanvraagt.</p>
+          <ReminderForm
+            client:load
+            email={customer?.email ?? ''}
+            customerId={customer?.id ?? ''}
+            token={customer ? t : ''}
+            firstname={customer?.firstname ?? ''}
+            occasions={OCCASIONS}
+          />
+        </div>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .nt-hero { position: relative; overflow: hidden; padding: 8.5rem 0 6.5rem; background: var(--hero-bg); }
+  .nt-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.8); color: var(--color-primary-dark); font-weight: 700; font-size: 0.85rem; }
+  .nt-title { font-family: var(--font-heading); font-weight: 900; font-size: clamp(2.5rem, 6.5vw, 4.5rem); line-height: 1.05; margin: 1rem auto 0.75rem; max-width: 50rem; }
+  .nt-sub { margin: 0 auto; max-width: 36rem; font-size: 1.1rem; color: #3d272a; }
+  .nt-body { position: relative; z-index: 2; margin-top: -3.5rem; padding-bottom: 5rem; }
+  .nt-grid { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 1.5rem; align-items: start; max-width: 64rem; margin: 0 auto; }
+  .nt-card { display: grid; gap: 0.75rem; padding: clamp(1.5rem, 4vw, 2.25rem); border-radius: 1.75rem; background: #fff; border: 1px solid var(--color-border-light); box-shadow: 0 40px 80px -40px rgba(212, 90, 106, 0.45); }
+  .nt-card h2 { font-family: var(--font-heading); font-size: 2rem; line-height: 1.1; margin: 0; color: var(--color-text) !important; text-shadow: none !important; }
+  .nt-card p { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
+  .nt-now { color: #fff; background: radial-gradient(80% 80% at 20% 0%, #F2A0AA, transparent 70%), linear-gradient(160deg, #E8788A, #D45A6A); border: 0; text-decoration: none; }
+  .nt-now h2 { color: #fff !important; text-shadow: none !important; }
+  .nt-now p { color: rgba(255, 255, 255, 0.9); }
+  .nt-cta { margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; justify-self: start; padding: 0.8rem 1.4rem; border-radius: 999px; background: #fff; color: var(--color-primary-dark); font-weight: 800; }
+  .nt-cta i { transition: transform 300ms var(--ease-spring); }
+  .nt-now:hover .nt-cta i { transform: translateX(4px); }
+  .nt-icon { width: 3.2rem; height: 3.2rem; border-radius: 1rem; display: grid; place-items: center; background: rgba(255, 255, 255, 0.2); font-size: 1.3rem; }
+  .nt-icon.soft { background: var(--color-secondary); color: var(--color-primary); }
+  .nt-lead { margin-bottom: 0.5rem !important; }
+  @media (max-width: 860px) { .nt-grid { grid-template-columns: 1fr; } }
+</style>

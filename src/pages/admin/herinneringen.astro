@@ -1,0 +1,122 @@
+---
+import AdminLayout from '../../layouts/admin/AdminLayout.astro';
+import { listReminders, occasionLabel, type Reminder } from '../../lib/reminders';
+import { listCustomers } from '../../lib/customers';
+
+let reminders: Reminder[] = [];
+let customerByEmail = new Map<string, { id: string; name: string }>();
+try {
+  const [r, customers] = await Promise.all([listReminders(), listCustomers()]);
+  reminders = r;
+  customerByEmail = new Map(customers.map((c) => [c.email.toLowerCase(), { id: c.id, name: c.name }]));
+} catch (e) {
+  console.error('[admin/herinneringen] failed:', e);
+}
+
+const today = new Date().toISOString().slice(0, 10);
+const in30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+const count = (s: string) => reminders.filter((r) => r.status === s).length;
+const upcoming = reminders.filter((r) => r.status === 'active' && r.remind_at <= in30).length;
+const fmt = (iso: string | null) => iso ? new Date(iso.length === 10 ? iso + 'T00:00:00' : iso).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const STATUS: Record<string, { label: string; cls: string }> = {
+  pending: { label: 'Wacht op bevestiging', cls: 'warn' },
+  active: { label: 'Actief', cls: 'ok' },
+  sent: { label: 'Verstuurd', cls: 'muted' },
+  cancelled: { label: 'Gestopt', cls: 'off' },
+};
+---
+
+<AdminLayout title="Herinneringen">
+  <p class="intro">Klanten die vroegen om een mail <strong>een maand voor</strong> een verjaardag of feest. Ze krijgen automatisch een herinnering met een knop om hun taart aan te vragen.</p>
+
+  <div class="stats">
+    <div><b>{count('active')}</b><span>actief</span></div>
+    <div><b>{upcoming}</b><span>mail binnen 30 dagen</span></div>
+    <div><b>{count('pending')}</b><span>wacht op bevestiging</span></div>
+    <div><b>{reminders.filter((r) => r.last_sent_at).length}</b><span>ooit verstuurd</span></div>
+  </div>
+
+  <div class="filters" role="tablist" aria-label="Filter op status">
+    {[['all', 'Alles'], ['active', 'Actief'], ['pending', 'Wacht op bevestiging'], ['sent', 'Verstuurd'], ['cancelled', 'Gestopt']].map(([v, l], i) => (
+      <button type="button" class:list={['filter', { on: i === 0 }]} data-filter={v}>{l}</button>
+    ))}
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Klant</th><th>Feest</th><th>Datum</th><th>Mail op</th><th>Status</th><th>Toestemming</th><th></th></tr>
+      </thead>
+      <tbody>
+        {reminders.map((r) => {
+          const customer = customerByEmail.get(r.email.toLowerCase());
+          const st = STATUS[r.status];
+          return (
+            <tr data-status={r.status}>
+              <td>
+                {customer ? <a href={`/admin/klanten/${customer.id}`}><strong>{customer.name}</strong></a> : <strong>Nieuwe contactpersoon</strong>}
+                <small>{r.email}</small>
+              </td>
+              <td>{occasionLabel(r.occasion)}{r.name ? ` · ${r.name}` : ''}{r.yearly ? <small>jaarlijks</small> : null}</td>
+              <td>{fmt(r.event_date)}</td>
+              <td class:list={[{ soon: r.status === 'active' && r.remind_at <= in30, due: r.status === 'active' && r.remind_at <= today }]}>{fmt(r.remind_at)}{r.last_sent_at && <small>laatst: {fmt(r.last_sent_at)}</small>}</td>
+              <td><span class={`pill ${st.cls}`}>{st.label}</span></td>
+              <td>{fmt(r.consent_at)}<small>{r.source === 'mail' ? 'via mail-link' : 'via website'}</small></td>
+              <td>{(r.status === 'active' || r.status === 'pending') && <button type="button" class="stop" data-cancel={r.id}>Stoppen</button>}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+    {reminders.length === 0 && <p class="empty">Nog geen herinneringen. Klanten kunnen er een instellen via de review-mail of via <a href="/volgende-taart" target="_blank">/volgende-taart</a>.</p>}
+  </div>
+</AdminLayout>
+
+<script>
+  import { toast } from '../../scripts/admin/toast';
+
+  document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter]').forEach((b) => b.classList.toggle('on', b === btn));
+      const f = btn.dataset.filter;
+      document.querySelectorAll<HTMLTableRowElement>('tr[data-status]').forEach((r) => { r.hidden = f !== 'all' && r.dataset.status !== f; });
+    });
+  });
+
+  document.addEventListener('click', async (e) => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>('[data-cancel]');
+    if (!btn) return;
+    btn.disabled = true;
+    const res = await fetch(`/admin/api/reminders/${encodeURIComponent(btn.dataset.cancel!)}/cancel`, { method: 'POST' });
+    if (res.ok) { toast('Herinnering gestopt'); setTimeout(() => location.reload(), 600); }
+    else { toast('Stoppen mislukt', 'error'); btn.disabled = false; }
+  });
+</script>
+
+<style>
+  .intro { margin: 0 0 1.25rem; color: #64748b; max-width: 48rem; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+  .stats div { padding: 1.1rem 1.25rem; border-radius: 1rem; background: #fff; border: 1px solid #e2e8f0; display: grid; }
+  .stats b { font-size: 1.8rem; color: #0f172a; line-height: 1.1; }
+  .stats span { font-size: 0.8rem; color: #64748b; font-weight: 600; }
+  .filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .filter { padding: 0.45rem 0.9rem; border-radius: 999px; border: 1px solid #e2e8f0; background: #fff; font: inherit; font-size: 0.85rem; font-weight: 600; color: #475569; cursor: pointer; }
+  .filter.on { background: #e8788a; border-color: #e8788a; color: #fff; }
+  .table-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  th { text-align: left; padding: 0.8rem 1rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+  td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: top; }
+  td a { color: #0f172a; text-decoration: none; }
+  td a:hover strong { color: #d45a6a; }
+  td small { display: block; color: #94a3b8; font-size: 0.75rem; }
+  td.soon { color: #b45309; font-weight: 700; }
+  td.due { color: #d45a6a; }
+  .pill { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+  .pill.ok { background: #f0fdf4; color: #15803d; }
+  .pill.warn { background: #fffbeb; color: #b45309; }
+  .pill.muted { background: #f1f5f9; color: #64748b; }
+  .pill.off { background: #fef2f2; color: #b91c1c; }
+  .stop { border: 0; background: none; color: #b91c1c; font-weight: 700; cursor: pointer; }
+  .empty { padding: 2rem; text-align: center; color: #94a3b8; margin: 0; }
+  @media (max-width: 900px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+</style>
