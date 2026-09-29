@@ -3,6 +3,7 @@ import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 import OrderModal from '../../components/admin/orders/OrderModal.astro';
 import { listOrders, type FullOrder } from '../../lib/orderRepo';
 import { toLocalDateStr } from '../../lib/availability';
+import { belgianNow } from '../../lib/dates';
 import { productName, itemSummary, type AanvraagItem } from '../../lib/catalog';
 
 // Everything that is confirmed and still has to be made, grouped per pickup day
@@ -16,8 +17,8 @@ try {
   loadError = true;
 }
 
-const today = toLocalDateStr(new Date());
-const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+const today = toLocalDateStr(belgianNow());
+const tomorrowDate = belgianNow(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
 const tomorrow = toLocalDateStr(tomorrowDate);
 
 const dayLabel = (iso: string) => {

@@ -8,9 +8,11 @@
  * 3. Use the methods below to manage availability
  */
 
-const GOOGLE_CLIENT_ID = import.meta.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = import.meta.env.GOOGLE_CLIENT_SECRET;
-const GOOGLE_REDIRECT_URI = import.meta.env.GOOGLE_REDIRECT_URI || 'http://localhost:4321/admin/api/calendar/callback';
+import { env } from './env';
+
+const GOOGLE_CLIENT_ID = (env('GOOGLE_CLIENT_ID') ?? '');
+const GOOGLE_CLIENT_SECRET = (env('GOOGLE_CLIENT_SECRET') ?? '');
+const GOOGLE_REDIRECT_URI = env('GOOGLE_REDIRECT_URI') || 'http://localhost:4321/admin/api/calendar/callback';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar.readonly',

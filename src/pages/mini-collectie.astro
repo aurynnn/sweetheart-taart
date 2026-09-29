@@ -1,4 +1,5 @@
 ---
+import { env } from '../lib/env';
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -8,7 +9,7 @@ import CollectionHero from '../components/collection/CollectionHero.astro';
 import FeatureCard from '../components/collection/FeatureCard.astro';
 import { listMedia } from '../lib/r2';
 
-const R2 = (import.meta.env.PUBLIC_R2_BASE_URL || '').replace(/\/$/, '');
+const R2 = (env('PUBLIC_R2_BASE_URL') || '').replace(/\/$/, '');
 const mini = (key: string) => `${R2}/mini-collectie/images/${key}`;
 
 const galleryImages = await listMedia('mini-collectie');

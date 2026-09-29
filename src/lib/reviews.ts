@@ -8,6 +8,7 @@
 import { d1Query } from './d1';
 import { signToken, verifyToken } from './tokens';
 import { toLocalDateStr } from './availability';
+import { belgianNow } from './dates';
 
 // Same DDL as migrations/0007_review_requests.sql — additive, safe to run repeatedly
 const DDL = `CREATE TABLE IF NOT EXISTS review_requests (
@@ -78,7 +79,7 @@ export async function saveFeedback(orderId: string, liked: string[], feedback: s
  */
 export async function dueReviewOrderIds(): Promise<string[]> {
   await ensureReviewTable();
-  const today = new Date();
+  const today = belgianNow();
   const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
   const res = await d1Query(
     `SELECT o.id FROM orders o

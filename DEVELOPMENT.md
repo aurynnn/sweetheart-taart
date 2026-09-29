@@ -114,9 +114,24 @@ src/
 
 ---
 
-## Deployment
+## Deployment (Cloudflare Workers)
+
+The site runs as a Cloudflare Worker (`@astrojs/cloudflare`, config in `wrangler.toml`,
+entry `src/worker.ts`). Pushing to `master` builds and deploys via Workers Builds:
+
+- Build command: `npm run build`
+- Deploy command: `npx wrangler deploy`
 
 ```bash
-npm run build    # Build for production
-npm run preview  # Preview production build
+npm run build     # Build to dist/ (dist/server = Worker, dist/client = static assets)
+npm run preview   # Run the built Worker locally (workerd)
+npx wrangler deploy
 ```
+
+- **Variables & secrets** (see `.env.example`) are set in the Cloudflare dashboard
+  (Worker → Settings → Variables and Secrets) or with `npx wrangler secret put NAME`.
+  Locally they come from `.env`.
+- **Background jobs** (review mails, reminders, privacy clean-up) run from the hourly
+  cron trigger in `wrangler.toml` → `runScheduledJobs()` in `src/lib/scheduler.ts`.
+- The Worker runs in UTC: use the helpers in `src/lib/dates.ts` (`todayIso`,
+  `belgianNow`, `belgianHour`, …) for anything that depends on "today" or "now".

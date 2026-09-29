@@ -4,6 +4,7 @@
 
 import { d1Query } from './d1';
 import { getPickupConfig, timesForDate } from './pickupTimes';
+import { belgianNow } from './dates';
 
 export interface DayAvailability {
   date: string;
@@ -106,7 +107,7 @@ export async function getAvailability(startDate: string | null, endDate: string 
   if (startDate && endDate) {
     const start = new Date(startDate + 'T00:00:00');
     const end = new Date(endDate + 'T00:00:00');
-    const today = new Date();
+    const today = belgianNow();
     today.setHours(0, 0, 0, 0);
     const leadTimeCutoff = new Date(today);
     leadTimeCutoff.setDate(leadTimeCutoff.getDate() + leadTimeDays);

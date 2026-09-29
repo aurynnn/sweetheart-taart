@@ -8,8 +8,10 @@
 //   │ ☐ gebakken ☐ versierd ☐ verpakt ☐ opgehaald              │
 //   └ footer: page x / y ───────────────────────────────────────┘
 
-import PDFDocument from 'pdfkit';
+// Standalone build: the standard fonts are bundled in (a Worker has no filesystem)
+import PDFDocument from 'pdfkit/js/pdfkit.standalone.js';
 import { SITE } from '../../config/site';
+import { LOCALE, TIME_ZONE } from '../dates';
 import { productName, itemSummary, type AanvraagItem } from '../catalog';
 import type { FullOrder } from '../orderRepo';
 
@@ -51,7 +53,7 @@ function header(doc: Doc, orders: FullOrder[]): number {
   const period = !first ? '' : first === last ? fmtDay(first) : `${fmtDay(first)} – ${fmtDay(last!)}`;
   doc.font('Helvetica-Bold').fontSize(14).fillColor(C.white).text('Te maken', PAGE.m, 28, { width: CONTENT_W, align: 'right' });
   doc.font('Helvetica').fontSize(10).fillColor('#FFE4EA').text(period, PAGE.m, 48, { width: CONTENT_W, align: 'right' });
-  doc.fontSize(8).text(`Afgedrukt op ${new Date().toLocaleString('nl-BE', { dateStyle: 'medium', timeStyle: 'short' })}`, PAGE.m, 64, { width: CONTENT_W, align: 'right' });
+  doc.fontSize(8).text(`Afgedrukt op ${new Date().toLocaleString(LOCALE, { timeZone: TIME_ZONE, dateStyle: 'medium', timeStyle: 'short' })}`, PAGE.m, 64, { width: CONTENT_W, align: 'right' });
   return 112;
 }
 

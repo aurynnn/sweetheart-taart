@@ -34,7 +34,7 @@ const anonymized = isAnonymized(customer.email);
         {customer.phone && <a href={`tel:${customer.phone.replace(/[^0-9+]/g, '')}`}><i class="fa-solid fa-phone" aria-hidden="true"></i> {customer.phone}</a>}
       </p>
       <p class="meta">
-        Klant sinds {new Date(customer.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })} ·
+        Klant sinds {new Date(customer.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString('nl-BE', { timeZone: 'Europe/Brussels', month: 'long', year: 'numeric' })} ·
         {optedOut ? <span class="pill off">uitgeschreven voor marketingmails</span> : <span class="pill ok">ontvangt review-vragen & herinneringen</span>}
       </p>
     </div>

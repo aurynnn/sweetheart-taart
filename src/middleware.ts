@@ -1,12 +1,7 @@
-import './lib/timezone'; // must be first: server runs in Belgian time
 import { defineMiddleware } from 'astro:middleware';
-import { startScheduler } from './lib/scheduler';
 import { SESSION_COOKIE, readSession, requiresAdmin } from './lib/auth';
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  // Background jobs start with the first request the server handles (idempotent)
-  startScheduler();
-
   const { url, request, cookies, redirect, locals } = context;
   const session = readSession(cookies.get(SESSION_COOKIE)?.value);
   (locals as any).admin = session;

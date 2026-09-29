@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
+import { env } from '../../../../lib/env';
 
 export const GET: APIRoute = async ({ redirect }) => {
-  const clientId = import.meta.env.GOOGLE_CLIENT_ID;
-  const redirectUri = `${import.meta.env.PUBLIC_SITE_URL || 'http://localhost:4321'}/admin/api/calendar/callback`;
+  const clientId = (env('GOOGLE_CLIENT_ID') ?? '');
+  const redirectUri = `${env('PUBLIC_SITE_URL') || 'http://localhost:4321'}/admin/api/calendar/callback`;
   
   const scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',

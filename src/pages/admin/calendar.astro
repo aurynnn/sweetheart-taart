@@ -8,33 +8,15 @@ import CalendarBlockView from '../../components/admin/calendar/CalendarBlockView
 import CalendarHoursView from '../../components/admin/calendar/CalendarHoursView.astro';
 import PickupTimesEditor from '../../components/admin/pickup/PickupTimesEditor.svelte';
 import { d1Query } from '../../lib/d1';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-
-const DATA_DIR = join(process.cwd(), 'data');
-const SETTINGS_FILE = join(DATA_DIR, 'settings.json');
 
 const url = Astro.url;
 const connected = url.searchParams.get('connected') === 'true';
 const disconnected = url.searchParams.get('disconnected') === 'true';
 const error = url.searchParams.get('error');
 
+// Defaults; lead time and pickup times come from D1 below
 function loadSettings() {
-  if (!existsSync(SETTINGS_FILE)) {
-    return { maxOrdersPerDay: 3, googleConnected: false, recurringUnavailableDays: [0], availableDays: [1, 2, 3, 4, 5, 6] };
-  }
-  try {
-    const data = readFileSync(SETTINGS_FILE, 'utf-8');
-    const s = JSON.parse(data);
-    return {
-      maxOrdersPerDay: s.maxOrdersPerDay || 3,
-      googleConnected: s.googleConnected || false,
-      recurringUnavailableDays: s.recurringUnavailableDays || [0],
-      availableDays: s.availableDays || [1, 2, 3, 4, 5, 6]
-    };
-  } catch {
-    return { maxOrdersPerDay: 3, googleConnected: false, recurringUnavailableDays: [0], availableDays: [1, 2, 3, 4, 5, 6] };
-  }
+  return { maxOrdersPerDay: 3, googleConnected: false, recurringUnavailableDays: [0], availableDays: [1, 2, 3, 4, 5, 6] };
 }
 
 // Load leadTimeDays from D1

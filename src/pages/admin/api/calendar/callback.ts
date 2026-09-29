@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { env } from '../../../../lib/env';
 
 export const GET: APIRoute = async ({ url, redirect }) => {
   const code = url.searchParams.get('code');
@@ -13,9 +14,9 @@ export const GET: APIRoute = async ({ url, redirect }) => {
   }
 
   try {
-    const clientId = import.meta.env.GOOGLE_CLIENT_ID;
-    const clientSecret = import.meta.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = `${import.meta.env.PUBLIC_SITE_URL || 'http://localhost:4321'}/admin/api/calendar/callback`;
+    const clientId = (env('GOOGLE_CLIENT_ID') ?? '');
+    const clientSecret = (env('GOOGLE_CLIENT_SECRET') ?? '');
+    const redirectUri = `${env('PUBLIC_SITE_URL') || 'http://localhost:4321'}/admin/api/calendar/callback`;
 
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {

@@ -8,6 +8,7 @@
 import { randomUUID } from 'node:crypto';
 import { d1Query } from './d1';
 import { toLocalDateStr } from './availability';
+import { belgianNow } from './dates';
 
 export const REMIND_DAYS_BEFORE = 30;
 
@@ -48,7 +49,7 @@ export async function ensureReminderTables() {
 }
 
 /** Next occurrence of a (month, day) on or after `from`, as YYYY-MM-DD */
-export function nextOccurrence(dateIso: string, from = new Date()): string {
+export function nextOccurrence(dateIso: string, from = belgianNow()): string {
   const [, m, d] = dateIso.split('-').map(Number);
   const today = new Date(from); today.setHours(0, 0, 0, 0);
   let year = today.getFullYear();

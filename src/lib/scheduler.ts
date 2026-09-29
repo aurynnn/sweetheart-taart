@@ -1,28 +1,23 @@
-// src/lib/scheduler.ts — Background jobs inside the Node server.
+// src/lib/scheduler.ts — Background jobs, run by the Worker's hourly cron trigger
+// (wrangler.toml → src/worker.ts).
 //
-// Every hour (mails only between 09:00 and 20:00):
+// Every hour (mails only between 09:00 and 20:00 Belgian time):
 //   - review requests: orders picked up yesterday (up to a week ago) get "hoe was het?" — once
 //   - reminders: "over een maand is het …" mails whose remind date has come
-// Once a day: retention clean-up (old example photos, long-inactive customers)
+// Once a day, at 03:00: retention clean-up (old example photos, long-inactive customers)
 //
-// Runs in production by default. REVIEW_SCHEDULER=false switches it off,
-// REVIEW_SCHEDULER=true switches it on in development too.
+// REVIEW_SCHEDULER=false switches the jobs off.
 
-import { todayIso, belgianHour } from './dates';
+import { belgianHour } from './dates';
 import { env } from './env';
 import { dueReviewOrderIds } from './reviews';
 import { sendReviewRequest, sendDueReminders } from './email';
 import { purgeOldPhotos, purgeInactiveCustomers } from './retention';
 
-const HOUR = 60 * 60_000;
-let started = false;
-let lastCleanup = '';
+const CLEANUP_HOUR = 3;
 
 /** GDPR storage limitation, once a day (see lib/retention.ts) */
 async function dailyCleanup() {
-  const today = todayIso();
-  if (lastCleanup === today) return;
-  lastCleanup = today;
   try {
     const photos = await purgeOldPhotos();
     const customers = await purgeInactiveCustomers();
@@ -32,15 +27,13 @@ async function dailyCleanup() {
   }
 }
 
-function enabled(): boolean {
-  const flag = env('REVIEW_SCHEDULER');
-  if (flag === 'false') return false;
-  return flag === 'true' || import.meta.env.PROD;
-}
-
-async function runHourlyJobs() {
-  await dailyCleanup();
+export async function runScheduledJobs() {
+  if (env('REVIEW_SCHEDULER') === 'false') {
+    console.info('[scheduler] disabled (REVIEW_SCHEDULER=false)');
+    return;
+  }
   const hour = belgianHour();
+  if (hour === CLEANUP_HOUR) await dailyCleanup();
   if (hour < 9 || hour >= 20) return;
   try {
     const ids = await dueReviewOrderIds();
@@ -57,16 +50,4 @@ async function runHourlyJobs() {
   } catch (err) {
     console.error('[scheduler] reminders failed:', err);
   }
-}
-
-export function startScheduler() {
-  if (started) return;
-  started = true;
-  if (!enabled()) {
-    console.info('[scheduler] disabled (set REVIEW_SCHEDULER=true to enable outside production)');
-    return;
-  }
-  console.info('[scheduler] started — review requests and reminders are checked every hour');
-  setTimeout(runHourlyJobs, 60_000);
-  setInterval(runHourlyJobs, HOUR).unref?.();
 }

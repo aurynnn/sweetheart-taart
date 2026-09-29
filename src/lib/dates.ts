@@ -65,6 +65,21 @@ export function formatDateTime(value: string | null | undefined, withTime = true
   }).replace(', ', ' ');
 }
 
+/**
+ * "Now" as a Date whose local fields (getHours, getDate, getDay, …) show the Belgian
+ * wall-clock time, for server-side calendar arithmetic. Needed because the Worker
+ * runs in UTC, where "today" would still be yesterday between 22:00/23:00 and midnight.
+ */
+export function belgianNow(moment: Date = new Date()): Date {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    }).formatToParts(moment).map((p) => [p.type, Number(p.value)]),
+  );
+  return new Date(parts.year, parts.month - 1, parts.day, parts.hour % 24, parts.minute, parts.second);
+}
+
 /** Current hour in Belgium (0–23), for "only send mails between 9 and 20" */
 export function belgianHour(moment: Date = new Date()): number {
   return Number(new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, hour: '2-digit', hour12: false }).format(moment)) % 24;

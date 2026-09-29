@@ -1,6 +1,20 @@
+# Cloudflare Worker for the Sweetheart site (Astro SSR + static assets).
+# Build: `npm run build` · Deploy: `npx wrangler deploy`
+# Secrets (API keys, admin password, …) are set in the dashboard or with
+# `npx wrangler secret put NAME` — never in this file. See .env.example for the list.
 name = "sweetheart"
-compatibility_date = "2024-01-01"
 account_id = "0c208fec72117fa28deae09152d2abe2"
+main = "./src/worker.ts"
+compatibility_date = "2026-09-01"
+# node:crypto, Buffer and process.env (vars + secrets) inside the Worker
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+# Review requests, reminders and the daily clean-up (see src/lib/scheduler.ts)
+[triggers]
+crons = ["0 * * * *"]
 
 [[d1_databases]]
 binding = "DB"

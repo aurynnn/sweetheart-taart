@@ -1,5 +1,5 @@
 ---
-import { todayIso, addDays } from '../../lib/dates';
+import { todayIso, addDays, belgianNow, belgianHour } from '../../lib/dates';
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 import OrderModal from '../../components/admin/orders/OrderModal.astro';
 import { d1Query } from '../../lib/d1';
@@ -20,7 +20,7 @@ let orders: Row[] = [];
 let capacity: Array<{ date: string; orders: number; maxOrders: number; available: boolean; reason?: string }> = [];
 let loadError = false;
 
-const today = new Date();
+const today = belgianNow();
 today.setHours(0, 0, 0, 0);
 const todayStr = toLocalDateStr(today);
 const in14 = new Date(today); in14.setDate(in14.getDate() + 13);
@@ -148,7 +148,7 @@ const relDay = (iso: string) => {
   if (diff < 7) return `Over ${diff} dagen`;
   return fmtDay(iso);
 };
-const hour = new Date().getHours();
+const hour = belgianHour();
 const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeienavond';
 ---
 

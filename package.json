@@ -13,9 +13,8 @@
     "upload:email-assets": "node scripts/upload-email-assets.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.1.1",
-    "@astrojs/node": "^10.0.4",
-    "@astrojs/svelte": "^8.0.3",
+    "@astrojs/cloudflare": "^14.3.3",
+    "@astrojs/svelte": "^9.0.1",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^7.3.5",
     "aws4fetch": "^1.0.20",
@@ -25,9 +24,11 @@
     "svelte": "^5.54.1",
     "tailwindcss": "^4.2.2",
     "three": "^0.186.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.143.1"
   },
   "devDependencies": {
+    "@types/node": "^22.20.4",
     "@types/three": "^0.186.0"
   }
 }
