@@ -13,7 +13,7 @@ export function toast(message: string, kind: 'ok' | 'error' = 'ok') {
   setTimeout(() => {
     el.style.animation = 'toastOut 0.2s ease forwards';
     setTimeout(() => el.remove(), 200);
-  }, 3200);
+  }, 6000);
 }
 
 export const STATUS_DONE: Record<string, string> = {
@@ -32,8 +32,11 @@ export async function updateStatus(orderId: string, status: string, { silent = f
       body: JSON.stringify({ orderId, status }),
     });
     if (!res.ok) throw new Error(String(res.status));
-    const { emailed } = await res.json();
-    if (!silent) toast(`Aanvraag ${orderId} ${STATUS_DONE[status] ?? status}${emailed ? ' · klant is gemaild' : ''}`);
+    const { emailed, to, reason } = await res.json();
+    if (!silent) {
+      const mailInfo = emailed ? ` · mail verstuurd naar ${to}` : reason ? ` · geen mail: ${reason}` : '';
+      toast(`Aanvraag ${orderId} ${STATUS_DONE[status] ?? status}${mailInfo}`, emailed || !reason ? 'ok' : 'error');
+    }
     return true;
   } catch {
     if (!silent) toast(`Bijwerken van ${orderId} mislukt. Probeer opnieuw.`, 'error');

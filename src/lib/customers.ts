@@ -2,6 +2,7 @@
 // constraint on customers.email) with their orders, reminders and ratings.
 // Includes the GDPR tools: data export (right of access) and erasure.
 
+import { todayIso } from './dates';
 import { d1Query } from './d1';
 import { tableColumns, customerNameSql } from './schema';
 import { parseEuro, isUploadKey } from './catalog';
@@ -38,7 +39,7 @@ export async function listCustomers(): Promise<CustomerSummary[]> {
     d1Query(`SELECT o.customer_id, AVG(r.rating) as avg FROM review_requests r JOIN orders o ON o.id = r.order_id WHERE r.rating IS NOT NULL GROUP BY o.customer_id`),
     listOptouts(),
   ]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
   const remindersByEmail = new Map((reminders.results || []).map((r: any) => [String(r.email), Number(r.n)]));
   const ratingByCustomer = new Map((ratings.results || []).map((r: any) => [String(r.customer_id), Number(r.avg)]));
 

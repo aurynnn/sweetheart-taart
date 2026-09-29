@@ -1,3 +1,4 @@
+import { todayIso } from '../../../lib/dates';
 import type { APIRoute } from 'astro';
 import { listOrders } from '../../../lib/orderRepo';
 import { getObject } from '../../../lib/r2';
@@ -47,7 +48,7 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(new Uint8Array(pdf), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="sweetheart-te-maken-${new Date().toISOString().slice(0, 10)}.pdf"`,
+        'Content-Disposition': `attachment; filename="sweetheart-te-maken-${todayIso()}.pdf"`,
       },
     });
   } catch (error: any) {

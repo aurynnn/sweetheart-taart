@@ -1,3 +1,4 @@
+import { todayIso } from '../../lib/dates';
 import type { APIRoute } from 'astro';
 import { EMAIL_RE } from '../../lib/catalog';
 import { verifyToken } from '../../lib/tokens';
@@ -33,7 +34,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (!EMAIL_RE.test(email)) return json({ success: false, error: 'Vul een geldig e-mailadres in' }, 400);
   if (!OCCASIONS.some((o) => o.value === occasion)) return json({ success: false, error: 'Kies een gelegenheid' }, 400);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date + 'T00:00:00').getTime())) return json({ success: false, error: 'Kies een geldige datum' }, 400);
-  if (!yearly && date < new Date().toISOString().slice(0, 10)) return json({ success: false, error: 'Deze datum ligt in het verleden' }, 400);
+  if (!yearly && date < todayIso()) return json({ success: false, error: 'Deze datum ligt in het verleden' }, 400);
   if (body?.consent !== true) return json({ success: false, error: 'Geef toestemming om je een herinnering te mailen' }, 400);
 
   // Verified when it comes from a signed customer link and the address wasn't changed

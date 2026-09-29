@@ -12,7 +12,7 @@ import { claimReviewRequest, releaseReviewRequest } from '../reviews';
 import { sendEmail, type SendResult } from './mailer';
 import { siteUrl } from './layout';
 import { aanvraagBevestigd, aanvraagGeweigerd, aanvraagOntvangen, nieuweAanvraag, reviewVerzoek, herinnering, herinneringBevestigen, herinneringIngesteld, type RenderedEmail } from './templates';
-import { ratingUrl, nextCakeUrl, unsubscribeUrlForCustomer, unsubscribeUrlForReminder, reminderUrl } from './links';
+import { ratingUrl, unsubscribeUrlForCustomer, unsubscribeUrlForReminder, reminderUrl } from './links';
 import { isOptedOut, dueReminders, markReminderSent, type Reminder } from '../reminders';
 
 export { emailConfigured } from './mailer';
@@ -44,31 +44,34 @@ export async function notifyNewAanvraag(orderId: string): Promise<void> {
   await Promise.all(jobs);
 }
 
-/** Call after an admin changes the status. Returns whether the customer was e-mailed. */
-export async function notifyStatusChange(orderId: string, status: string): Promise<boolean> {
+export interface MailOutcome { emailed: boolean; to?: string; reason?: string }
+
+/** Call after an admin changes the status. Tells the admin what happened with the mail. */
+export async function notifyStatusChange(orderId: string, status: string): Promise<MailOutcome> {
   if (status === 'completed') return sendReviewRequest(orderId);
-  if (status !== 'approved' && status !== 'cancelled') return false;
+  if (status !== 'approved' && status !== 'cancelled') return { emailed: false };
   const [order, settings] = await Promise.all([getOrder(orderId).catch(() => null), getEmailSettings()]);
-  if (!order || !settings.customerMails) return false;
+  if (!order) return { emailed: false, reason: 'aanvraag niet gevonden' };
+  if (!settings.customerMails) return { emailed: false, reason: 'klantmails staan uit in Instellingen' };
   const mail = status === 'approved' ? aanvraagBevestigd(order) : aanvraagGeweigerd(order);
   const result = await toCustomer(order, mail, status === 'approved' ? 'aanvraag-bevestigd' : 'aanvraag-geweigerd');
-  return result.ok;
+  return result.ok ? { emailed: true, to: order.customer.email } : { emailed: false, to: order.customer.email, reason: result.error };
 }
 
 export { ratingUrl } from './links';
 
-/** Sends the "hoe was het?" mail once per order. Returns whether it was sent now. */
-export async function sendReviewRequest(orderId: string): Promise<boolean> {
+/** Sends the "hoe was het?" mail once per order. */
+export async function sendReviewRequest(orderId: string): Promise<MailOutcome> {
   const settings = await getEmailSettings();
-  if (!settings.reviewRequests) return false;
+  if (!settings.reviewRequests) return { emailed: false, reason: 'review-mails staan uit in Instellingen' };
   const order = await getOrder(orderId).catch(() => null);
-  if (!order || order.status === 'cancelled' || order.status === 'pending') return false;
-  if (await isOptedOut(order.customer.email)) return false; // marketing opt-out respected
-  if (!(await claimReviewRequest(orderId))) return false; // already sent before
-  const links = { rating: ratingUrl(orderId), nextCake: nextCakeUrl(order.customer.id), unsubscribe: unsubscribeUrlForCustomer(order.customer.id) };
-  const result = await toCustomer(order, reviewVerzoek(order, links), 'review-verzoek');
+  if (!order || order.status === 'cancelled' || order.status === 'pending') return { emailed: false };
+  const to = order.customer.email;
+  if (await isOptedOut(to)) return { emailed: false, to, reason: 'klant is uitgeschreven' };
+  if (!(await claimReviewRequest(orderId))) return { emailed: false, to, reason: 'review-mail werd al eerder verstuurd' };
+  const result = await toCustomer(order, reviewVerzoek(order, { rating: ratingUrl(orderId), unsubscribe: unsubscribeUrlForCustomer(order.customer.id) }), 'review-verzoek');
   if (!result.ok) await releaseReviewRequest(orderId); // try again on the next run
-  return result.ok;
+  return result.ok ? { emailed: true, to } : { emailed: false, to, reason: result.error };
 }
 
 // ── Reminders ──────────────────────────────────────────────────────────────

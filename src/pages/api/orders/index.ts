@@ -203,9 +203,11 @@ export const PATCH: APIRoute = async ({ request }) => {
     await d1Query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
 
     // Only e-mail the customer on a real change (not when re-saving the same status)
-    const emailed = notify !== false && previous !== status ? await notifyStatusChange(orderId, status) : false;
+    const mail = notify !== false && previous !== status
+      ? await notifyStatusChange(orderId, status)
+      : { emailed: false, reason: previous === status ? 'status was al zo' : undefined };
 
-    return json({ success: true, emailed });
+    return json({ success: true, ...mail });
   } catch (error: any) {
     return json({ success: false, error: error?.message }, 500);
   }

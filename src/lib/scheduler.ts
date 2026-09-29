@@ -8,6 +8,7 @@
 // Runs in production by default. REVIEW_SCHEDULER=false switches it off,
 // REVIEW_SCHEDULER=true switches it on in development too.
 
+import { todayIso, belgianHour } from './dates';
 import { env } from './env';
 import { dueReviewOrderIds } from './reviews';
 import { sendReviewRequest, sendDueReminders } from './email';
@@ -19,7 +20,7 @@ let lastCleanup = '';
 
 /** GDPR storage limitation, once a day (see lib/retention.ts) */
 async function dailyCleanup() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
   if (lastCleanup === today) return;
   lastCleanup = today;
   try {
@@ -39,7 +40,7 @@ function enabled(): boolean {
 
 async function runHourlyJobs() {
   await dailyCleanup();
-  const hour = new Date().getHours();
+  const hour = belgianHour();
   if (hour < 9 || hour >= 20) return;
   try {
     const ids = await dueReviewOrderIds();

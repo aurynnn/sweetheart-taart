@@ -3,7 +3,7 @@
 
 import type { FullOrder } from '../orderRepo';
 import * as t from './templates';
-import { ratingUrl, nextCakeUrl, unsubscribeUrlForCustomer, reminderUrl } from './links';
+import { ratingUrl, unsubscribeUrlForCustomer, reminderUrl } from './links';
 import { siteUrl } from './layout';
 
 const sampleReminder = (): t.ReminderView => {
@@ -18,7 +18,7 @@ export const PREVIEWS: Record<string, { label: string; render: (order: FullOrder
   aanvraagGeweigerd: { label: 'Klant: aanvraag niet mogelijk', render: (o) => t.aanvraagGeweigerd(o) },
   reviewVerzoek: {
     label: 'Klant: hoe was het? (review)',
-    render: (o) => t.reviewVerzoek(o, { rating: ratingUrl(o.id), nextCake: nextCakeUrl(o.customer.id), unsubscribe: unsubscribeUrlForCustomer(o.customer.id) }),
+    render: (o) => t.reviewVerzoek(o, { rating: ratingUrl(o.id), unsubscribe: unsubscribeUrlForCustomer(o.customer.id) }),
   },
   herinneringBevestigen: {
     label: 'Herinnering: bevestig je e-mailadres',

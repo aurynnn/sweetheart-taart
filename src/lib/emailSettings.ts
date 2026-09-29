@@ -22,7 +22,7 @@ let cache: { at: number; value: EmailSettings } | null = null;
 
 export function defaultEmailSettings(): EmailSettings {
   return {
-    notifyEmails: [env('ADMIN_NOTIFY_EMAIL', SITE.email)!],
+    notifyEmails: env('ADMIN_NOTIFY_EMAIL', SITE.email)!.split(',').map((e) => e.trim().toLowerCase()).filter((e) => EMAIL_RE.test(e)),
     notifyOnNew: true,
     customerMails: true,
     reviewRequests: true,

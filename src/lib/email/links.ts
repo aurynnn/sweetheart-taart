@@ -11,10 +11,6 @@ const q = (params: Record<string, string>) => new URLSearchParams(params).toStri
 export const ratingUrl = (orderId: string) => (stars: number) =>
   stars === 5 ? SITE.reviewUrl : siteUrl(`/beoordeling?${q({ o: orderId, r: String(stars), t: signToken('review', orderId) })}`);
 
-/** "Plan je volgende taart" — page with the e-mail address filled in */
-export const nextCakeUrl = (customerId: string) =>
-  siteUrl(`/volgende-taart?${q({ c: customerId, t: signToken('customer', customerId) })}`);
-
 export const unsubscribeUrlForCustomer = (customerId: string) =>
   siteUrl(`/uitschrijven?${q({ c: customerId, t: signToken('optout', `c:${customerId}`) })}`);
 

@@ -3,6 +3,7 @@
 // env handling, which does not expose non-PUBLIC_ vars to SSR code reliably).
 // The .env file is re-read when it changes, so new keys work without a restart.
 
+import './timezone';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

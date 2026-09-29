@@ -1,3 +1,4 @@
+import './lib/timezone'; // must be first: server runs in Belgian time
 import { defineMiddleware } from 'astro:middleware';
 import { startScheduler } from './lib/scheduler';
 import { SESSION_COOKIE, readSession, requiresAdmin } from './lib/auth';

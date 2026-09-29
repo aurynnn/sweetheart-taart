@@ -128,6 +128,7 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
 <script>
   import { getOrders, setOrders, setCurrentOrderId, STATUS_CONFIG, renderOrderDetail } from '../../lib/orders';
   import { productName } from '../../lib/catalog';
+  import { formatDate, formatDateTime, todayIso } from '../../lib/dates';
   import { updateStatus } from '../../scripts/admin/toast';
 
   // ── Config ─────────────────────────────────────────────────────────────────
@@ -156,13 +157,11 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
       const data: any[] = Array.isArray(res) ? res : await res.json();
       setOrders(data);
       // Auto-complete orders past their pickup date
-      const today = new Date(); today.setHours(0, 0, 0, 0);
+      // (Belgian calendar day; completing also triggers the one-time review mail)
+      const today = todayIso();
       for (const order of data) {
-        if (order.status === 'approved' && order.date) {
-          const d = new Date(order.date + 'T00:00:00');
-          if (d < today) {
-            await patchStatus(order.id, 'completed', true); // silent patch, no toast
-          }
+        if (order.status === 'approved' && order.date && order.date < today) {
+          await patchStatus(order.id, 'completed', true); // silent patch, no toast
         }
       }
       updateStats();
@@ -251,7 +250,7 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
     return `
       <tr data-order-id="${order.id}" data-status="${order.status}">
         <td class="td-id">#${order.id}</td>
-        <td class="td-date">${escHtml(order.date || '—')}${order.time ? `<br><small>${escHtml(order.time)}</small>` : ''}</td>
+        <td class="td-date">${escHtml(order.date ? formatDate(order.date, 'numeric') : '—')}${order.time ? `<br><small>${escHtml(order.time)}</small>` : ''}</td>
         <td>
           <div class="td-customer">
             <div class="td-avatar">${escHtml(name.charAt(0).toUpperCase())}</div>
@@ -357,15 +356,11 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
     setCurrentOrderId(orderId);
     const subtitle = document.getElementById('modalOrderId');
     if (subtitle) {
-      const d = order.date ? new Date(order.date + 'T00:00:00') : null;
-      if (d && !isNaN(d.getTime())) {
-        const formatted = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
-        subtitle.textContent = `#${order.id} · Ophaaldatum: ${formatted}`;
+      if (order.date) {
+        subtitle.textContent = `#${order.id} · Ophalen ${formatDate(order.date, 'weekday')}${order.time ? ` om ${order.time}` : ''}`;
       } else if (order.createdAt) {
         // Fallback to createdAt when pickup date is empty
-        const created = new Date(order.createdAt);
-        const createdStr = created.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
-        subtitle.textContent = `#${order.id} · Geplaatst: ${createdStr}`;
+        subtitle.textContent = `#${order.id} · Geplaatst: ${formatDateTime(order.createdAt)}`;
       } else {
         subtitle.textContent = `#${order.id}`;
       }

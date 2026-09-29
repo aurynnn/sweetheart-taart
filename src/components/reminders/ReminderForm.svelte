@@ -4,6 +4,7 @@
   // personal link in one of our mails; changing it switches to double opt-in.
   import { fade, scale, slide } from 'svelte/transition';
   import { backOut } from 'svelte/easing';
+  import { todayIso } from '../../lib/dates';
 
   let { email: initialEmail = '', customerId = '', token = '', firstname = '', occasions }: {
     email?: string; customerId?: string; token?: string; firstname?: string;
@@ -14,7 +15,11 @@
   let editingEmail = $state(!initialEmail);
   let name = $state('');
   let occasion = $state('verjaardag');
-  let date = $state('');
+  // Belgian order (dag / maand / jaar) instead of the browser's date field,
+  // which follows the computer's language (e.g. 03/14/2027 on an English laptop)
+  let day = $state('');
+  let month = $state('');
+  let year = $state(String(new Date().getFullYear()));
   let yearly = $state(true);
   let consent = $state(false);
   let sending = $state(false);
@@ -22,14 +27,23 @@
   let result = $state<'active' | 'pending' | null>(null);
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
+  const MONTHS = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+  const thisYear = Number(today.slice(0, 4));
+  const YEARS = [thisYear, thisYear + 1, thisYear + 2, thisYear + 3];
+  const daysIn = (m: number, y: number) => new Date(y, m, 0).getDate();
+  // Yearly reminders only need day + month (29 feb is allowed, so use a leap year)
+  let maxDay = $derived(month ? daysIn(Number(month), yearly ? 2028 : Number(year)) : 31);
+  let date = $derived(day && month ? `${yearly ? thisYear : year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}` : '');
+  $effect(() => { if (day && Number(day) > maxDay) day = String(maxDay); });
   let verifiedEmail = $derived(!!initialEmail && email.trim().toLowerCase() === initialEmail.toLowerCase());
 
   async function submit(e: SubmitEvent) {
     e.preventDefault();
     error = '';
     if (!EMAIL_RE.test(email.trim())) { error = 'Vul een geldig e-mailadres in.'; return; }
-    if (!date) { error = 'Kies de datum van het feest.'; return; }
+    if (!date) { error = 'Kies de dag en maand van het feest.'; return; }
+    if (!yearly && date < today) { error = 'Deze datum ligt in het verleden.'; return; }
     if (!consent) { error = 'Vink aan dat we je hiervoor mogen mailen.'; return; }
     sending = true;
     try {
@@ -59,7 +73,7 @@
       <h3>Check je mailbox 📬</h3>
       <p>We stuurden een bevestigingslink naar <strong>{email}</strong>. Klik erop om je herinnering te activeren.</p>
     {/if}
-    <button type="button" class="again" onclick={() => { result = null; name = ''; date = ''; consent = false; }}>+ Nog een herinnering</button>
+    <button type="button" class="again" onclick={() => { result = null; name = ''; day = ''; month = ''; consent = false; }}>+ Nog een herinnering</button>
   </div>
 {:else}
   <form onsubmit={submit} novalidate>
@@ -90,10 +104,24 @@
         <span class="legend">Voor wie? <small>(optioneel)</small></span>
         <input type="text" maxlength="60" bind:value={name} placeholder="bv. Emma" />
       </label>
-      <label class="field">
-        <span class="legend">Datum van het feest</span>
-        <input type="date" bind:value={date} min={yearly ? undefined : today} required />
-      </label>
+      <fieldset class="field">
+        <legend class="legend">Datum van het feest</legend>
+        <div class="date-row" class:with-year={!yearly}>
+          <select bind:value={day} aria-label="Dag" required>
+            <option value="" disabled>dag</option>
+            {#each Array.from({ length: maxDay }, (_, i) => i + 1) as d}<option value={String(d)}>{d}</option>{/each}
+          </select>
+          <select bind:value={month} aria-label="Maand" required>
+            <option value="" disabled>maand</option>
+            {#each MONTHS as m, i}<option value={String(i + 1)}>{m}</option>{/each}
+          </select>
+          {#if !yearly}
+            <select bind:value={year} aria-label="Jaar" transition:slide={{ axis: 'x' }}>
+              {#each YEARS as y}<option value={String(y)}>{y}</option>{/each}
+            </select>
+          {/if}
+        </div>
+      </fieldset>
     </div>
 
     <label class="check">
@@ -119,7 +147,11 @@
   .field { display: grid; gap: 0.45rem; border: 0; padding: 0; margin: 0; min-width: 0; }
   .legend { font-weight: 700; font-size: 0.92rem; padding: 0; }
   .legend small { font-weight: 400; color: var(--color-text-muted); }
-  input[type='email'], input[type='text'], input[type='date'] { font: inherit; padding: 0.8rem 1rem; border-radius: 0.9rem; border: 1.5px solid var(--color-border); background: #fff; color: var(--color-text); width: 100%; }
+  select { font: inherit; padding: 0.8rem 0.7rem; border-radius: 0.9rem; border: 1.5px solid var(--color-border); background: #fff; color: var(--color-text); min-width: 0; }
+  select:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 4px rgba(232, 120, 138, 0.15); }
+  .date-row { display: grid; grid-template-columns: 0.8fr 1.4fr; gap: 0.5rem; }
+  .date-row.with-year { grid-template-columns: 0.8fr 1.4fr 1fr; }
+  input[type='email'], input[type='text'] { font: inherit; padding: 0.8rem 1rem; border-radius: 0.9rem; border: 1.5px solid var(--color-border); background: #fff; color: var(--color-text); width: 100%; }
   input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 4px rgba(232, 120, 138, 0.15); }
   .field small { color: var(--color-text-muted); font-size: 0.8rem; }
   .email-locked { display: flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1rem; border-radius: 0.9rem; background: #F0FDF4; color: #166534; font-weight: 600; overflow-wrap: anywhere; }

@@ -1,4 +1,5 @@
 ---
+import { todayIso, addDays, formatDate, formatDateTime } from '../../lib/dates';
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 import { listReminders, occasionLabel, type Reminder } from '../../lib/reminders';
 import { listCustomers } from '../../lib/customers';
@@ -13,11 +14,11 @@ try {
   console.error('[admin/herinneringen] failed:', e);
 }
 
-const today = new Date().toISOString().slice(0, 10);
-const in30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+const today = todayIso();
+const in30 = addDays(today, 30);
 const count = (s: string) => reminders.filter((r) => r.status === s).length;
 const upcoming = reminders.filter((r) => r.status === 'active' && r.remind_at <= in30).length;
-const fmt = (iso: string | null) => iso ? new Date(iso.length === 10 ? iso + 'T00:00:00' : iso).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fmt = (value: string | null) => !value ? '—' : value.length === 10 ? formatDate(value, 'short') : formatDateTime(value, false);
 const STATUS: Record<string, { label: string; cls: string }> = {
   pending: { label: 'Wacht op bevestiging', cls: 'warn' },
   active: { label: 'Actief', cls: 'ok' },

@@ -1,4 +1,5 @@
 ---
+import { formatDate } from '../../../lib/dates';
 export interface OrderItem {
   product: string;
   event?: string;
@@ -61,7 +62,7 @@ const sc = statusConfig[order.status] || statusConfig.pending;
   <div class="card-header">
     <div class="card-meta">
       <span class="order-id">#{order.id}</span>
-      <span class="order-date">{order.date || '—'}</span>
+      <span class="order-date">{order.date ? formatDate(order.date, 'numeric') : '—'}</span>
     </div>
     <span class="status-badge" style={`background:${sc.bg}; color:${sc.color}`}>
       <span class="status-dot" style={`background:${sc.dot}`}></span>

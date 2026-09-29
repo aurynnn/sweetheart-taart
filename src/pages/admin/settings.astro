@@ -137,12 +137,12 @@ import EmailSettings from '../../components/admin/EmailSettings.svelte';
 </AdminLayout>
 
 <script>
+  import { todayIso, addDays } from '../../lib/dates';
   // Load settings from API on page load
   async function loadSettings() {
     try {
-      const today = new Date();
-      const startDate = today.toISOString().split('T')[0];
-      const endDate = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const startDate = todayIso();
+      const endDate = addDays(startDate, 90);
       const res = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}`);
       if (!res.ok) return;
       const data = await res.json();

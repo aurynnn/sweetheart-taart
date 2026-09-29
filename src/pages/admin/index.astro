@@ -1,4 +1,5 @@
 ---
+import { todayIso, addDays } from '../../lib/dates';
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 import OrderModal from '../../components/admin/orders/OrderModal.astro';
 import { d1Query } from '../../lib/d1';
@@ -131,7 +132,7 @@ try { reviews = await reviewStats(); } catch (e) { console.warn('[admin] review 
 let reminderList: Reminder[] = [];
 try { reminderList = await listReminders(); } catch (e) { console.warn('[admin] reminders unavailable:', e); }
 const activeReminders = reminderList.filter((r) => r.status === 'active').sort((a, b) => a.remind_at.localeCompare(b.remind_at));
-const in30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+const in30 = addDays(todayIso(), 30);
 const pendingReminders = reminderList.filter((r) => r.status === 'pending').length;
 
 const stars = (n: number) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));

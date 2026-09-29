@@ -166,7 +166,7 @@ export function aanvraagGeweigerd(order: FullOrder): RenderedEmail {
 // ── 5. Customer: hoe was het? (review request) ─────────────────────────────
 const STAR_LABELS = ['Niet goed', 'Matig', 'Oké', 'Lekker!', 'Geweldig!'];
 
-export interface ReviewLinks { rating: (stars: number) => string; nextCake: string; unsubscribe: string }
+export interface ReviewLinks { rating: (stars: number) => string; unsubscribe: string }
 
 export function reviewVerzoek(order: FullOrder, links: ReviewLinks): RenderedEmail {
   // One row of 5 stars; tapping star n gives n stars (5 → straight to Google reviews)
@@ -185,9 +185,6 @@ export function reviewVerzoek(order: FullOrder, links: ReviewLinks): RenderedEma
     </td></tr></table>`,
     paragraph(`<span style="font-size:13px;color:${COLORS.muted}">Je feedback helpt ${esc(SITE.owner)} om elke creatie nog mooier te maken. Bedankt! 💕</span>`, 'text-align:center'),
     hearts(),
-    `<p style="margin:0 0 6px;font-family:${SCRIPT_FONT};font-size:28px;text-align:center;color:${COLORS.pinkDark}">Nog een feestje in zicht?</p>`,
-    paragraph(`Vraag meteen je volgende taart aan, of laat ons je <strong>een maand op voorhand</strong> herinneren aan die verjaardag — dan ben je altijd op tijd.`, 'text-align:center'),
-    button(links.nextCake, '🎂 Plan je volgende taart', 'light'),
   ].join('');
   return {
     subject: `Hoe was je taart, ${firstName(order)}? ⭐`,
@@ -197,7 +194,7 @@ export function reviewVerzoek(order: FullOrder, links: ReviewLinks): RenderedEma
       body,
       footerNote: `Liever geen mails meer zoals deze? <a href="${esc(links.unsubscribe)}" style="color:${COLORS.muted}">Uitschrijven</a>`,
     }),
-    text: `Hoi ${firstName(order)}!\n\nWe hopen dat je hebt gesmuld. Hoe vond je je bestelling?\n${[1, 2, 3, 4, 5].map((n) => `${n} ster${n === 1 ? '' : 'ren'} (${STAR_LABELS[n - 1]}): ${links.rating(n)}`).join('\n')}\n\nPlan je volgende taart of stel een herinnering in: ${links.nextCake}\n\nUitschrijven: ${links.unsubscribe}\n\n${contactText}`,
+    text: `Hoi ${firstName(order)}!\n\nWe hopen dat je hebt gesmuld. Hoe vond je je bestelling?\n${[1, 2, 3, 4, 5].map((n) => `${n} ster${n === 1 ? '' : 'ren'} (${STAR_LABELS[n - 1]}): ${links.rating(n)}`).join('\n')}\n\nUitschrijven: ${links.unsubscribe}\n\n${contactText}`,
   };
 }
 
