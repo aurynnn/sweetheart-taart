@@ -19,6 +19,7 @@ const dayNames = [
   { num: 5, name: 'Vrijdag' },
   { num: 6, name: 'Zaterdag' },
 ];
+import EmailSettings from '../../components/admin/EmailSettings.svelte';
 ---
 
 <AdminLayout title="Instellingen">
@@ -80,45 +81,11 @@ const dayNames = [
   </div>
 
   <div class="settings-section">
-    <h2>Notificatie Instellingen</h2>
+    <h2>E-mail & meldingen</h2>
     <p class="section-description">
-      Configureer hoe je notificaties ontvangt voor nieuwe bestellingen.
+      Kies wie een melding krijgt bij een nieuwe aanvraag en welke mails automatisch vertrekken.
     </p>
-    
-    <div class="settings-card">
-      <div class="setting-row">
-        <div class="setting-info">
-          <strong>E-mail notificaties</strong>
-          <span>Ontvang een e-mail bij elke nieuwe bestelling</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-      
-      <div class="setting-row">
-        <div class="setting-info">
-          <strong>SMS notificaties</strong>
-          <span>Ontvang een SMS bij spoedbestellingen</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox">
-          <span class="slider"></span>
-        </label>
-      </div>
-      
-      <div class="setting-row">
-        <div class="setting-info">
-          <strong>Dagelijkse samenvatting</strong>
-          <span>Ontvang elke ochtend een overzicht van de dag</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
+    <EmailSettings client:load />
   </div>
 
   <div class="settings-section">

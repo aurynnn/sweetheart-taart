@@ -267,7 +267,8 @@ try {
 @keyframes badgePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,120,138,0.5); } 50% { box-shadow: 0 0 0 6px rgba(232,120,138,0); } }
 
 .content-body { animation: contentIn 500ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-@keyframes contentIn { from { opacity: 0; transform: translateY(10px); } }
+/* opacity only: a transform here would trap position:fixed modals inside the content area */
+@keyframes contentIn { from { opacity: 0; } }
 
 .mobile-bar, .sidebar-backdrop { display: none; }
 

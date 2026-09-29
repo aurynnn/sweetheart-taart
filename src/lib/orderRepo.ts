@@ -4,9 +4,11 @@
 import { d1Query } from './d1';
 import { tableColumns, customerNameSql } from './schema';
 import { formatEuro, parseEuro } from './catalog';
+import { attachNotePhotos } from './orders';
 
 export interface OrderFilters {
   id?: string;
+  ids?: string[];
   status?: string | null;
   dateFrom?: string | null;
   dateTo?: string | null;
@@ -41,6 +43,7 @@ export async function listOrders(filters: OrderFilters = {}): Promise<FullOrder[
   `;
   const bindings: unknown[] = [];
   if (filters.id) { query += ' AND o.id = ?'; bindings.push(filters.id); }
+  if (filters.ids?.length) { query += ` AND o.id IN (${filters.ids.map(() => '?').join(',')})`; bindings.push(...filters.ids); }
   if (filters.status) { query += ' AND o.status = ?'; bindings.push(filters.status); }
   if (filters.dateFrom) { query += ' AND o.date >= ?'; bindings.push(filters.dateFrom); }
   if (filters.dateTo) { query += ' AND o.date <= ?'; bindings.push(filters.dateTo); }
@@ -76,7 +79,7 @@ export async function listOrders(filters: OrderFilters = {}): Promise<FullOrder[
     }
   }
 
-  return rows.map((row: any) => ({
+  return rows.map((row: any) => attachNotePhotos({
     id: row.id,
     date: row.date,
     time: row.time,
@@ -94,7 +97,7 @@ export async function listOrders(filters: OrderFilters = {}): Promise<FullOrder[
       notes: row.notes,
     },
     items: itemsByOrder.get(row.id) ?? [],
-  }));
+  } as any) as FullOrder);
 }
 
 export async function getOrder(id: string): Promise<FullOrder | null> {

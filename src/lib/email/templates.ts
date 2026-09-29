@@ -1,139 +1,194 @@
 // src/lib/email/templates.ts — The e-mails Sweetheart sends. Each returns subject + HTML + plain text.
 
-import { SITE, fullAddress, directionsUrl } from '../../config/site';
+import { SITE, fullAddress, directionsUrl, EMAIL_IMAGES } from '../../config/site';
 import { itemPrice, itemSummary, productName, formatEuro, type AanvraagItem } from '../catalog';
 import type { FullOrder } from '../orderRepo';
-import { COLORS, button, callout, detailRows, esc, heading, layout, paragraph, siteUrl, steps } from './layout';
+import {
+  COLORS, FONT, SCRIPT_FONT, button, callout, detailRows, esc, eyebrow, hearts, imageUrl, layout,
+  paragraph, productImage, siteUrl, timeline,
+} from './layout';
 
 export interface RenderedEmail { subject: string; html: string; text: string }
 
 const formatDate = (iso: string) =>
   new Date(iso + 'T00:00:00').toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
 const pickup = (o: Pick<FullOrder, 'date' | 'time'>) => `${formatDate(o.date)}${o.time ? ` om ${o.time}` : ''}`;
+const firstName = (o: FullOrder) => o.customer.firstname || 'daar';
 
-function itemLine(item: FullOrder['items'][number]) {
-  const summary = itemSummary(item as AanvraagItem);
+function itemInfo(item: FullOrder['items'][number]) {
+  const summary = itemSummary({ ...(item as AanvraagItem), quantity: item.product === 'feesttaart' ? undefined : item.quantity });
   return { name: productName(item.product), summary, price: item.price || itemPrice(item as AanvraagItem) };
 }
 
-/** Product table with optional per-item notes (allergies, wishes, photo) */
-function itemsTable(order: FullOrder, forAdmin = false): string {
+/** The order as a "bon": product photo, details, price — dashed border like a ticket */
+function ticket(order: FullOrder, forOwner = false): string {
   const rows = order.items.map((item) => {
-    const { name, summary, price } = itemLine(item);
+    const { name, summary, price } = itemInfo(item);
     const extras = [
-      item.allergies ? `<div style="margin-top:4px;color:#B45309;font-weight:700">⚠ Allergieën: ${esc(item.allergies)}</div>` : '',
-      item.message ? `<div style="margin-top:4px;color:${COLORS.muted};font-style:italic">“${esc(item.message)}”</div>` : '',
+      item.allergies ? `<div style="margin-top:6px;display:inline-block;padding:3px 10px;border-radius:999px;background:#FFFBEB;color:#B45309;font-size:12px;font-weight:700">⚠ ${esc(item.allergies)}</div>` : '',
+      item.message ? `<div style="margin-top:6px;color:${COLORS.muted};font-style:italic;font-size:13px">“${esc(item.message)}”</div>` : '',
       item.image
-        ? forAdmin
-          ? `<div style="margin-top:4px"><a href="${esc(siteUrl(`/admin/api/upload?key=${encodeURIComponent(item.image)}`))}" style="color:${COLORS.pinkDark}">📷 Voorbeeldfoto bekijken</a></div>`
-          : `<div style="margin-top:4px;color:${COLORS.muted}">📷 Voorbeeldfoto toegevoegd</div>`
+        ? forOwner
+          ? `<div style="margin-top:6px"><a href="${esc(siteUrl(`/admin/api/upload?key=${encodeURIComponent(item.image)}`))}" style="color:${COLORS.pinkDark};font-size:13px;font-weight:700">📷 Voorbeeldfoto bekijken</a></div>`
+          : `<div style="margin-top:6px;color:${COLORS.muted};font-size:13px">📷 Voorbeeldfoto ontvangen</div>`
         : '',
     ].join('');
     return `<tr>
-      <td style="padding:12px 0;border-bottom:1px solid ${COLORS.line};font-family:Helvetica,Arial,sans-serif;font-size:15px;color:${COLORS.ink};vertical-align:top">
-        <strong>${esc(name)}</strong><br><span style="font-size:14px;color:${COLORS.muted}">${esc(summary || 'Standaard')}</span>${extras}
+      <td width="72" valign="top" style="padding:14px 0 14px 16px">
+        <img src="${esc(productImage(item.product))}" alt="${esc(name)}" width="60" height="60" style="display:block;width:60px;height:60px;border-radius:14px;object-fit:cover;background:${COLORS.blush}">
       </td>
-      <td style="padding:12px 0;border-bottom:1px solid ${COLORS.line};font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:${COLORS.pinkDark};text-align:right;vertical-align:top;white-space:nowrap">${esc(formatEuro(price))}</td>
+      <td valign="top" style="padding:14px 10px;font-family:${FONT};font-size:15px;color:${COLORS.ink}">
+        <strong>${esc(name)}</strong><br><span style="font-size:13px;color:${COLORS.muted}">${esc(summary || 'Standaard')}</span>${extras}
+      </td>
+      <td valign="top" align="right" style="padding:14px 16px 14px 0;font-family:${FONT};font-size:15px;font-weight:800;color:${COLORS.pinkDark};white-space:nowrap">${esc(formatEuro(price))}</td>
     </tr>`;
-  }).join('');
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px;border-collapse:collapse">${rows}
-    <tr>
-      <td style="padding:14px 0 20px;font-family:Helvetica,Arial,sans-serif;font-size:15px;color:${COLORS.ink}"><strong>Totaal</strong> <span style="color:${COLORS.muted};font-size:13px">(indicatie)</span></td>
-      <td style="padding:14px 0 20px;font-family:Helvetica,Arial,sans-serif;font-size:18px;font-weight:800;color:${COLORS.pinkDark};text-align:right">${esc(order.total)}</td>
-    </tr>
+  }).join(`<tr><td colspan="3" style="padding:0 16px"><div style="border-top:1px dashed ${COLORS.line}"></div></td></tr>`);
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 22px;border:2px dashed ${COLORS.pinkLight};border-radius:18px;background:${COLORS.cream}">
+    <tr><td colspan="3" style="padding:12px 16px 0;font-family:${FONT};font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:${COLORS.pink}">${forOwner ? 'Aanvraag' : 'Jouw aanvraag'} · #${esc(order.id)}</td></tr>
+    ${rows}
+    <tr><td colspan="2" style="padding:12px 16px 16px;border-top:1px solid ${COLORS.line};font-family:${FONT};font-size:15px;color:${COLORS.ink}"><strong>Totaal</strong> <span style="font-size:12px;color:${COLORS.muted}">(indicatie)</span></td>
+      <td align="right" style="padding:12px 16px 16px;border-top:1px solid ${COLORS.line};font-family:${FONT};font-size:20px;font-weight:800;color:${COLORS.pinkDark}">${esc(order.total)}</td></tr>
   </table>`;
 }
 
 function itemsText(order: FullOrder): string {
   return order.items.map((item) => {
-    const { name, summary, price } = itemLine(item);
+    const { name, summary, price } = itemInfo(item);
     return `- ${name}${summary ? ` (${summary})` : ''}: ${formatEuro(price)}${item.allergies ? `\n  Allergieën: ${item.allergies}` : ''}${item.message ? `\n  Wensen: ${item.message}` : ''}`;
   }).join('\n') + `\nTotaal (indicatie): ${order.total}`;
 }
 
 const contactText = `${SITE.owner} — ${SITE.name}\n${fullAddress}\n${SITE.phone.display} · ${SITE.email}`;
+const phoneLink = () => `<a href="${esc(SITE.phone.href)}" style="color:${COLORS.pinkDark};font-weight:700">${esc(SITE.phone.display)}</a>`;
 
 // ── 1. Customer: aanvraag ontvangen ────────────────────────────────────────
 export function aanvraagOntvangen(order: FullOrder): RenderedEmail {
-  const name = order.customer.firstname || 'daar';
   const body = [
-    heading(`Bedankt, ${name}!`),
-    paragraph(`We hebben je aanvraag <strong>#${esc(order.id)}</strong> goed ontvangen. Hieronder vind je een overzicht.`),
-    callout(`<strong>Ophalen:</strong> ${esc(pickup(order))}<br><span style="color:${COLORS.muted}">${esc(fullAddress)}</span>`),
-    itemsTable(order),
-    paragraph(`<strong>Wat gebeurt er nu?</strong>`),
-    steps([
-      [`${SITE.owner} bekijkt je aanvraag`, 'Meestal binnen 1 à 2 werkdagen.'],
-      ['Je krijgt een bevestiging', 'Per mail of telefoon, met de definitieve prijs.'],
-      ['Ophalen & smullen', `Op ${pickup(order)}.`],
+    paragraph(`Hoi ${esc(firstName(order))}! 💕 Wat leuk dat je aan ons denkt. Je aanvraag is goed ontvangen — hieronder vind je een overzicht.`),
+    callout('📅', `<strong>Ophalen</strong><br>${esc(pickup(order))}<br><span style="color:${COLORS.muted}">${esc(fullAddress)}</span>`),
+    ticket(order),
+    eyebrow('Wat gebeurt er nu?'),
+    timeline([
+      { title: 'Aanvraag ontvangen', text: 'Dat is gelukt!', state: 'done' },
+      { title: `${SITE.owner} bekijkt je aanvraag`, text: 'Meestal binnen 1 à 2 werkdagen.', state: 'current' },
+      { title: 'Je krijgt een bevestiging', text: 'Per mail, met de definitieve prijs.', state: 'next' },
+      { title: 'Ophalen & smullen', text: pickup(order), state: 'next' },
     ]),
-    paragraph(`Dit is een <strong>vrijblijvende aanvraag</strong> — je betaalt nu nog niets. Iets wijzigen of een vraag? Beantwoord gewoon deze mail of bel ${esc(SITE.phone.display)}.`),
+    paragraph(`Dit is een <strong>vrijblijvende aanvraag</strong> — je betaalt nu nog niets. Iets wijzigen of een vraag? Beantwoord gewoon deze mail of bel ${phoneLink()}.`),
+    hearts(),
   ].join('');
   return {
-    subject: `We hebben je aanvraag ontvangen 🎂 (#${order.id})`,
-    html: layout({ preheader: `Ophalen op ${pickup(order)} — ${SITE.owner} neemt snel contact op.`, body }),
-    text: `Bedankt, ${name}!\n\nWe hebben je aanvraag #${order.id} goed ontvangen.\n\nOphalen: ${pickup(order)}\n${fullAddress}\n\n${itemsText(order)}\n\n${SITE.owner} bekijkt je aanvraag en bevestigt meestal binnen 1 à 2 werkdagen, met de definitieve prijs. Je betaalt nu nog niets.\n\n${contactText}`,
+    subject: `Joepie, je aanvraag is binnen! 🎂 (#${order.id})`,
+    html: layout({
+      preheader: `Ophalen op ${pickup(order)} — ${SITE.owner} neemt snel contact op.`,
+      hero: { eyebrow: 'Aanvraag ontvangen', title: `Bedankt, ${firstName(order)}!`, subtitle: 'We gaan er iets moois van maken.', image: imageUrl(EMAIL_IMAGES.heroReceived), imageAlt: 'Cupcakes van Sweetheart' },
+      body,
+    }),
+    text: `Bedankt, ${firstName(order)}!\n\nWe hebben je aanvraag #${order.id} goed ontvangen.\n\nOphalen: ${pickup(order)}\n${fullAddress}\n\n${itemsText(order)}\n\n${SITE.owner} bekijkt je aanvraag en bevestigt meestal binnen 1 à 2 werkdagen, met de definitieve prijs. Je betaalt nu nog niets.\n\n${contactText}`,
   };
 }
 
-// ── 2. Nathalie: nieuwe aanvraag ───────────────────────────────────────────
+// ── 2. Owner: nieuwe aanvraag ──────────────────────────────────────────────
 export function nieuweAanvraag(order: FullOrder): RenderedEmail {
   const c = order.customer;
   const who = [c.firstname, c.lastname].filter(Boolean).join(' ') || c.email;
   const hasAllergy = order.items.some((i) => i.allergies);
   const body = [
-    heading('Nieuwe aanvraag!'),
-    paragraph(`<strong>${esc(who)}</strong> heeft zonet een aanvraag verstuurd${hasAllergy ? ' — <span style="color:#B45309;font-weight:700">met allergieën</span>' : ''}.`),
+    paragraph(`<strong>${esc(who)}</strong> heeft zonet een aanvraag verstuurd${hasAllergy ? ' — <span style="color:#B45309;font-weight:800">⚠ met allergieën</span>' : ''}.`),
     detailRows([
-      ['Aanvraag', `#${esc(order.id)}`],
       ['Ophalen', esc(pickup(order))],
       ['E-mail', `<a href="mailto:${esc(c.email)}" style="color:${COLORS.pinkDark}">${esc(c.email)}</a>`],
       ['Telefoon', `<a href="tel:${esc(c.phone.replace(/[^0-9+]/g, ''))}" style="color:${COLORS.pinkDark}">${esc(c.phone)}</a>`],
     ]),
-    itemsTable(order, true),
-    order.message ? callout(`<strong>Opmerking van de klant:</strong><br>${esc(order.message).replace(/\n/g, '<br>')}`) : '',
-    button(siteUrl('/admin'), 'Bekijk en bevestig in het dashboard'),
-    paragraph(`<span style="font-size:13px;color:${COLORS.muted}">Tip: beantwoord deze mail om de klant rechtstreeks te mailen.</span>`),
+    ticket(order, true),
+    order.message ? callout('💬', `<strong>Opmerking van de klant</strong><br>${esc(order.message).replace(/\n/g, '<br>')}`) : '',
+    button(siteUrl('/admin'), 'Bekijk & bevestig in het dashboard'),
+    paragraph(`<span style="font-size:13px;color:${COLORS.muted}">Tip: beantwoord deze mail om de klant rechtstreeks te mailen.</span>`, 'text-align:center'),
   ].join('');
   return {
     subject: `🎂 Nieuwe aanvraag van ${who} — ${formatDate(order.date)}`,
-    html: layout({ preheader: `${who} · ophalen ${pickup(order)} · ${order.total}`, body, signature: false }),
+    html: layout({
+      preheader: `${who} · ophalen ${pickup(order)} · ${order.total}`,
+      hero: { eyebrow: `Nieuwe aanvraag · #${order.id}`, title: 'Er is een nieuwe aanvraag!', subtitle: pickup(order) },
+      body, signature: false, social: false,
+    }),
     text: `Nieuwe aanvraag #${order.id} van ${who}\n\nOphalen: ${pickup(order)}\nE-mail: ${c.email}\nTelefoon: ${c.phone}\n\n${itemsText(order)}${order.message ? `\n\nOpmerking: ${order.message}` : ''}\n\nDashboard: ${siteUrl('/admin')}`,
   };
 }
 
 // ── 3. Customer: bevestigd ─────────────────────────────────────────────────
 export function aanvraagBevestigd(order: FullOrder): RenderedEmail {
-  const name = order.customer.firstname || 'daar';
   const body = [
-    heading(`Joepie ${name}, het is in orde! 🎉`),
-    paragraph(`Je aanvraag <strong>#${esc(order.id)}</strong> is bevestigd. ${esc(SITE.owner)} gaat met veel liefde voor je aan de slag.`),
-    callout(`<strong>Ophalen:</strong> ${esc(pickup(order))}<br>${esc(fullAddress)}<br><span style="color:${COLORS.muted}">De bel van het atelier hangt aan de carport, naast het uithangbord.</span>`),
-    itemsTable(order),
-    button(directionsUrl, '📍 Route plannen in Google Maps'),
-    paragraph(`Het resterende bedrag betaal je bij het ophalen, contant of met Payconiq. Te laat of verhinderd? Laat het even weten via ${esc(SITE.phone.display)}.`),
-    paragraph(`<a href="${esc(siteUrl('/tips#bewaren'))}" style="color:${COLORS.pinkDark};font-weight:700">Tips om je taart mooi thuis te krijgen →</a>`),
+    paragraph(`Hoi ${esc(firstName(order))}, goed nieuws: je aanvraag is <strong>bevestigd</strong>! ${esc(SITE.owner)} gaat met veel liefde voor je aan de slag. 🎉`),
+    callout('📍', `<strong>Tot ${esc(pickup(order))}</strong><br>${esc(fullAddress)}<br><span style="color:${COLORS.muted}">De bel van het atelier hangt aan de carport, naast het uithangbord.</span>`),
+    button(directionsUrl, '📍 Route plannen'),
+    ticket(order),
+    eyebrow('Handig om te weten'),
+    timeline([
+      { title: 'Aanvraag bevestigd', text: 'Je taart staat in de agenda.', state: 'done' },
+      { title: 'Ophalen', text: `${pickup(order)} — betalen kan contant of met Payconiq.`, state: 'current' },
+      { title: 'Genieten!', text: 'Haal je taart een half uurtje op voorhand uit de koelkast.', state: 'next' },
+    ]),
+    paragraph(`Te laat of verhinderd? Laat het even weten via ${phoneLink()}. <a href="${esc(siteUrl('/tips#bewaren'))}" style="color:${COLORS.pinkDark};font-weight:700">Bekijk onze tips</a> om je taart mooi thuis te krijgen.`),
+    hearts(),
   ].join('');
   return {
-    subject: `Je aanvraag is bevestigd 🎉 (#${order.id})`,
-    html: layout({ preheader: `Tot ${pickup(order)}!`, body }),
-    text: `Joepie ${name}, het is in orde!\n\nJe aanvraag #${order.id} is bevestigd.\n\nOphalen: ${pickup(order)}\n${fullAddress}\nRoute: ${directionsUrl}\n\n${itemsText(order)}\n\nHet resterende bedrag betaal je bij het ophalen (contant of Payconiq).\nTips: ${siteUrl('/tips')}\n\n${contactText}`,
+    subject: `Het is in orde! Je aanvraag is bevestigd 🎉 (#${order.id})`,
+    html: layout({
+      preheader: `Tot ${pickup(order)}!`,
+      hero: { eyebrow: 'Bevestigd', title: `Joepie, ${firstName(order)}!`, subtitle: `Ophalen: ${pickup(order)}`, image: imageUrl(EMAIL_IMAGES.heroConfirmed), imageAlt: 'Feesttaart van Sweetheart' },
+      body,
+    }),
+    text: `Joepie ${firstName(order)}, het is in orde!\n\nJe aanvraag #${order.id} is bevestigd.\n\nOphalen: ${pickup(order)}\n${fullAddress}\nRoute: ${directionsUrl}\n\n${itemsText(order)}\n\nHet resterende bedrag betaal je bij het ophalen (contant of Payconiq).\nTips: ${siteUrl('/tips')}\n\n${contactText}`,
   };
 }
 
 // ── 4. Customer: niet mogelijk ─────────────────────────────────────────────
 export function aanvraagGeweigerd(order: FullOrder): RenderedEmail {
-  const name = order.customer.firstname || 'daar';
   const body = [
-    heading(`Hoi ${name},`),
-    paragraph(`Bedankt voor je aanvraag <strong>#${esc(order.id)}</strong> voor ${esc(pickup(order))}. Helaas lukt het ${esc(SITE.owner)} niet om deze aanvraag uit te voeren — vaak omdat de agenda op die dag al vol zit.`),
-    paragraph(`Misschien past een andere datum wel? Bel gerust even naar <a href="${esc(SITE.phone.href)}" style="color:${COLORS.pinkDark}">${esc(SITE.phone.display)}</a> of dien een nieuwe aanvraag in — dan zoeken we samen een oplossing.`),
-    button(siteUrl('/aanvraag'), 'Nieuwe aanvraag indienen'),
+    paragraph(`Hoi ${esc(firstName(order))}, bedankt voor je aanvraag <strong>#${esc(order.id)}</strong> voor ${esc(pickup(order))}. Helaas lukt het ${esc(SITE.owner)} niet om deze aanvraag uit te voeren — vaak omdat de agenda op die dag al vol zit.`),
+    callout('💡', `Misschien past een <strong>andere datum</strong> wel? Bel gerust even naar ${phoneLink()} of dien een nieuwe aanvraag in — dan zoeken we samen een oplossing.`),
+    button(siteUrl('/aanvraag'), 'Kies een andere datum'),
+    hearts(),
   ].join('');
   return {
     subject: `Over je aanvraag bij ${SITE.name} (#${order.id})`,
-    html: layout({ preheader: 'Helaas lukt je aanvraag niet op deze datum — misschien een andere dag?', body }),
-    text: `Hoi ${name},\n\nBedankt voor je aanvraag #${order.id} voor ${pickup(order)}. Helaas lukt het ${SITE.owner} niet om deze aanvraag uit te voeren.\n\nMisschien past een andere datum wel? Bel ${SITE.phone.display} of dien een nieuwe aanvraag in: ${siteUrl('/aanvraag')}\n\n${contactText}`,
+    html: layout({
+      preheader: 'Helaas lukt je aanvraag niet op deze datum — misschien een andere dag?',
+      hero: { eyebrow: `Aanvraag #${order.id}`, title: 'Oei, deze datum lukt niet', subtitle: 'Maar we denken graag mee over een andere dag.' },
+      body,
+    }),
+    text: `Hoi ${firstName(order)},\n\nBedankt voor je aanvraag #${order.id} voor ${pickup(order)}. Helaas lukt het ${SITE.owner} niet om deze aanvraag uit te voeren.\n\nMisschien past een andere datum wel? Bel ${SITE.phone.display} of dien een nieuwe aanvraag in: ${siteUrl('/aanvraag')}\n\n${contactText}`,
+  };
+}
+
+// ── 5. Customer: hoe was het? (review request) ─────────────────────────────
+const STAR_LABELS = ['Niet goed', 'Matig', 'Oké', 'Lekker!', 'Geweldig!'];
+
+export function reviewVerzoek(order: FullOrder, ratingUrl: (stars: number) => string): RenderedEmail {
+  const stars = [1, 2, 3, 4, 5].map((n) => `
+    <td align="center" width="20%" style="padding:0 3px">
+      <a href="${esc(ratingUrl(n))}" style="display:block;text-decoration:none;padding:12px 0 10px;border-radius:14px;background:#ffffff;border:1px solid ${COLORS.line}" title="${n} ster${n === 1 ? '' : 'ren'}">
+        <span style="display:block;font-size:13px;line-height:1.2;color:${COLORS.gold};letter-spacing:-1px">${'★'.repeat(n)}</span>
+        <span style="display:block;margin-top:6px;font-family:${FONT};font-size:12px;font-weight:800;color:${COLORS.ink}">${STAR_LABELS[n - 1]}</span>
+      </a>
+    </td>`).join('');
+  const body = [
+    paragraph(`Hoi ${esc(firstName(order))}! We hopen dat je bestelling een echte blikvanger was en dat iedereen heeft gesmuld. 🎂`),
+    paragraph(`Mogen we vragen hoe je het vond? <strong>Eén tik is genoeg:</strong>`, 'text-align:center'),
+    `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 20px;border-radius:18px;background:${COLORS.blush}"><tr><td style="padding:14px 8px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>${stars}</tr></table></td></tr></table>`,
+    paragraph(`<span style="font-size:13px;color:${COLORS.muted}">Je feedback helpt ${esc(SITE.owner)} om elke creatie nog mooier te maken. Bedankt! 💕</span>`, 'text-align:center'),
+    hearts(),
+    `<p style="margin:0 0 12px;font-family:${SCRIPT_FONT};font-size:26px;text-align:center;color:${COLORS.pinkDark}">Tot een volgend feestje?</p>`,
+    button(siteUrl('/aanvraag'), 'Plan alvast je volgende taart', 'light'),
+  ].join('');
+  return {
+    subject: `Hoe was je taart, ${firstName(order)}? ⭐`,
+    html: layout({
+      preheader: 'Eén tik op de sterren — het duurt maar 2 seconden.',
+      hero: { eyebrow: 'We zijn benieuwd!', title: 'Hoe was het?', subtitle: 'Vertel het ons in één tik', image: imageUrl(EMAIL_IMAGES.heroReview), imageAlt: 'Verjaardagstaart van Sweetheart' },
+      body,
+    }),
+    text: `Hoi ${firstName(order)}!\n\nWe hopen dat je hebt gesmuld. Hoe vond je je bestelling? Geef een score van 1 tot 5:\n${[1, 2, 3, 4, 5].map((n) => `${n} ster${n === 1 ? '' : 'ren'} (${STAR_LABELS[n - 1]}): ${ratingUrl(n)}`).join('\n')}\n\nBedankt!\n\n${contactText}`,
   };
 }

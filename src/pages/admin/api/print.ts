@@ -1,140 +1,57 @@
 import type { APIRoute } from 'astro';
-import PDFDocument from 'pdfkit';
-import { d1Query } from '../../../lib/d1';
-import { customerNameSql } from '../../../lib/schema';
-import { formatEuro, parseEuro } from '../../../lib/catalog';
+import { listOrders } from '../../../lib/orderRepo';
+import { getObject } from '../../../lib/r2';
+import { isUploadKey } from '../../../lib/catalog';
+import { renderBakingSheet, type PhotoMap } from '../../../lib/pdf/bakingSheet';
+
+const json = (data: unknown, status: number) =>
+  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+
+/** Fetch the customers' example photos (JPEG/PNG only — pdfkit can't embed WebP). */
+async function loadPhotos(keys: string[]): Promise<PhotoMap> {
+  const photos: PhotoMap = new Map();
+  await Promise.all(keys.filter(isUploadKey).map(async (key) => {
+    try {
+      const res = await getObject(key);
+      if (!res.ok) return;
+      const buf = Buffer.from(await res.arrayBuffer());
+      const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
+      const isPng = buf[0] === 0x89 && buf[1] === 0x50;
+      if (isJpeg || isPng) photos.set(key, buf);
+    } catch { /* print without that photo */ }
+  }));
+  return photos;
+}
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const { orderIds } = await request.json();
-
-    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-      return new Response(JSON.stringify({ error: 'Geen bestellingen geselecteerd' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (!Array.isArray(orderIds) || orderIds.length === 0 || orderIds.length > 100) {
+      return json({ error: 'Geen aanvragen geselecteerd' }, 400);
     }
 
-    // Fetch orders with customer and items
-    const placeholders = orderIds.map(() => '?').join(',');
-    const name = await customerNameSql('c');
-    const ordersResult = await d1Query(
-      `SELECT o.id, o.date, o.status, o.total, o.message,
-              ${name.first} as firstname, ${name.last} as lastname, c.email, c.phone
-       FROM orders o
-       JOIN customers c ON o.customer_id = c.id
-       WHERE o.id IN (${placeholders})`,
-      orderIds
-    );
+    const orders = await listOrders({ ids: orderIds.map(String) });
+    if (!orders.length) return json({ error: 'Geen aanvragen gevonden' }, 404);
 
-    if (!ordersResult.results || ordersResult.results.length === 0) {
-      return new Response(JSON.stringify({ error: 'Geen bestellingen gevonden' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const photos = await loadPhotos(orders.flatMap((o) => o.items.map((i) => i.image).filter(Boolean) as string[]));
+    const doc = renderBakingSheet(orders, photos);
 
-    // Fetch items for each order
-    const orders = [];
-    for (const row of ordersResult.results || []) {
-      const itemsResult = await d1Query(
-        'SELECT product, event, persons, flavor, allergies, price FROM order_items WHERE order_id = ?',
-        [row.id]
-      );
-      orders.push({
-        ...row,
-        items: itemsResult.results || [],
-      });
-    }
-
-    // Generate PDF
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
-
-    const statusLabels: Record<string, string> = {
-      pending: 'In afwachting',
-      approved: 'Goedgekeurd',
-      completed: 'Voltooid',
-      cancelled: 'Geannuleerd',
-    };
-
-    // Header
-    doc.fontSize(20).font('Helvetica-Bold').text('Sweetheart Bakery', 50, 50);
-    doc.fontSize(12).font('Helvetica').text(`Bestellingen - ${new Date().toLocaleDateString('nl-BE')}`, 50, 75);
-    doc.moveTo(50, 95).lineTo(545, 95).stroke();
-
-    let y = 110;
-
-    for (const order of orders) {
-      if (y > 700) {
-        doc.addPage();
-        y = 50;
-      }
-
-      const cardHeight = 130;
-
-      // Card background
-      doc.rect(50, y, 495, cardHeight).fillAndStroke('#fdf0f2', '#E8788A');
-
-      // Header bar
-      doc.rect(50, y, 495, 25).fillAndStroke('#E8788A', '#E8788A');
-
-      // Order ID + Status
-      doc.fillColor('white').fontSize(11).font('Helvetica-Bold')
-        .text(`${order.id}`, 60, y + 7);
-      doc.text(statusLabels[order.status] || order.status, 480, y + 7, { width: 55, align: 'right' });
-
-      // Date
-      doc.fillColor('#1e293b').fontSize(9).font('Helvetica')
-        .text(new Date(order.date + 'T00:00:00').toLocaleDateString('nl-BE', {
-          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-        }), 60, y + 30);
-
-      // Customer info
-      const customerName = [order.firstname, order.lastname].filter(Boolean).join(' ') || 'Onbekend';
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e293b').text(customerName, 60, y + 48);
-      doc.font('Helvetica').fontSize(9).fillColor('#64748b');
-      if (order.email) doc.text(order.email, 60, y + 63);
-      if (order.phone) doc.text(order.phone, 200, y + 63);
-
-      // Items
-      doc.fillColor('#1e293b').fontSize(9);
-      let itemY = y + 78;
-      for (const item of order.items || []) {
-        const itemText = `${item.product}${item.event ? ` (${item.event})` : ''}${item.flavor ? ` - ${item.flavor}` : ''}${item.persons ? ` - ${item.persons} personen` : ''}`;
-        doc.text(itemText, 60, itemY);
-        itemY += 13;
-      }
-
-      // Total + message
-      doc.font('Helvetica-Bold').fontSize(10).fillColor('#1e293b').text(formatEuro(parseEuro(order.total)), 60, y + cardHeight - 22);
-      if (order.message) {
-        doc.font('Helvetica').fontSize(8).fillColor('#64748b')
-          .text(`Opmerking: ${order.message}`, 120, y + cardHeight - 22, { width: 320 });
-      }
-
-      y += cardHeight + 15;
-    }
-
-    // Get PDF as buffer
-    const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+    const chunks: Buffer[] = [];
+    const pdf = await new Promise<Buffer>((resolve, reject) => {
+      doc.on('data', (c: Buffer) => chunks.push(c));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
       doc.end();
     });
 
-    return new Response(pdfBuffer, {
-      status: 200,
+    return new Response(new Uint8Array(pdf), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="bestellingen-${Date.now()}.pdf"`,
+        'Content-Disposition': `attachment; filename="sweetheart-te-maken-${new Date().toISOString().slice(0, 10)}.pdf"`,
       },
     });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error?.message ?? 'Failed' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error('[admin/api/print] failed:', error);
+    return json({ error: 'PDF maken mislukt' }, 500);
   }
 };

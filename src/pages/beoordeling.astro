@@ -1,0 +1,62 @@
+---
+// Landing page for the star links in the review e-mail.
+// The page script saves the score; 5 stars → on to Google reviews, 1–4 stars → a short feedback form.
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import FeedbackForm from '../components/review/FeedbackForm.svelte';
+import { SITE } from '../config/site';
+import { verifyReviewToken, getReview } from '../lib/reviews';
+
+const orderId = Astro.url.searchParams.get('o') ?? '';
+const token = Astro.url.searchParams.get('t') ?? '';
+const rating = Number(Astro.url.searchParams.get('r'));
+const valid = /^ORD-\d+$/.test(orderId) && verifyReviewToken(orderId, token) && Number.isInteger(rating) && rating >= 1 && rating <= 5;
+
+// Nothing is saved on page load: e-mail link scanners open every star link.
+// The rating is posted by the page's script (see FeedbackForm), which scanners don't run.
+let alreadyFeedback = false;
+if (valid) {
+  try {
+    alreadyFeedback = !!(await getReview(orderId))?.feedback;
+  } catch (e) {
+    console.error('[beoordeling] could not load review:', e);
+  }
+}
+Astro.response.headers.set('X-Robots-Tag', 'noindex');
+---
+
+<Layout title="Bedankt voor je beoordeling" description="Laat ons weten hoe je bestelling bij Sweetheart was.">
+  <Header />
+  <main class="collection">
+    <section class="rv-hero grain">
+      <div class="container relative z-10 text-center">
+        <span class="rv-badge"><i class="fa-solid fa-heart" aria-hidden="true"></i> Jouw mening telt</span>
+        <h1 class="rv-title" data-split>{!valid ? 'Oeps, deze link werkt niet' : rating === 5 ? 'Joepie, dankjewel!' : 'Bedankt voor je score!'}</h1>
+      </div>
+    </section>
+
+    <div class="container rv-body">
+      <div class="rv-card animate-on-scroll">
+        {valid ? (
+          <FeedbackForm client:load orderId={orderId} token={token} rating={rating} alreadySent={alreadyFeedback} reviewUrl={SITE.reviewUrl} />
+        ) : (
+          <div class="rv-invalid">
+            <p>Deze beoordelingslink is ongeldig of verlopen. Wil je ons toch iets laten weten? Stuur gerust een mail naar <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+            <a href="/" class="btn btn-primary">Naar de homepage</a>
+          </div>
+        )}
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .rv-hero { position: relative; overflow: hidden; padding: 8.5rem 0 6rem; background: var(--hero-bg); }
+  .rv-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.8); color: var(--color-primary-dark); font-weight: 700; font-size: 0.85rem; }
+  .rv-title { font-family: var(--font-heading); font-weight: 900; font-size: clamp(2.6rem, 7vw, 4.5rem); margin: 1rem 0 0; }
+  .rv-body { position: relative; z-index: 2; margin-top: -3rem; padding-bottom: 5rem; }
+  .rv-card { max-width: 40rem; margin: 0 auto; padding: clamp(1.5rem, 4vw, 2.75rem); border-radius: 1.75rem; background: #fff; border: 1px solid var(--color-border-light); box-shadow: 0 40px 80px -40px rgba(212, 90, 106, 0.45); }
+  .rv-invalid { text-align: center; display: grid; gap: 1.25rem; justify-items: center; color: var(--color-text-muted); }
+</style>

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { listOrders } from '../../lib/orderRepo';
 import * as templates from '../../lib/email/templates';
+import { ratingUrl } from '../../lib/email';
 
 // Admin-only preview of the e-mails, rendered with the most recent aanvraag.
 //   /admin/email-preview                      → overview with links
@@ -10,6 +11,7 @@ const NAMES: Record<string, string> = {
   nieuweAanvraag: 'Nathalie: nieuwe aanvraag',
   aanvraagBevestigd: 'Klant: aanvraag bevestigd',
   aanvraagGeweigerd: 'Klant: aanvraag niet mogelijk',
+  reviewVerzoek: 'Klant: hoe was het? (review)',
 };
 
 export const GET: APIRoute = async ({ url }) => {
@@ -48,7 +50,7 @@ export const GET: APIRoute = async ({ url }) => {
     );
   }
 
-  const mail = render(order);
+  const mail = render(order, ratingUrl(order.id));
   if (url.searchParams.get('format') === 'text') {
     return new Response(`Onderwerp: ${mail.subject}\n\n${mail.text}`, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }

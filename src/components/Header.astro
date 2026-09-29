@@ -47,17 +47,15 @@ const navLinks = [
             {link.label}
           </a>
         ))}
+        <a href={SITE.reviewUrl} target="_blank" rel="noopener" class="review-star" aria-label="Laat een Google-review achter" data-tooltip="Laat een review achter">
+          <i class="fa-solid fa-star" aria-hidden="true"></i>
+        </a>
       </div>
 
-      <!-- Review star + CTA (Desktop) -->
-      <div class="hidden lg:flex items-center gap-3">
-      <a href={SITE.reviewUrl} target="_blank" rel="noopener" class="review-star" aria-label="Laat een Google-review achter" data-tooltip="Laat een review achter">
-        <i class="fa-solid fa-star" aria-hidden="true"></i>
-      </a>
-      <a href="/aanvraag" class="flex btn btn-primary text-sm btn-shine" data-magnetic="0.25" title="Vrijblijvende aanvraag — je betaalt pas na bevestiging">
+      <!-- CTA (Desktop) -->
+      <a href="/aanvraag" class="hidden lg:flex btn btn-primary text-sm btn-shine" data-magnetic="0.25" title="Vrijblijvende aanvraag — je betaalt pas na bevestiging">
         Bestellen
       </a>
-      </div>
 
       <!-- Mobile Menu Toggle -->
       <button
@@ -310,7 +308,7 @@ const navLinks = [
 
   /* ── Review star: small, glowing like the nav, tooltip on hover ─────── */
   .review-star {
-    position: relative; width: 2.5rem; height: 2.5rem; border-radius: 50%; display: grid; place-items: center;
+    position: relative; width: 2.2rem; height: 2.2rem; margin-left: -1rem; border-radius: 50%; display: grid; place-items: center; font-size: 0.9rem;
     color: #fff; background: rgba(255, 255, 255, 0.18); backdrop-filter: blur(4px);
     border: 1px solid rgba(255, 255, 255, 0.45);
     filter: drop-shadow(0 0 6px #ffcce0);

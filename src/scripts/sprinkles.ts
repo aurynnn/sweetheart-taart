@@ -198,7 +198,8 @@ async function mount(canvas: HTMLCanvasElement) {
     hearts.setColorAt(i, new THREE.Color(HEARTS[i % HEARTS.length]));
     return {
       base: new THREE.Vector3((rand() - 0.5) * spread.x * 2.2, (rand() - 0.5) * spread.y * 2, (rand() - 0.5) * 6),
-      phase: rand() * Math.PI * 2, amp: 0.2 + rand() * 0.4, spin: 0.3 + rand() * 0.8, scale: 0.35 + rand() * 0.45,
+      phase: rand() * Math.PI * 2, amp: 0.2 + rand() * 0.4, spin: 0.25 + rand() * 0.35, scale: 0.35 + rand() * 0.45,
+      angle: rand() * Math.PI * 2,
     };
   });
   world.add(hearts);
@@ -239,7 +240,8 @@ async function mount(canvas: HTMLCanvasElement) {
     pointer.x += (pointer.tx - pointer.x) * 0.05;
     pointer.y += (pointer.ty - pointer.y) * 0.05;
     const v = scrollVelocity || 0;
-    spinBoost += (Math.min(Math.abs(v) * 0.2, 5) - spinBoost) * 0.08;
+    // Scrolling adds a gentle, eased extra spin (never a jump)
+    spinBoost += (Math.min(Math.abs(v) * 0.05, 1.2) - spinBoost) * 0.04;
     scrollDrift += v * 0.003;
 
     world.rotation.y = pointer.x * 0.15;
@@ -254,7 +256,7 @@ async function mount(canvas: HTMLCanvasElement) {
         wrapY(f.base.y + Math.sin(t * 0.6 + f.phase) * f.amp + scrollDrift * 0.6, spread.y),
         f.base.z,
       );
-      f.obj.rotation.y += (f.spin * 0.3 + (f.spin > 0 ? 1 : -1) * spinBoost * 0.15) * dt;
+      f.obj.rotation.y += (f.spin * 0.3 + (f.spin > 0 ? 1 : -1) * spinBoost * 0.12) * dt;
       f.obj.rotation.z = f.tilt + Math.sin(t * 0.8 + f.phase) * 0.08 - pointer.x * 0.1;
       f.obj.rotation.x = 0.25 + Math.cos(t * 0.5 + f.phase) * 0.08 + pointer.y * 0.1;
       f.obj.scale.setScalar(f.scale);
@@ -266,7 +268,9 @@ async function mount(canvas: HTMLCanvasElement) {
         wrapY(h.base.y + Math.sin(t * 0.7 + h.phase) * h.amp + scrollDrift * (0.8 + h.amp), spread.y * 1.1),
         h.base.z,
       );
-      dummy.rotation.set(Math.sin(t * 0.5 + h.phase) * 0.4, t * h.spin * (1 + spinBoost * 0.3) + h.phase, Math.sin(t + h.phase) * 0.2);
+      // Accumulate the angle per frame: multiplying elapsed time by a changing speed made hearts whirl
+      h.angle += h.spin * (1 + spinBoost) * dt;
+      dummy.rotation.set(Math.sin(t * 0.5 + h.phase) * 0.4, h.angle, Math.sin(t + h.phase) * 0.2);
       // gentle heartbeat
       dummy.scale.setScalar(h.scale * (1 + Math.max(0, Math.sin(t * 2.4 + h.phase)) ** 8 * 0.18));
       dummy.updateMatrix();

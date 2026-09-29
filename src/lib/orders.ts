@@ -49,16 +49,35 @@ export function esc(value: unknown): string {
 const photoUrl = (key: string) => `/admin/api/upload?key=${encodeURIComponent(key)}`;
 
 function photoHtml(key: string): string {
-  return `<a class="example-photo" href="${esc(photoUrl(key))}" target="_blank" rel="noopener" title="Voorbeeldfoto openen">
+  return `<a class="example-photo" href="${esc(photoUrl(key))}" target="_blank" rel="noopener" title="Voorbeeldfoto openen op volle grootte"
+      style="display:block;margin-top:0.75rem;border-radius:0.9rem;overflow:hidden;border:1px solid #fbd5db;text-decoration:none">
     <img src="${esc(photoUrl(key))}" alt="Voorbeeldfoto van de klant" loading="lazy"
-      style="width:100%;max-height:220px;object-fit:cover;border-radius:0.75rem;margin-top:0.5rem;display:block" />
-    <span style="font-size:0.75rem;color:#64748b">📷 Voorbeeldfoto — klik om te vergroten</span>
+      style="width:100%;max-height:320px;object-fit:contain;background:#fdf2f4;display:block" />
+    <span style="display:block;padding:0.45rem 0.75rem;font-size:0.75rem;font-weight:600;color:#be3455;background:#fff7f8">
+      📷 Voorbeeldfoto van de klant — klik om te vergroten
+    </span>
   </a>`;
 }
 
-/** Notes stored before migrations/0006 contain the photo link as text — show it as a photo. */
-function linkPhotos(escapedText: string): string {
-  return escapedText.replace(/\/admin\/api\/upload\?key=(aanvragen\/[0-9]{4}-[0-9]{2}\/[0-9a-f-]{36}\.(?:jpg|png|webp))/g, (_m, key) => photoHtml(key));
+const PHOTO_NOTE = /^(?:Product (\d+): )?voorbeeldfoto: \/admin\/api\/upload\?key=(aanvragen\/[0-9]{4}-[0-9]{2}\/[0-9a-f-]{36}\.(?:jpg|png|webp))$/;
+
+/**
+ * Before migrations/0006 the photo key is stored as a line in the order note
+ * ("Product 2: voorbeeldfoto: /admin/api/upload?key=…"). Move those onto their item
+ * so the photo shows next to the right product, and return the note without them.
+ */
+export function attachNotePhotos(order: Order): Order {
+  if (!order.message) return order;
+  const items = (order.items || []).map((i) => ({ ...i }));
+  const kept: string[] = [];
+  for (const line of order.message.split('\n')) {
+    const m = line.trim().match(PHOTO_NOTE);
+    if (!m) { kept.push(line); continue; }
+    const target = items[m[1] ? Number(m[1]) - 1 : 0];
+    if (target && !target.image) target.image = m[2];
+    else kept.push(line);
+  }
+  return { ...order, items, message: kept.join('\n').trim() };
 }
 
 export function formatPickup(order: Pick<Order, 'date' | 'time'>): string {
@@ -72,7 +91,8 @@ export function formatPickup(order: Pick<Order, 'date' | 'time'>): string {
 
 // ── Render ───────────────────────────────────────────────────────────────────
 
-export function renderOrderDetail(order: Order): string {
+export function renderOrderDetail(input: Order): string {
+  const order = attachNotePhotos(input);
   const c = order.customer || {};
   const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
   const fullName = [c.firstname, c.lastname].filter(Boolean).join(' ');
@@ -142,7 +162,7 @@ export function renderOrderDetail(order: Order): string {
       ${order.message ? `
         <div class="info-row notes-row">
           <div class="info-label">Notitie</div>
-          <div class="info-value" style="white-space:pre-line">${linkPhotos(esc(order.message))}</div>
+          <div class="info-value" style="white-space:pre-line">${esc(order.message)}</div>
         </div>` : ''}
     </div>`;
 

@@ -6,6 +6,7 @@ import { customerNameSql } from '../../lib/schema';
 import { getAvailability, toLocalDateStr } from '../../lib/availability';
 import { formatEuro, parseEuro, productName, PRODUCTS, itemSummary } from '../../lib/catalog';
 import { STATUS_CONFIG } from '../../lib/orders';
+import { reviewStats } from '../../lib/reviews';
 
 interface Row {
   id: string; date: string; time: string | null; status: string; total: number;
@@ -123,6 +124,10 @@ const customerKeys = orders.map((o) => (o.email || o.phone || o.customer).toLowe
 const uniqueCustomers = new Set(customerKeys).size;
 const returning = [...new Set(customerKeys)].filter((k) => customerKeys.filter((x) => x === k).length > 1).length;
 const newThisWeek = orders.filter((o) => (Date.now() - new Date(o.createdAt.replace(' ', 'T') + 'Z').getTime()) < 7 * 86400000).length;
+
+let reviews = { count: 0, average: 0, sent: 0, recent: [] as Awaited<ReturnType<typeof reviewStats>>['recent'] };
+try { reviews = await reviewStats(); } catch (e) { console.warn('[admin] review stats unavailable:', e); }
+const stars = (n: number) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
 
 const maxCap = Math.max(...capacity.map((c) => Math.max(c.maxOrders, c.orders)), 1);
 
@@ -392,6 +397,39 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
     </div>
   </section>
 
+  <section class="panel reveal reviews-panel" aria-labelledby="reviews-title">
+    <header class="panel-head">
+      <h2 id="reviews-title">Klantbeoordelingen <small>via de review-mail na het ophalen</small></h2>
+      <a href="/admin/settings" class="link">Instellingen →</a>
+    </header>
+    <div class="rv-top">
+      <div class="rv-score">
+        <b>{reviews.count ? reviews.average.toFixed(1) : '–'}</b>
+        <span class="rv-stars" aria-label={`Gemiddeld ${reviews.average.toFixed(1)} op 5`}>{stars(reviews.average)}</span>
+        <small>{reviews.count} beoordeling{reviews.count === 1 ? '' : 'en'} · {reviews.sent} mail{reviews.sent === 1 ? '' : 's'} verstuurd</small>
+      </div>
+      <p class="rv-note">5 sterren gaan meteen door naar Google. Bij 4 of minder vraagt de website wat beter kon — dat lees je hier.</p>
+    </div>
+    {reviews.recent.length === 0 ? (
+      <p class="empty-small">Nog geen beoordelingen ontvangen.</p>
+    ) : (
+      <ul class="rv-list">
+        {reviews.recent.map((r) => (
+          <li>
+            <button type="button" data-open-order={r.order_id}>
+              <span class="rv-row-stars">{stars(r.rating ?? 0)}</span>
+              <span class="rv-text">
+                {r.feedback ? `“${r.feedback}”` : r.rating === 5 ? 'Doorgestuurd naar Google' : 'Nog geen toelichting'}
+                {r.liked && <small>{r.liked}</small>}
+              </span>
+              <span class="rv-id">#{r.order_id}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+
   <div id="chart-tip" class="chart-tip" role="tooltip" hidden></div>
   <div id="live-banner" class="live-banner" hidden>
     <i class="fa-solid fa-bell" aria-hidden="true"></i>
@@ -403,37 +441,19 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
 <OrderModal />
 
 <script>
-  import { STATUS_CONFIG, renderOrderDetail, esc } from '../../lib/orders';
+  import { initOrderModal, openOrderModal } from '../../scripts/admin/orderModal';
   import { updateStatus } from '../../scripts/admin/toast';
 
   let allOrders: any[] = [];
   const ordersReady = fetch('/api/orders').then((r) => r.json()).then((d) => (allOrders = d)).catch(() => []);
 
-  // ── Order detail modal ────────────────────────────────────────────────
+  // ── Order detail modal (shared with the Todo page) ─────────────────
+  initOrderModal({ onStatusChanged: () => setTimeout(() => location.reload(), 800) });
   async function openModal(orderId: string) {
     await ordersReady;
     const order = allOrders.find((o: any) => o.id === orderId);
-    if (!order) return;
-    const subtitle = document.getElementById('modalOrderId');
-    if (subtitle) subtitle.textContent = `#${order.id}`;
-    const badge = document.getElementById('modalStatusBadge');
-    if (badge) {
-      const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-      badge.innerHTML = `<span class="dot" style="background:${sc.dot}"></span>${esc(sc.label)}`;
-      badge.style.background = sc.bg;
-      badge.style.color = sc.color;
-    }
-    const body = document.getElementById('orderModalBody');
-    if (body) body.innerHTML = renderOrderDetail(order);
-    document.getElementById('orderModal')?.classList.add('active');
+    if (order) openOrderModal(order);
   }
-  const closeModal = () => document.getElementById('orderModal')?.classList.remove('active');
-  document.getElementById('closeOrderModalBtn')?.addEventListener('click', closeModal);
-  document.getElementById('closeOrderModalBtn2')?.addEventListener('click', closeModal);
-  document.getElementById('orderModal')?.addEventListener('click', (e) => {
-    if ((e.target as Element).classList.contains('modal-overlay')) closeModal();
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
   document.addEventListener('click', async (e) => {
     const target = e.target as Element;
@@ -691,6 +711,21 @@ const greeting = hour < 12 ? 'Goeiemorgen' : hour < 18 ? 'Goeiemiddag' : 'Goeien
     .bake-days { grid-template-columns: repeat(4, 1fr); }
     .bake-day.empty { display: none; }
   }
+
+  .reviews-panel { margin-top: 1.5rem; }
+  .rv-top { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .rv-score { display: grid; gap: 0.1rem; }
+  .rv-score b { font-size: 2.2rem; line-height: 1; color: #0f172a; }
+  .rv-stars, .rv-row-stars { color: #f5b83d; letter-spacing: 0.1em; }
+  .rv-score small { color: #64748b; font-size: 0.75rem; }
+  .rv-note { margin: 0; flex: 1; min-width: 14rem; font-size: 0.82rem; color: #64748b; }
+  .rv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .rv-list button { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem; align-items: center; text-align: left; padding: 0.6rem 0.75rem; border-radius: 0.7rem; border: 1px solid #f1f5f9; background: #fff; font: inherit; cursor: pointer; }
+  .rv-list button:hover { border-color: #fbd5db; background: #fffafb; }
+  .rv-text { display: grid; font-size: 0.85rem; color: #334155; }
+  .rv-text small { color: #94a3b8; font-size: 0.72rem; }
+  .rv-id { font-family: monospace; font-size: 0.75rem; color: #94a3b8; }
+  .empty-small { margin: 0; color: #94a3b8; font-size: 0.875rem; }
 
   .chart-tip { position: fixed; z-index: 500; padding: 0.45rem 0.7rem; border-radius: 0.5rem; background: #0f172a; color: white; font-size: 0.75rem; font-weight: 600; pointer-events: none; white-space: nowrap; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25); }
 

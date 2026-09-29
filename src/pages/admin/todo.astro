@@ -1,428 +1,234 @@
 ---
 import AdminLayout from '../../layouts/admin/AdminLayout.astro';
-import { d1Query, d1Exec } from '../../lib/d1';
-import { customerNameSql } from '../../lib/schema';
-import { formatEuro, parseEuro } from '../../lib/catalog';
+import OrderModal from '../../components/admin/orders/OrderModal.astro';
+import { listOrders, type FullOrder } from '../../lib/orderRepo';
+import { toLocalDateStr } from '../../lib/availability';
+import { productName, itemSummary, type AanvraagItem } from '../../lib/catalog';
 
-let todos: any[] = [];
-
+// Everything that is confirmed and still has to be made, grouped per pickup day
+let orders: FullOrder[] = [];
+let loadError = false;
 try {
-  const name = await customerNameSql('c');
-  const res = await d1Query(`
-    SELECT
-      o.id, o.date, o.status, o.total, o.message,
-      o.time, ${name.first} as firstname, ${name.last} as lastname, c.email, c.phone,
-      (SELECT GROUP_CONCAT(product, ', ') FROM order_items WHERE order_id = o.id) as products
-    FROM orders o
-    JOIN customers c ON o.customer_id = c.id
-    WHERE o.status = 'approved'
-    ORDER BY o.date ASC
-    LIMIT 50
-  `);
-  todos = (res.results || []).map((row: any) => ({
-    id: row.id,
-    date: row.date,
-    status: row.status,
-    time: row.time || '',
-    total: formatEuro(parseEuro(row.total)),
-    customer: [row.firstname, row.lastname].filter(Boolean).join(' ') || 'Onbekend',
-    email: row.email || '',
-    phone: row.phone || '',
-    products: row.products || '—',
-    message: row.message || ''
-  }));
+  orders = (await listOrders({ status: 'approved' }))
+    .sort((a, b) => (a.date + (a.time ?? '')).localeCompare(b.date + (b.time ?? '')));
 } catch (e) {
   console.error('[admin/todo] Failed to load orders:', e);
+  loadError = true;
 }
 
-const statusBadge = (status: string) => {
-  const styles: Record<string, string> = {
-    pending: 'background:#fef3c7;color:#92400e;',
-    approved: 'background:#dbeafe;color:#1e40af;',
-    completed: 'background:#dcfce7;color:#166534;',
-    cancelled: 'background:#fee2e2;color:#991b1b;'
-  };
-  const labels: Record<string, string> = {
-    pending: 'In afwachting',
-    approved: 'Goedgekeurd',
-    completed: 'Voltooid',
-    cancelled: 'Geannuleerd'
-  };
-  return `<span style="display:inline-block;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;${styles[status] || styles.pending}">${labels[status] || status}</span>`;
+const today = toLocalDateStr(new Date());
+const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+const tomorrow = toLocalDateStr(tomorrowDate);
+
+const dayLabel = (iso: string) => {
+  if (iso < today) return 'Achterstallig';
+  if (iso === today) return 'Vandaag';
+  if (iso === tomorrow) return 'Morgen';
+  return new Date(iso + 'T00:00:00').toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long' });
 };
 
-const isToday = (date: string) => date === new Date().toISOString().split('T')[0];
-const isTomorrow = (date: string) => {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return date === d.toISOString().split('T')[0];
+const groups = orders.reduce<Array<{ key: string; label: string; tone: string; orders: FullOrder[] }>>((acc, o) => {
+  const key = o.date < today ? 'overdue' : o.date;
+  let group = acc.find((g) => g.key === key);
+  if (!group) {
+    group = { key, label: dayLabel(o.date), tone: o.date < today ? 'overdue' : o.date === today ? 'today' : o.date === tomorrow ? 'tomorrow' : '', orders: [] };
+    acc.push(group);
+  }
+  group.orders.push(o);
+  return acc;
+}, []);
+
+const customerName = (o: FullOrder) => [o.customer.firstname, o.customer.lastname].filter(Boolean).join(' ') || 'Onbekend';
+const itemLine = (i: FullOrder['items'][number]) => {
+  const detail = itemSummary(i as AanvraagItem);
+  return `${productName(i.product)}${detail ? ` · ${detail}` : ''}`;
 };
-const isOverdue = (date: string) => date < new Date().toISOString().split('T')[0];
 ---
 
-<AdminLayout title="Todo">
-  <div class="page-header">
-    <div>
-      <h1>Todo</h1>
-      <p class="subtitle">Komende bestellingen — {todos.length} openstaand</p>
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-primary" id="print-btn" onclick="handlePrint()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="6 9 6 2 18 2 18 9"></polyline>
-          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-          <rect x="6" y="14" width="12" height="8"></rect>
-        </svg>
-        <span id="print-btn-text">Maak PDF</span>
-      </button>
-    </div>
+<AdminLayout title="Te maken">
+  <div class="todo-toolbar">
+    <p class="subtitle">
+      {orders.length === 0 ? 'Niets te maken — alles is klaar!' : `${orders.length} bevestigde aanvra${orders.length === 1 ? 'ag' : 'gen'} om te maken. Klik op een aanvraag voor alle details.`}
+    </p>
+    {orders.length > 0 && (
+      <div class="toolbar-actions">
+        <label class="select-all"><input type="checkbox" id="selectAll" /> Alles selecteren</label>
+        <button type="button" class="btn-pdf" id="pdfBtn" disabled>
+          <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> <span id="pdfLabel">PDF</span>
+        </button>
+      </div>
+    )}
   </div>
 
-  {todos.length === 0 ? (
-    <div class="empty-state">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M9 11l3 3L22 4"></path>
-        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-      </svg>
-      <p>Geen openstaande bestellingen</p>
-    </div>
-  ) : (
-    <div class="todo-list">
-      {todos.map(order => (
-        <div class={`todo-card ${isOverdue(order.date) ? 'overdue' : isToday(order.date) ? 'today' : ''}`} data-order-id={order.id} onclick="togglePrintCard(this)">
-          <div class="date-block">
-            <span class="date-day">{new Date(order.date + 'T00:00:00').getDate()}</span>
-            <span class="date-month">{new Date(order.date + 'T00:00:00').toLocaleDateString('nl-BE', { month: 'short' })}</span>
-          </div>
-          <div class="info">
-            <div class="info-top">
-              <span class="customer-name">{order.customer}</span>
-              <span class="todo-status" set:html={statusBadge(order.status)} />
-              {isToday(order.date) && <span class="tag tag-today">Vandaag</span>}
-              {isTomorrow(order.date) && <span class="tag tag-tomorrow">Morgen</span>}
-              {isOverdue(order.date) && <span class="tag tag-overdue">Achterstallig</span>}
-            </div>
-            <p class="products">{order.products}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  )}
+  {loadError && <div class="alert">De aanvragen konden niet geladen worden.</div>}
 
-  <div id="toast-container"></div>
+  {groups.map((g) => (
+    <section class={`day ${g.tone}`}>
+      <h2 class="day-title">
+        <span>{g.label}</span>
+        <small>{g.orders.length} aanvra{g.orders.length === 1 ? 'ag' : 'gen'}</small>
+      </h2>
+      <div class="cards">
+        {g.orders.map((o) => {
+          const photo = o.items.find((i) => i.image)?.image;
+          const allergies = o.items.map((i) => i.allergies).filter(Boolean);
+          return (
+            <article class="card" data-order-id={o.id}>
+              <label class="pick" title="Selecteer voor PDF">
+                <input type="checkbox" class="pick-box" value={o.id} aria-label={`Selecteer ${o.id} voor PDF`} />
+              </label>
+              <button type="button" class="card-main" data-open={o.id}>
+                <span class="time">
+                  <b>{o.time ?? '—'}</b>
+                  {g.key === 'overdue' && <small>{new Date(o.date + 'T00:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })}</small>}
+                </span>
+                <span class="body">
+                  <span class="who">{customerName(o)} <small>#{o.id}</small></span>
+                  <ul class="items">
+                    {o.items.map((i) => <li>{itemLine(i)}</li>)}
+                  </ul>
+                  <span class="flags">
+                    {allergies.length > 0 && <em class="flag allergy" title={allergies.join(' · ')}><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {allergies.join(' · ')}</em>}
+                    {o.message && <em class="flag note"><i class="fa-regular fa-comment" aria-hidden="true"></i> notitie</em>}
+                  </span>
+                </span>
+                {photo && (
+                  <img class="thumb" src={`/admin/api/upload?key=${encodeURIComponent(photo)}`} alt="Voorbeeldfoto" loading="lazy" />
+                )}
+              </button>
+              <button type="button" class="done-btn" data-done={o.id} title="Markeer als voltooid" aria-label={`Markeer ${o.id} als voltooid`}>
+                <i class="fa-solid fa-check" aria-hidden="true"></i>
+              </button>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  ))}
+
+  <script type="application/json" id="todo-data" set:html={JSON.stringify(orders).replace(/</g, "\\u003c")} />
 </AdminLayout>
 
+<OrderModal />
+
 <script>
-  import { updateStatus } from '../../scripts/admin/toast';
-  function showToast(message: string, type: 'success' | 'error' = 'success') {
-    const container = document.getElementById('toast-container')!;
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `<span>${message}</span>`;
-    container.appendChild(toast);
-    setTimeout(() => {
-      toast.style.animation = 'toastOut 0.2s ease forwards';
-      setTimeout(() => toast.remove(), 200);
-    }, 3000);
-  }
+  import { initOrderModal, openOrderModal } from '../../scripts/admin/orderModal';
+  import { updateStatus, toast } from '../../scripts/admin/toast';
 
-  (window as any).updateStatus = async function(orderId: string, status: string) {
-    if (await updateStatus(orderId, status)) setTimeout(() => window.location.reload(), 900);
+  const orders: any[] = JSON.parse(document.getElementById('todo-data')?.textContent || '[]');
+  const byId = new Map(orders.map((o) => [o.id, o]));
+
+  const removeCard = (id: string) => {
+    const card = document.querySelector<HTMLElement>(`.card[data-order-id="${CSS.escape(id)}"]`);
+    card?.classList.add('leaving');
+    setTimeout(() => card?.remove(), 400);
   };
 
-  // --- Print selection (click-to-select) ---
-  let selectedForPrint: string[] = [];
-  let printSelectionMode = false;
+  initOrderModal({ onStatusChanged: (id, status) => { if (status !== 'approved') removeCard(id); } });
 
-  (window as any).togglePrintCard = function(card: HTMLElement) {
-    if (!printSelectionMode) return;
-
-    const orderId = card.getAttribute('data-order-id') || '';
-
-    if (selectedForPrint.includes(orderId)) {
-      selectedForPrint = selectedForPrint.filter(id => id !== orderId);
-      card.classList.remove('print-selected');
-    } else {
-      selectedForPrint.push(orderId);
-      card.classList.add('print-selected');
+  document.addEventListener('click', async (e) => {
+    const t = e.target as Element;
+    const open = t.closest<HTMLElement>('[data-open]');
+    if (open) { const o = byId.get(open.dataset.open!); if (o) openOrderModal(o); return; }
+    const done = t.closest<HTMLButtonElement>('[data-done]');
+    if (done) {
+      done.disabled = true;
+      if (await updateStatus(done.dataset.done!, 'completed')) removeCard(done.dataset.done!);
+      else done.disabled = false;
     }
+  });
 
-    updatePrintButton();
-  };
+  // ── PDF selection ─────────────────────────────────────────────────────
+  const boxes = () => Array.from(document.querySelectorAll<HTMLInputElement>('.pick-box'));
+  const selectAll = document.getElementById('selectAll') as HTMLInputElement | null;
+  const pdfBtn = document.getElementById('pdfBtn') as HTMLButtonElement | null;
+  const pdfLabel = document.getElementById('pdfLabel');
 
-  function enterPrintSelectionMode() {
-    printSelectionMode = true;
-    document.querySelectorAll('.todo-card').forEach(c => c.classList.add('selection-mode'));
-    updatePrintButton();
+  function syncSelection() {
+    const picked = boxes().filter((b) => b.checked);
+    boxes().forEach((b) => b.closest('.card')?.classList.toggle('picked', b.checked));
+    if (pdfBtn) pdfBtn.disabled = picked.length === 0;
+    if (pdfLabel) pdfLabel.textContent = picked.length ? `PDF van ${picked.length} aanvra${picked.length === 1 ? 'ag' : 'gen'}` : 'Selecteer aanvragen voor PDF';
+    if (selectAll) selectAll.checked = picked.length > 0 && picked.length === boxes().length;
   }
+  document.addEventListener('change', (e) => { if ((e.target as Element).classList.contains('pick-box')) syncSelection(); });
+  selectAll?.addEventListener('change', () => { boxes().forEach((b) => (b.checked = selectAll.checked)); syncSelection(); });
+  syncSelection();
 
-  function exitPrintSelectionMode() {
-    printSelectionMode = false;
-    selectedForPrint = [];
-    document.querySelectorAll('.todo-card').forEach(c => {
-      c.classList.remove('print-selected', 'selection-mode');
-    });
-    updatePrintButton();
-  }
-
-  function updatePrintButton() {
-    const btnText = document.getElementById('print-btn-text');
-    if (!btnText) return;
-
-    if (!printSelectionMode) {
-      btnText.textContent = 'Maak PDF';
-    } else if (selectedForPrint.length === 0) {
-      btnText.textContent = 'Klik op bestellingen om te selecteren';
-    } else if (selectedForPrint.length === 1) {
-      btnText.textContent = '1 bestelling — Download PDF';
-    } else {
-      btnText.textContent = `${selectedForPrint.length} bestellingen — Download PDF`;
-    }
-  }
-
-  (window as any).handlePrint = async function() {
-    if (!printSelectionMode) {
-      // Enter selection mode
-      enterPrintSelectionMode();
-      return;
-    }
-
-    if (selectedForPrint.length === 0) {
-      showToast('Klik eerst op een of meer bestellingen om te selecteren', 'error');
-      return;
-    }
-
-    const btn = document.getElementById('print-btn') as HTMLButtonElement | null;
-    if (btn) btn.disabled = true;
-
+  pdfBtn?.addEventListener('click', async () => {
+    const orderIds = boxes().filter((b) => b.checked).map((b) => b.value);
+    pdfBtn.disabled = true;
+    const label = pdfLabel?.textContent;
+    if (pdfLabel) pdfLabel.textContent = 'PDF maken…';
     try {
       const res = await fetch('/admin/api/print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderIds: selectedForPrint })
+        body: JSON.stringify({ orderIds }),
       });
-
-      if (!res.ok) throw new Error('Failed');
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      if (!res.ok) throw new Error();
+      const url = URL.createObjectURL(await res.blob());
       const a = document.createElement('a');
       a.href = url;
-      a.download = `bestellingen-${Date.now()}.pdf`;
+      a.download = `sweetheart-te-maken-${new Date().toISOString().slice(0, 10)}.pdf`;
       a.click();
-      URL.revokeObjectURL(url);
-
-      exitPrintSelectionMode();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
-      showToast('Kon PDF niet genereren', 'error');
+      toast('Kon de PDF niet maken. Probeer opnieuw.', 'error');
     } finally {
-      if (btn) btn.disabled = false;
+      if (pdfLabel && label) pdfLabel.textContent = label;
+      pdfBtn.disabled = false;
     }
-  };
+  });
 </script>
 
 <style>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-}
+  .todo-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .subtitle { margin: 0; color: #64748b; }
+  .toolbar-actions { display: flex; align-items: center; gap: 1rem; }
+  .select-all { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.875rem; color: #475569; cursor: pointer; }
+  .select-all input, .pick input { width: 1.1rem; height: 1.1rem; accent-color: #e8788a; cursor: pointer; }
+  .btn-pdf { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.1rem; border-radius: 0.7rem; border: 0; background: #e8788a; color: #fff; font-weight: 700; cursor: pointer; transition: opacity 200ms, transform 200ms; }
+  .btn-pdf:disabled { opacity: 0.45; cursor: default; }
+  .btn-pdf:not(:disabled):hover { transform: translateY(-1px); }
+  .alert { padding: 1rem; border-radius: 0.8rem; background: #fef2f2; color: #991b1b; margin-bottom: 1rem; }
 
-.header-actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
+  .day { margin-bottom: 2rem; }
+  .day-title { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.8rem; font-size: 1rem; font-weight: 800; color: #0f172a; text-transform: capitalize; }
+  .day-title small { font-weight: 500; color: #94a3b8; text-transform: none; }
+  .day.today .day-title span { color: #d45a6a; }
+  .day.overdue .day-title span { color: #b91c1c; }
+  .cards { display: grid; gap: 0.6rem; }
 
-.todo-card.print-selected {
-  outline: 3px solid #E8788A;
-  outline-offset: 1px;
-  background: #fff8f9;
-}
+  .card { position: relative; display: flex; align-items: stretch; background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; overflow: hidden; transition: border-color 200ms, box-shadow 200ms, opacity 400ms, transform 400ms; animation: cardIn 450ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes cardIn { from { opacity: 0; } }
+  .card:hover { border-color: #fbd5db; box-shadow: 0 10px 24px -16px rgba(212, 90, 106, 0.55); }
+  .card.picked { border-color: #e8788a; box-shadow: 0 0 0 2px rgba(232, 120, 138, 0.25); }
+  .card.leaving { opacity: 0; transform: translateX(40px); }
+  .day.today .card { border-left: 4px solid #e8788a; }
+  .day.overdue .card { border-left: 4px solid #ef4444; }
+  .pick { display: grid; place-items: center; padding: 0 0.3rem 0 1rem; }
+  .card-main { flex: 1; display: flex; align-items: center; gap: 1rem; min-width: 0; padding: 0.9rem 0.5rem; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  .time { display: grid; place-items: center; width: 4rem; flex-shrink: 0; padding: 0.5rem 0; border-radius: 0.7rem; background: #fdf2f4; line-height: 1.1; }
+  .time b { font-size: 1.05rem; color: #d45a6a; font-variant-numeric: tabular-nums; }
+  .time small { font-size: 0.68rem; color: #94a3b8; font-weight: 600; }
+  .body { display: grid; gap: 0.25rem; min-width: 0; flex: 1; }
+  .who { font-weight: 700; color: #0f172a; }
+  .who small { font-weight: 500; color: #94a3b8; font-family: monospace; margin-left: 0.3rem; }
+  .items { list-style: none; margin: 0; padding: 0; color: #475569; font-size: 0.85rem; }
+  .items li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .flags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+  .flag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.1rem 0.55rem; border-radius: 999px; font-style: normal; font-size: 0.7rem; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .flag.allergy { background: #fffbeb; color: #b45309; }
+  .flag.note { background: #f1f5f9; color: #475569; }
+  .thumb { width: 4.5rem; height: 4.5rem; flex-shrink: 0; border-radius: 0.7rem; object-fit: cover; border: 2px solid #fdf2f4; }
+  .done-btn { width: 3.5rem; flex-shrink: 0; border: 0; border-left: 1px solid #f1f5f9; background: #fff; color: #15803d; font-size: 1.1rem; cursor: pointer; transition: background 200ms, color 200ms; }
+  .done-btn:hover { background: #22c55e; color: #fff; }
+  .done-btn:disabled { opacity: 0.4; cursor: wait; }
 
-.todo-card.print-selected .todo-date {
-  background: #E8788A;
-  color: white;
-}
-
-.todo-card.print-selected .date-tag {
-  background: rgba(255,255,255,0.25);
-  color: white;
-}
-
-.todo-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.todo-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 1rem 1.25rem;
-  transition: all 0.15s;
-  cursor: pointer;
-  position: relative;
-}
-
-.todo-card:hover {
-  border-color: #fecdd3;
-  box-shadow: 0 2px 8px rgba(232, 120, 138, 0.08);
-}
-
-.todo-card.overdue {
-  border-left: 3px solid #ef4444;
-}
-
-.todo-card.today {
-  border-left: 3px solid #f59e0b;
-}
-
-.todo-card.selection-mode {
-  cursor: pointer;
-}
-
-.todo-card.print-selected {
-  border-color: #E8788A;
-  background: #fff5f6;
-  box-shadow: 0 0 0 2px #E8788A33;
-}
-
-.todo-card.print-selected .date-block {
-  background: #E8788A;
-  color: white;
-  border-radius: 0.5rem;
-}
-
-.todo-card.print-selected .date-block .date-month {
-  color: rgba(255,255,255,0.8);
-}
-
-/* Date block */
-.date-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: #fdf0f2;
-  border-radius: 0.75rem;
-  padding: 0.625rem 0.875rem;
-  min-width: 3.5rem;
-  flex-shrink: 0;
-  transition: background 0.15s;
-}
-
-.date-day {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #e8788a;
-  line-height: 1;
-}
-
-.date-month {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #94a3b8;
-  letter-spacing: 0.03em;
-}
-
-/* Info section */
-.info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.info-top {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  flex-wrap: wrap;
-}
-
-.customer-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.tag {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.15rem 0.5rem;
-  border-radius: 9999px;
-}
-
-.tag-today {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.tag-tomorrow {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.tag-overdue {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.products {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Total price */
-.total {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: #1e293b;
-  flex-shrink: 0;
-}
-
-/* Toast */
-#toast-container {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  z-index: 9999;
-}
-
-.toast {
-  background: #1e293b;
-  color: white;
-  padding: 0.75rem 1.25rem;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  animation: toastIn 0.2s ease;
-}
-
-.toast-success { background: #16a34a; }
-.toast-error { background: #ef4444; }
-
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(0.5rem); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes toastOut {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(0.5rem); }
-}
+  @media (max-width: 640px) {
+    .thumb { width: 3.2rem; height: 3.2rem; }
+    .time { width: 3.4rem; }
+    .toolbar-actions { width: 100%; justify-content: space-between; }
+  }
 </style>
