@@ -33,7 +33,7 @@ interface Props {
 
 const { order } = Astro.props;
 
-const customerName = order.customer?.name || 'Onbekend';
+const customerName = [order.customer?.firstname, order.customer?.lastname].filter(Boolean).join(' ') || 'Onbekend';
 const customerEmail = order.customer?.email || '';
 const customerPhone = order.customer?.phone || '';
 

@@ -8,7 +8,7 @@ try {
   const res = await d1Query(`
     SELECT
       o.id, o.date, o.status, o.total, o.message,
-      c.name as customer, c.email, c.phone,
+      c.firstname, c.lastname as customer, c.email, c.phone,
       (SELECT GROUP_CONCAT(product, ', ') FROM order_items WHERE order_id = o.id) as products
     FROM orders o
     JOIN customers c ON o.customer_id = c.id
@@ -21,7 +21,7 @@ try {
     date: row.date,
     status: row.status,
     total: typeof row.total === 'string' ? row.total : (row.total ? `€${Number(row.total).toFixed(2)}` : '€0.00'),
-    customer: row.customer || 'Onbekend',
+    customer: [row.firstname, row.lastname].filter(Boolean).join(' ') || 'Onbekend',
     email: row.email || '',
     phone: row.phone || '',
     products: row.products || '—',

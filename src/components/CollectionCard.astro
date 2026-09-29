@@ -13,13 +13,14 @@ const { title, description, href, image, imageAlt = '', badge } = Astro.props;
 // R2 bucket base URL from env
 const R2_BASE = import.meta.env.PUBLIC_R2_BASE_URL || '';
 
-// Real images from sweetheart-taart.com on R2
+// Images — use local public/ files (R2 bucket is empty)
+// Real R2 paths noted for when content is uploaded there
 const realImages: Record<string, string> = {
-  'feestcollectie': `${R2_BASE}/feestcollectie/images/trouwtaargeknipt-e1668952116982.png`,
-  'mini-collectie': `${R2_BASE}/mini-collectie/images/cupcakes1.png`,
-  'koekjescollectie': `${R2_BASE}/koekjescollectie/images/koekejs.png`,
-  'afternoon-tea': '/images/IMG_8459-scaled.jpg',
-  'vaste-collectie': '/images/F84329C2-DC88-4C4D-B108-ABFA9063F14C.jpeg',
+  'feestcollectie': '/images/trouwtaart.png',
+  'mini-collectie': '/images/cupcakes.png',
+  'koekjescollectie': '/images/koekjes.png',
+  'afternoon-tea': '/images/cupcakes.png',
+  'vaste-collectie': '/images/trouwtaart.png',
 };
 
 // Get image or fallback to real image

@@ -8,8 +8,8 @@ export const GET: APIRoute = async ({ url }) => {
 
   let query = `
     SELECT
-      o.id, o.date, o.status, o.total, o.message, o.created_at,
-      c.id as customer_id, c.name, c.email, c.phone, c.notes
+      o.id, o.date, o.time, o.status, o.total, o.message, o.created_at,
+      c.id as customer_id, c.firstname, c.lastname, c.email, c.phone, c.notes
     FROM orders o
     JOIN customers c ON o.customer_id = c.id
     WHERE 1=1
@@ -51,7 +51,8 @@ export const GET: APIRoute = async ({ url }) => {
       createdAt: row.created_at,
       customer: {
         id: row.customer_id,
-        name: row.name,
+        firstname: row.firstname,
+        lastname: row.lastname,
         email: row.email,
         phone: row.phone,
         notes: row.notes,
@@ -62,11 +63,13 @@ export const GET: APIRoute = async ({ url }) => {
         event: item.event,
         persons: item.persons,
         flavor: item.flavor,
+        topper: item.topper,
         allergies: item.allergies,
         price: item.price,
         quantity: item.quantity,
         miniType: item.mini_type,
       })) || [],
+      time: row.time,
     });
   }
 
@@ -79,7 +82,7 @@ export const GET: APIRoute = async ({ url }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { date, customer, items, total, message, isAdmin } = body;
+    const { date, time, customer, items, total, message, isAdmin } = body;
 
     // Check availability (skip for admin-created orders)
     if (!isAdmin) {
@@ -106,7 +109,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Find or create customer
     let customerId: string | null = null;
-    if (customer && (customer.name || customer.email || customer.phone)) {
+    if (customer && (customer.firstname || customer.lastname || customer.email || customer.phone)) {
       if (customer.email) {
         const existingCustomer = await d1Query(
           'SELECT id FROM customers WHERE email = ?',
@@ -115,8 +118,8 @@ export const POST: APIRoute = async ({ request }) => {
         if (existingCustomer.results && existingCustomer.results.length > 0) {
           customerId = existingCustomer.results[0].id as string;
           await d1Query(
-            'UPDATE customers SET name = ?, phone = ? WHERE id = ?',
-            [customer.name ?? null, customer.phone ?? null, customerId]
+            'UPDATE customers SET firstname = ?, lastname = ?, phone = ? WHERE id = ?',
+            [customer.firstname ?? null, customer.lastname ?? null, customer.phone ?? null, customerId]
           );
         }
       }
@@ -125,8 +128,8 @@ export const POST: APIRoute = async ({ request }) => {
         const custNum = ((custCount.results?.[0]?.cnt as number) ?? 0) + 1;
         customerId = `CUST-${String(custNum).padStart(3, '0')}`;
         await d1Query(
-          'INSERT INTO customers (id, name, email, phone, notes) VALUES (?, ?, ?, ?, ?)',
-          [customerId, customer.name ?? '', customer.email ?? '', customer.phone ?? '', customer.notes ?? '']
+          'INSERT INTO customers (id, firstname, lastname, email, phone, notes) VALUES (?, ?, ?, ?, ?, ?)',
+          [customerId, customer.firstname ?? '', customer.lastname ?? '', customer.email ?? '', customer.phone ?? '', customer.notes ?? '']
         );
       }
     }
@@ -139,8 +142,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Insert order
     await d1Query(
-      'INSERT INTO orders (id, customer_id, date, status, total, message) VALUES (?, ?, ?, ?, ?, ?)',
-      [orderId, customerId, orderDate, 'pending', total ?? '', message ?? '']
+      'INSERT INTO orders (id, customer_id, date, time, status, total, message) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [orderId, customerId, orderDate, time ?? null, 'pending', total ?? '', message ?? '']
     );
 
     // Insert order items
@@ -150,8 +153,8 @@ export const POST: APIRoute = async ({ request }) => {
       const itemId = `${orderId}-ITEM-${itemNum}`;
 
       await d1Query(
-        `INSERT INTO order_items (id, order_id, product, event, persons, flavor, allergies, price)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO order_items (id, order_id, product, event, persons, flavor, topper, allergies, price, quantity)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           itemId,
           orderId,
@@ -159,8 +162,10 @@ export const POST: APIRoute = async ({ request }) => {
           item.event ?? null,
           item.persons ?? null,
           item.flavor ?? null,
+          item.topper ?? null,
           item.allergies ?? null,
           item.price ?? 0,
+          item.quantity ?? 1,
         ]
       );
     }

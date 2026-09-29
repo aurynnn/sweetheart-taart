@@ -176,7 +176,7 @@ import NewOrderModal from '../../components/admin/orders/NewOrderModal.astro';
     return getOrders().filter(o => {
       if (filterStatus && o.status !== filterStatus) return false;
       if (q) {
-        const name = o.customer?.name?.toLowerCase() || '';
+        const name = [o.customer?.firstname, o.customer?.lastname].filter(Boolean).join(' ').toLowerCase();
         const email = o.customer?.email?.toLowerCase() || '';
         const id = o.id.toLowerCase();
         if (!name.includes(q) && !email.includes(q) && !id.includes(q)) return false;

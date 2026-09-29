@@ -13,7 +13,8 @@ export interface OrderItem {
 }
 
 export interface OrderCustomer {
-  name?: string;
+  firstname?: string;
+  lastname?: string;
   email?: string;
   phone?: string;
 }
@@ -37,7 +38,7 @@ export function renderOrderDetail(order: Order): string {
   const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
 
   // Customer avatar initials
-  const initials = (c.name || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+  const initials = ([c.firstname, c.lastname].filter(Boolean).join(' ') || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
 
   const itemsHtml = (order.items || []).map((item, i) => {
     const productIcons: Record<string, string> = {
@@ -86,7 +87,7 @@ export function renderOrderDetail(order: Order): string {
     <div class="customer-top">
       <div class="customer-avatar">${initials}</div>
       <div>
-        <div class="customer-name">${c.name || '—'}</div>
+        <div class="customer-name">${[c.firstname, c.lastname].filter(Boolean).join(' ') || '—'}</div>
         <div class="customer-contact-row">
           ${c.email ? `<div class="contact-item"><i class="fa-solid fa-envelope"></i><a href="mailto:${c.email}">${c.email}</a></div>` : ''}
           ${c.phone ? `<div class="contact-item"><i class="fa-solid fa-phone"></i><a href="tel:${c.phone}">${c.phone}</a></div>` : ''}

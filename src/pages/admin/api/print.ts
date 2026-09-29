@@ -17,7 +17,7 @@ export const POST: APIRoute = async ({ request }) => {
     const placeholders = orderIds.map(() => '?').join(',');
     const ordersResult = await d1Query(
       `SELECT o.id, o.date, o.status, o.total, o.message,
-              c.name, c.email, c.phone
+              c.firstname, c.lastname, c.email, c.phone
        FROM orders o
        JOIN customers c ON o.customer_id = c.id
        WHERE o.id IN (${placeholders})`,
@@ -87,7 +87,8 @@ export const POST: APIRoute = async ({ request }) => {
         }), 60, y + 30);
 
       // Customer info
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e293b').text(order.name || 'Onbekend', 60, y + 48);
+      const customerName = [order.firstname, order.lastname].filter(Boolean).join(' ') || 'Onbekend';
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e293b').text(customerName, 60, y + 48);
       doc.font('Helvetica').fontSize(9).fillColor('#64748b');
       if (order.email) doc.text(order.email, 60, y + 63);
       if (order.phone) doc.text(order.phone, 200, y + 63);

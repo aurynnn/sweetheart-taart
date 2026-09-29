@@ -2,22 +2,24 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import CalendarPicker from '../components/CalendarPicker.astro';
+import DatumPicker from '../components/DatumPicker.svelte';
+import TijdPicker from '../components/TijdPicker.svelte';
 ---
 
-<Layout title="Bestellen" description="Bestel uw feesttaart of mini-gebak bij Sweetheart Taart. Neem contact op voor een vrijblijvende aanvraag.">
+<Layout title="Aanvraag" description="Vraag uw feesttaart of mini-gebak aan bij Sweetheart Taart. Neem contact op voor een vrijblijvende aanvraag.">
   <Header />
 
   <main id="bestellen-main">
+
     <!-- Hero Section -->
     <section id="bestellen-hero" class="pt-32 pb-16" style="background-color: #f0c0c0;">
       <div id="bestellen-hero-content" class="container">
         <div id="bestellen-hero-inner" class="max-w-3xl mx-auto text-center">
           <span id="bestellen-badge" class="inline-block px-4 py-1 text-sm font-semibold bg-white text-[var(--color-primary)] rounded-full mb-4">
-            Bestellen
+            Aanvraag
           </span>
           <h1 id="bestellen-title" class="font-heading text-4xl md:text-5xl lg:text-6xl font-semibold text-white mb-6 animate-on-scroll">
-            Bestel uw taart
+            Vraag uw taart aan
           </h1>
           <p id="bestellen-subtitle" class="text-lg text-white/80 animate-on-scroll stagger-1">
             Na de aanvraag nemen we contact op
@@ -32,32 +34,41 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         <div id="bestellen-form-wrapper" class="max-w-2xl mx-auto">
           <div id="bestellen-form-card" class="card p-8 md:p-12 animate-on-scroll">
 
-            <form id="order-form">
+            <form id="order-form" novalidate>
 
-              <!-- ─── PRODUCT SELECTOR (always visible) ─── -->
-              <div id="product-selection" class="product-type-cards grid grid-cols-3 gap-4 mb-6">
-                <button type="button" class="product-card" data-product="feesttaart">
-                  <span class="product-icon">
+              <!-- ─── PRODUCT SELECTOR (always visible first) ─── -->
+              <div id="product-section">
+                <h2 class="font-heading text-xl font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                  <span class="w-8 h-8 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] text-sm">
                     <i class="fa-solid fa-cake-candles"></i>
                   </span>
-                  <span class="product-name">Feesttaarten</span>
-                </button>
-                <button type="button" class="product-card" data-product="koekjes">
-                  <span class="product-icon">
-                    <i class="fa-solid fa-cookie-bite"></i>
-                  </span>
-                  <span class="product-name">Koekjes</span>
-                </button>
-                <button type="button" class="product-card" data-product="mini-gebak">
-                  <span class="product-icon">
-                    <i class="fa-solid fa-cookie"></i>
-                  </span>
-                  <span class="product-name">Mini-gebak</span>
-                </button>
+                  Kies uw product
+                </h2>
+
+                <div id="product-selection" class="product-type-cards grid grid-cols-3 gap-4 mb-6">
+                  <button type="button" class="product-card" data-product="feesttaart">
+                    <span class="product-icon">
+                      <i class="fa-solid fa-cake-candles"></i>
+                    </span>
+                    <span class="product-name">Feesttaarten</span>
+                  </button>
+                  <button type="button" class="product-card" data-product="koekjes">
+                    <span class="product-icon">
+                      <i class="fa-solid fa-cookie-bite"></i>
+                    </span>
+                    <span class="product-name">Koekjes</span>
+                  </button>
+                  <button type="button" class="product-card" data-product="mini-gebak">
+                    <span class="product-icon">
+                      <i class="fa-solid fa-cookie"></i>
+                    </span>
+                    <span class="product-name">Mini-gebak</span>
+                  </button>
+                </div>
               </div>
 
-              <!-- ─── ORDER INFO (hidden once ≥1 product in cart) ─── -->
-              <div id="order-info-section">
+              <!-- ─── CONTACT INFO (required before adding to cart) ─── -->
+              <div id="contact-section" class="mt-8">
                 <h2 class="font-heading text-xl font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
                   <span class="w-8 h-8 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] text-sm">
                     <i class="fa-solid fa-user"></i>
@@ -66,53 +77,86 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                 </h2>
 
                 <div class="space-y-3 mb-4">
-                  <!-- Name -->
+                  <!-- Voornaam + Achternaam (single row, single icon) -->
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
                       <i class="fa-solid fa-user"></i>
                     </div>
-                    <input type="text" name="name" required placeholder="Uw naam" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
+                    <input
+                      type="text"
+                      id="contact-firstname"
+                      name="firstname"
+                      required
+                      placeholder="Voornaam"
+                      autocomplete="given-name"
+                      class="contact-input flex-1 min-w-0 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
+                    />
+                    <input
+                      type="text"
+                      id="contact-lastname"
+                      name="lastname"
+                      required
+                      placeholder="Achternaam"
+                      autocomplete="family-name"
+                      class="contact-input flex-1 min-w-0 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
+                    />
                   </div>
                   <!-- Email -->
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
                       <i class="fa-solid fa-envelope"></i>
                     </div>
-                    <input type="email" name="email" required placeholder="uw@email.be" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
+                    <input
+                      type="email"
+                      id="contact-email"
+                      name="email"
+                      required
+                      placeholder="uw@email.be"
+                      autocomplete="email"
+                      class="contact-input flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
+                    />
                   </div>
                   <!-- Phone -->
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
                       <i class="fa-solid fa-phone"></i>
                     </div>
-                    <input type="tel" name="phone" required placeholder="+32 xxx xx xx xx" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all" />
+                    <input
+                      type="tel"
+                      id="contact-phone"
+                      name="phone"
+                      required
+                      placeholder="+32 xxx xx xx xx"
+                      autocomplete="tel"
+                      class="contact-input flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
+                    />
                   </div>
-                  <!-- Date -->
+                  <!-- Date + Time -->
                   <div>
                     <div class="flex items-center gap-3">
                       <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
                         <i class="fa-solid fa-calendar"></i>
                       </div>
-                      <div class="flex-1">
-                        <CalendarPicker id="date-input" name="date" />
+                      <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <DatumPicker client:load />
+                        <TijdPicker client:load />
                       </div>
                     </div>
+                    <input type="hidden" id="date-input" name="date" value="" />
+                    <input type="hidden" id="time-input" name="time" value="" />
                     <span id="date-availability-message" class="date-availability-message ml-14" style="display:none;"></span>
                   </div>
                 </div>
+
+                <!-- Contact validation hint -->
+                <p id="contact-hint" class="text-xs text-[var(--color-text-muted)] mb-4 ml-14">
+                  <i class="fa-solid fa-info-circle mr-1"></i>
+                  Vul uw gegevens in om door te gaan
+                </p>
               </div>
 
               <!-- ─── ADDED ITEMS (collapsible cards) ─── -->
               <div id="items-list" class="space-y-3 mb-4"></div>
-
-              <!-- ─── ADD PRODUCT BUTTON ─── -->
-              <button type="button" id="add-product-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 mb-4">
-                <i class="fa-solid fa-plus"></i>
-                Nog een product toevoegen
-              </button>
-              <p id="max-items-hint" class="text-center text-sm text-[var(--color-text-muted)] mb-4" style="display:none;">
-                Maximum van 6 producten bereikt.
-              </p>
 
               <!-- ─── ITEM DETAILS FORM (shown when adding/editing) ─── -->
               <div id="item-form-section" class="item-form-section mb-4" style="display:none;">
@@ -131,62 +175,86 @@ import CalendarPicker from '../components/CalendarPicker.astro';
 
                     <!-- Event Type (feesttaart only) -->
                     <div id="feesttaart-fields" class="feesttaart-only" style="display:none;">
-                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type gelegenheid</label>
-                      <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                          <i class="fa-solid fa-star"></i>
-                        </div>
-                        <select id="event-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                          <option value="">Selecteer een optie</option>
-                          <option value="verjaardag">Verjaardag</option>
-                          <option value="jubileum">Jubileum</option>
-                          <option value="huwelijk">Huwelijk</option>
-                          <option value="communie">Communie</option>
-                          <option value="doopsel">Doopsel</option>
-                          <option value="babyshower">Baby shower</option>
-                          <option value="anders">Anders</option>
-                        </select>
-                      </div>
-                    </div>
 
-                    <!-- Persons (feesttaart only) -->
-                    <div id="feesttaart-persons" class="feesttaart-only" style="display:none;">
-                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal personen</label>
-                      <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                          <i class="fa-solid fa-users"></i>
+                      <!-- Type gelegenheid -->
+                      <div class="mb-3">
+                        <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
+                          Type gelegenheid <span class="text-red-400">*</span>
+                        </label>
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                            <i class="fa-solid fa-star"></i>
+                          </div>
+                          <select id="event-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                            <option value="">Selecteer een optie</option>
+                            <option value="verjaardag">Verjaardag</option>
+                            <option value="jubileum">Jubileum</option>
+                            <option value="huwelijk">Huwelijk</option>
+                            <option value="communie">Communie</option>
+                            <option value="doopsel">Doopsel</option>
+                            <option value="babyshower">Baby shower</option>
+                            <option value="anders">Anders</option>
+                          </select>
                         </div>
-                        <select id="persons-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                          <option value="">Selecteer aantal</option>
-                          <option value="8-14">8-14 personen (1 laag)</option>
-                          <option value="15-25">15-25 personen (2 lagen)</option>
-                          <option value="25-40">25-40 personen (3 lagen)</option>
-                          <option value="40+">40+ personen (meerlagen)</option>
-                        </select>
                       </div>
-                    </div>
 
-                    <!-- Flavor -->
-                    <div>
-                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak voorkeur (vulling)</label>
-                      <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
-                          <i class="fa-solid fa-wine-glass"></i>
+                      <!-- Aantal personen -->
+                      <div class="mb-3">
+                        <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">
+                          Aantal personen <span class="text-red-400">*</span>
+                        </label>
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                            <i class="fa-solid fa-users"></i>
+                          </div>
+                          <select id="persons-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                            <option value="">Selecteer aantal</option>
+                            <option value="8-14">8-14 personen (1 laag)</option>
+                            <option value="15-25">15-25 personen (2 lagen)</option>
+                            <option value="25-40">25-40 personen (3 lagen)</option>
+                            <option value="40+">40+ personen (meerlagen)</option>
+                          </select>
                         </div>
-                        <select id="flavor-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
-                          <option value="">Geen voorkeur (ik adviseer)</option>
-                          <option value="aardbei">Aardbei</option>
-                          <option value="framboos">Framboos</option>
-                          <option value="banaan">Banaan</option>
-                          <option value="bosvruchten">Bosvruchten</option>
-                          <option value="chocolade">Chocolade</option>
-                          <option value="anders">Anders (specificeer hieronder)</option>
-                        </select>
                       </div>
-                    </div>
 
-                    <!-- Quantity Stepper (koekjes) -->
-                    <div id="koekjes-stepper" class="quantity-only" style="display:none;">
+                      <!-- Smaak combinatie -->
+                      <div class="mb-3">
+                        <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak combinatie</label>
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                            <i class="fa-solid fa-wine-glass"></i>
+                          </div>
+                          <select id="flavor-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                            <option value="">Geen voorkeur (ik adviseer)</option>
+                            <option value="vanille-bisquit-slagroom">Vanille biscuit met slagroom</option>
+                            <option value="vanille-bisquit-aardbei">Vanille biscuit met aardbei</option>
+                            <option value="chocolade-bisquit-framboos">Chocolade biscuit met framboos</option>
+                            <option value="redvelvet-creamcheese">Red velvet met cream cheese</option>
+                            <option value="anders">Anders (vermeld hieronder)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Cake Topper -->
+                      <div class="mb-3">
+                        <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Taarttopper</label>
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                            <i class="fa-solid fa-wand-sparkles"></i>
+                          </div>
+                          <select id="topper-select" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                            <option value="">Geen figuurtje</option>
+                            <option value="kunststof">Kunststof figuurtje</option>
+                            <option value="geboetseerd">Geboetseerd figuurtje</option>
+                            <option value="print">Opdruk op taart</option>
+                          </select>
+                        </div>
+                      </div>
+
+                    </div><!-- /feesttaart-fields -->
+
+                    <!-- Koekjes: Quantity Stepper -->
+                    <div id="koekjes-stepper" class="quantity-only mb-3" style="display:none;">
                       <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal koekjes</label>
                       <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
@@ -201,8 +269,8 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                       </div>
                     </div>
 
-                    <!-- Mini-gebak Type Selection -->
-                    <div id="mini-type-section" class="quantity-only" style="display:none;">
+                    <!-- Mini-gebak: Type Selection -->
+                    <div id="mini-type-section" class="quantity-only mb-3" style="display:none;">
                       <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Type mini-gebak</label>
                       <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
@@ -221,8 +289,8 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                       </div>
                     </div>
 
-                    <!-- Mini-gebak Amount Stepper -->
-                    <div id="mini-amount-section" class="quantity-only" style="display:none;">
+                    <!-- Mini-gebak: Amount Stepper -->
+                    <div id="mini-amount-section" class="quantity-only mb-3" style="display:none;">
                       <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Aantal</label>
                       <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
@@ -237,8 +305,26 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                       </div>
                     </div>
 
+                    <!-- Smaak (koekjes & mini-gebak) -->
+                    <div id="koekjes-flavor-section" class="quantity-only mb-3" style="display:none;">
+                      <label class="block text-sm font-medium text-[var(--color-text)] mb-2 ml-14">Smaak combinatie</label>
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0">
+                          <i class="fa-solid fa-wine-glass"></i>
+                        </div>
+                        <select id="flavor-select-koekjes" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all">
+                          <option value="">Geen voorkeur (ik adviseer)</option>
+                          <option value="vanille-bisquit-slagroom">Vanille biscuit met slagroom</option>
+                          <option value="vanille-bisquit-aardbei">Vanille biscuit met aardbei</option>
+                          <option value="chocolade-bisquit-framboos">Chocolade biscuit met framboos</option>
+                          <option value="redvelvet-creamcheese">Red velvet met cream cheese</option>
+                          <option value="anders">Anders (vermeld hieronder)</option>
+                        </select>
+                      </div>
+                    </div>
+
                     <!-- Image Upload -->
-                    <div class="flex items-start gap-3">
+                    <div class="flex items-start gap-3 mb-3">
                       <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
                         <i class="fa-solid fa-image"></i>
                       </div>
@@ -246,18 +332,23 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                         <input type="file" id="image-input" accept="image/*" class="hidden" />
                         <div id="upload-placeholder" class="upload-placeholder">
                           <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--color-text-muted)] mb-1"></i>
-                          <p class="text-xs text-[var(--color-text-muted)]">Voeg een voorbeeld toe</p>
+                          <p class="text-xs text-[var(--color-text-muted)]">Voeg een voorbeeld toe (optioneel)</p>
                         </div>
                         <img id="preview-image" class="preview-image hidden" alt="Upload preview" />
                       </div>
                     </div>
 
-                    <!-- Allergies -->
-                    <div class="flex items-start gap-3">
+                    <!-- Allergieën -->
+                    <div class="flex items-start gap-3 mb-3">
                       <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
                         <i class="fa-solid fa-exclamation-circle"></i>
                       </div>
-                      <textarea id="allergies-input" rows="2" placeholder="Allergieën (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
+                      <textarea
+                        id="allergies-input"
+                        rows="2"
+                        placeholder="Allergieën (optioneel)"
+                        class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"
+                      ></textarea>
                     </div>
 
                     <!-- Opmerkingen -->
@@ -265,19 +356,32 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                       <div class="w-10 h-10 rounded-full bg-[#FDEEF0] flex items-center justify-center text-[#E8788A] flex-shrink-0 mt-1">
                         <i class="fa-solid fa-comment"></i>
                       </div>
-                      <textarea id="message-input" rows="2" placeholder="Opmerkingen (optioneel)" class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"></textarea>
+                      <textarea
+                        id="message-input"
+                        rows="2"
+                        placeholder="Opmerkingen of speciale wensen (optioneel)"
+                        class="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none transition-all"
+                      ></textarea>
                     </div>
-                  </div>
 
+                  </div>
                 </div>
               </div>
 
-              <!-- ─── SUBMIT ITEM BUTTON (appears after item form) ─── -->
-              <button type="button" id="submit-item-btn" class="btn btn-primary w-full justify-center text-lg py-4 flex items-center gap-2 mb-4" style="display:none;">
-                <i class="fa-solid fa-check mr-2"></i>Nog een product toevoegen
+              <!-- ─── ADD PRODUCT BUTTON (always enabled — missing fields show red borders on click) ─── -->
+              <button type="button" id="add-product-btn" class="btn btn-secondary w-full justify-center text-lg py-4 flex items-center gap-2 mb-4">
+                <i class="fa-solid fa-plus"></i>
+                Nog een product toevoegen
               </button>
+              <p id="max-items-hint" class="text-center text-sm text-[var(--color-text-muted)] mb-4" style="display:none;">
+                Maximum van 6 producten bereikt.
+              </p>
+
+              <!-- ─── CONTROLEREN BUTTON ─── -->
+              <!-- Both buttons above save the open item form to the cart (if any).
+                   The "Aanvraag controleren" button then opens the review screen. -->
               <button type="button" id="review-btn" class="btn btn-primary w-full justify-center text-lg py-4">
-                Bestelling controleren
+                Aanvraag controleren
               </button>
               <p class="text-center text-sm text-[var(--color-text-muted)] mt-3">
                 U ontvangt een bevestigingsmail na verzending. We nemen spoedig contact op.
@@ -292,7 +396,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                 </svg>
               </div>
               <h3 class="font-heading text-2xl font-semibold text-[var(--color-text)] mb-2">
-                Bedankt voor uw bestelling!
+                Bedankt voor uw aanvraag!
               </h3>
               <p class="text-[var(--color-text-muted)]">
                 We hebben uw aanvraag ontvangen en nemen snel contact met u op.
@@ -302,7 +406,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
             <!-- Order Review Section -->
             <div id="order-review" class="hidden">
               <h3 class="font-heading text-2xl font-semibold text-[var(--color-text)] mb-6 text-center">
-                Uw bestelling
+                Uw aanvraag
               </h3>
 
               <div class="bg-[var(--color-surface)] rounded-xl p-6 mb-6">
@@ -311,40 +415,49 @@ import CalendarPicker from '../components/CalendarPicker.astro';
                 </h4>
                 <div class="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <label class="text-xs text-[var(--color-text-muted)]">Naam</label>
-                    <input type="text" id="review-name-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+                    <label class="text-xs text-[var(--color-text-muted)]">Voornaam</label>
+                    <div id="review-firstname-input" class="font-medium text-[var(--color-text)]"></div>
                   </div>
                   <div>
-                    <label class="text-xs text-[var(--color-text-muted)]">Email</label>
-                    <input type="email" id="review-email-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+                    <label class="text-xs text-[var(--color-text-muted)]">Achternaam</label>
+                    <div id="review-lastname-input" class="font-medium text-[var(--color-text)]"></div>
+                  </div>
+                  <div>
+                    <label class="text-xs text-[var(--color-text-muted)]">E-mail</label>
+                    <div id="review-email-input" class="font-medium text-[var(--color-text)]"></div>
                   </div>
                   <div>
                     <label class="text-xs text-[var(--color-text-muted)]">Telefoon</label>
-                    <input type="tel" id="review-phone-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+                    <div id="review-phone-input" class="font-medium text-[var(--color-text)]"></div>
                   </div>
                   <div>
-                    <label class="text-xs text-[var(--color-text-muted)]">Datum</label>
-                    <input type="date" id="review-date-input" class="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer" />
+                    <label class="text-xs text-[var(--color-text-muted)]">Ophaaldatum</label>
+                    <div id="review-date-input" class="font-medium text-[var(--color-text)]"></div>
+                  </div>
+                  <div>
+                    <label class="text-xs text-[var(--color-text-muted)]">Ophaalmoment</label>
+                    <div id="review-time-input" class="font-medium text-[var(--color-text)]"></div>
                   </div>
                 </div>
               </div>
 
-              <div id="review-items" class="space-y-4 mb-4"></div>
+              <div id="review-items" class="space-y-3 mb-6"></div>
 
-              <div id="review-total" class="flex justify-between items-center px-4 py-3 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)]">
-                <span class="font-semibold text-[var(--color-text)]">Totaal</span>
-                <span id="review-total-amount" class="text-xl font-bold text-[var(--color-primary)]">€0.00</span>
+              <div class="flex items-center justify-between p-4 bg-[#FDEEF0] rounded-xl mb-6">
+                <span class="font-semibold text-[var(--color-text)]">Totaal (indicatie)</span>
+                <span id="review-total-amount" class="text-xl font-bold text-[var(--color-primary)]"></span>
               </div>
 
-              <div class="flex gap-3 mt-4">
+              <div class="flex gap-3">
                 <button type="button" id="back-btn" class="btn btn-secondary flex-1 justify-center text-lg py-4">
                   <i class="fa-solid fa-arrow-left mr-2"></i> Terug
                 </button>
                 <button type="button" id="submit-btn-final" class="btn btn-primary flex-1 justify-center text-lg py-4">
-                  <i class="fa-solid fa-paper-plane mr-2"></i> Verstuur bestelling
+                  <i class="fa-solid fa-paper-plane mr-2"></i> Verstuur aanvraag
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -364,7 +477,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
             U kunt uw bestelling elke dag gratis ophalen na het telefonisch bevestigen van uw ophaalmoment.
           </p>
           <p class="text-[var(--color-text-muted)]">
-            <strong>Bel gerust:</strong> <a href="tel:+32486953210" class="text-[var(--color-primary)] font-semibold hover:underline">+32 486 95 32 10</a>
+            <strong>Bel gerust:</strong> <a href="tel:+324****3210" class="text-[var(--color-primary)] font-semibold hover:underline">+32 486 95 32 10</a>
           </p>
         </div>
       </div>
@@ -373,55 +486,192 @@ import CalendarPicker from '../components/CalendarPicker.astro';
 
   <Footer />
 
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
+
   <script>
+    // Prevent browser from restoring scroll position on back/forward navigation
+    history.scrollRestoration = 'manual';
+
+    // Always start at the top of the page
+    window.scrollTo(0, 0);
+
     // ─── STATE ───────────────────────────────────────────────────────────
-    const cart = [];           // Array of item objects
-    let editingIndex = null;  // Which cart index is being edited (null = adding new)
+    const cart = [];
+    let editingIndex = null;
     const MAX_ITEMS = 6;
+    let contactFilled = false;
+
+    // ─── DISABLE PRODUCT CARDS ON STARTUP ────────────────────────────────
+    // Cards start disabled; validateContact() re-enables them when valid
+    // (called after productCards is defined, below)
 
     // ─── DOM REFS ─────────────────────────────────────────────────────────
-    const itemsList        = document.getElementById('items-list');
-    const addProductBtn    = document.getElementById('add-product-btn');
-    const maxItemsHint      = document.getElementById('max-items-hint');
-    const itemFormSection   = document.getElementById('item-form-section');
-    const itemFormTitle     = document.getElementById('item-form-title');
-    const cancelItemBtn     = document.getElementById('cancel-item-btn');
-    const submitItemBtn     = document.getElementById('submit-item-btn');
-    const productCards      = document.querySelectorAll('.product-card');
-    const feesttaartFields  = document.querySelectorAll('.feesttaart-only');
-    const orderInfoSection  = document.getElementById('order-info-section');
-    const form              = document.getElementById('order-form');
-    const successMessage    = document.getElementById('success-message');
-    const reviewSection     = document.getElementById('order-review');
-    const reviewBtn         = document.getElementById('review-btn');
-    const backBtn           = document.getElementById('back-btn');
-    const submitBtnFinal    = document.getElementById('submit-btn-final');
+    const contactFirstname = document.getElementById('contact-firstname') as HTMLInputElement;
+    const contactLastname  = document.getElementById('contact-lastname') as HTMLInputElement;
+    const contactEmail     = document.getElementById('contact-email') as HTMLInputElement;
+    const contactPhone     = document.getElementById('contact-phone') as HTMLInputElement;
+    const contactHint    = document.getElementById('contact-hint') as HTMLElement;
+    const productSection = document.getElementById('product-section') as HTMLElement;
+    const itemsList      = document.getElementById('items-list') as HTMLElement;
+    const addProductBtn  = document.getElementById('add-product-btn') as HTMLButtonElement;
+    const maxItemsHint   = document.getElementById('max-items-hint') as HTMLElement;
+    const itemFormSection = document.getElementById('item-form-section') as HTMLElement;
+    const itemFormTitle  = document.getElementById('item-form-title') as HTMLElement;
+    const cancelItemBtn  = document.getElementById('cancel-item-btn') as HTMLButtonElement;
+    const productCards   = document.querySelectorAll('.product-card');
+    const form           = document.getElementById('order-form') as HTMLFormElement;
+    const successMessage = document.getElementById('success-message') as HTMLElement;
+    const reviewSection  = document.getElementById('order-review') as HTMLElement;
+    const reviewBtn      = document.getElementById('review-btn') as HTMLButtonElement;
+    const backBtn        = document.getElementById('back-btn') as HTMLButtonElement;
+    const submitBtnFinal = document.getElementById('submit-btn-final') as HTMLButtonElement;
+    const dateInput      = document.getElementById('date-input') as HTMLInputElement;
+    const timeInput      = document.getElementById('time-input') as HTMLInputElement;
 
     // ─── PRODUCT ICONS / NAMES ────────────────────────────────────────────
-    const productIcons = {
+    const productIcons: Record<string,string> = {
       'feesttaart': '<i class="fa-solid fa-cake-candles"></i>',
       'koekjes':    '<i class="fa-solid fa-cookie-bite"></i>',
       'mini-gebak': '<i class="fa-solid fa-cookie"></i>',
     };
-    const productNames = {
+    const productNames: Record<string,string> = {
       'feesttaart': 'Feesttaart',
       'koekjes':    'Koekjes',
       'mini-gebak': 'Mini-gebak',
     };
 
+    // ─── FLAVOR LABELS ────────────────────────────────────────────────────
+    const flavorLabels: Record<string,string> = {
+      'vanille-bisquit-slagroom':    'Vanille biscuit met slagroom',
+      'vanille-bisquit-aardbei':     'Vanille biscuit met aardbei',
+      'chocolade-bisquit-framboos':  'Chocolade biscuit met framboos',
+      'redvelvet-creamcheese':       'Red velvet met cream cheese',
+      'anders':                       'Anders',
+    };
+
+    // ─── TOPPER LABELS ────────────────────────────────────────────────────
+    const topperLabels: Record<string,string> = {
+      'kunststof':  'Kunststof figuurtje',
+      'geboetseerd':'Geboetseerd figuurtje',
+      'print':      'Opdruk op taart',
+      '':           'Geen figuurtje',
+    };
+
+    // ─── CONTACT VALIDATION ───────────────────────────────────────────────
+    function validateContact(): boolean {
+      const firstname = contactFirstname.value.trim();
+      const lastname  = contactLastname.value.trim();
+      const email     = contactEmail.value.trim();
+      const phone     = contactPhone.value.trim();
+
+      let valid = true;
+
+      // Clear previous errors
+      [contactFirstname, contactLastname, contactEmail, contactPhone].forEach(inp => {
+        inp.classList.remove('contact-input-error');
+        inp.style.borderColor = '';
+      });
+
+      if (!firstname) {
+        contactFirstname.classList.add('contact-input-error');
+        contactFirstname.style.borderColor = '#ef4444';
+        valid = false;
+      }
+      if (!lastname) {
+        contactLastname.classList.add('contact-input-error');
+        contactLastname.style.borderColor = '#ef4444';
+        valid = false;
+      }
+      if (!email || !email.includes('@') || !email.includes('.')) {
+        contactEmail.classList.add('contact-input-error');
+        contactEmail.style.borderColor = '#ef4444';
+        valid = false;
+      }
+      if (!phone || phone.replace(/\D/g, '').length < 10) {
+        contactPhone.classList.add('contact-input-error');
+        contactPhone.style.borderColor = '#ef4444';
+        valid = false;
+      }
+
+      contactFilled = valid;
+      if (valid) {
+        contactHint.innerHTML = '<i class="fa-solid fa-check-circle mr-1" style="color:#22c55e"></i> Gegevens ingevuld — u kunt producten toevoegen';
+      }
+      return valid;
+    }
+
+    // Clear error styling on input
+    [contactFirstname, contactLastname, contactEmail, contactPhone].forEach(inp => {
+      inp.addEventListener('input', () => {
+        inp.classList.remove('contact-input-error');
+        inp.style.borderColor = '';
+      });
+    });
+
+    // ─── DATE + TIME (DatumPicker / TijdPicker) ───────────────────────────
+    // The Svelte components write a single ISO date string (e.g. "2026-12-15")
+    // to the hidden #date-input and a "HH:MM" string to #time-input, then
+    // dispatch a 'change' event. The helpers below read those values safely.
+
+    function getSelectedDate(): string {
+      return (dateInput.value || '').trim();
+    }
+
+    function getSelectedTime(): string {
+      return (timeInput.value || '').trim();
+    }
+
+    function formatDateForDisplay(dateStr: string): string {
+      if (!dateStr) return 'Nog niet gekozen';
+      const d = new Date(dateStr + 'T00:00:00');
+      if (isNaN(d.getTime())) return dateStr;
+      const dayNames = ['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
+      const monthNames = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+      return `${dayNames[d.getDay()]} ${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    function formatTimeForDisplay(timeStr: string): string {
+      if (!timeStr) return 'Nog niet gekozen';
+      // e.g. "15:00" → "15:00 – 17:00" (assuming 2h pickup windows like master)
+      const [h, m] = timeStr.split(':').map(Number);
+      if (isNaN(h) || isNaN(m)) return timeStr;
+      const endHour = h + 2;
+      const endStr = `${String(endHour).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      return `${timeStr} – ${endStr}`;
+    }
+
+    // Clear error border as soon as the user picks a date or time
+    dateInput.addEventListener('change', () => {
+      dateInput.classList.remove('contact-input-error');
+      dateInput.style.borderColor = '';
+    });
+    timeInput.addEventListener('change', () => {
+      timeInput.classList.remove('contact-input-error');
+      timeInput.style.borderColor = '';
+    });
+
     // ─── HELPERS ──────────────────────────────────────────────────────────
     function getItemData() {
       const product = document.querySelector('.product-card.selected')?.getAttribute('data-product');
       if (!product) return null;
+
+      // Feesttaart flavor from the main flavor select; koekjes/mini from the koekjes-flavor select
+      const flavorEl = document.getElementById(
+        product === 'feesttaart' ? 'flavor-select' : 'flavor-select-koekjes'
+      ) as HTMLSelectElement;
+
       return {
         product,
-        event:    document.getElementById('event-select')?.value || '',
-        persons:  document.getElementById('persons-select')?.value || '',
-        flavor:   document.getElementById('flavor-select')?.value || '',
-        allergies:document.getElementById('allergies-input')?.value || '',
-        message:  document.getElementById('message-input')?.value || '',
+        event:    (document.getElementById('event-select') as HTMLSelectElement)?.value || '',
+        persons:  (document.getElementById('persons-select') as HTMLSelectElement)?.value || '',
+        flavor:   flavorEl?.value || '',
+        topper:   (document.getElementById('topper-select') as HTMLSelectElement)?.value || '',
+        allergies:(document.getElementById('allergies-input') as HTMLTextAreaElement)?.value || '',
+        message:  (document.getElementById('message-input') as HTMLTextAreaElement)?.value || '',
         miniType: product === 'mini-gebak'
-          ? (document.querySelector('input[name="mini-type"]:checked')?.value || '') : '',
+          ? (document.querySelector('input[name="mini-type"]:checked') as HTMLInputElement)?.value || ''
+          : '',
         quantity: product === 'koekjes'
           ? parseInt((document.getElementById('koekjes-input') as HTMLInputElement)?.value) || 0
           : product === 'mini-gebak'
@@ -430,84 +680,98 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       };
     }
 
-    function itemPrice(item) {
+    function itemPrice(item: any) {
       if (item.product === 'feesttaart') return 45;
       if (item.product === 'koekjes')    return item.quantity ? Math.ceil(item.quantity / 24) * 12 : 12;
       if (item.product === 'mini-gebak') return item.quantity ? Math.ceil(item.quantity / 12) * 9 : 9;
       return 0;
     }
 
-    function itemLabel(item) {
-      const parts = [];
+    function itemLabel(item: any) {
+      const parts: string[] = [];
       if (item.event)   parts.push(item.event);
       if (item.persons) parts.push(item.persons);
-      if (item.flavor)  parts.push(item.flavor);
-      if (item.quantity) parts.push(item.quantity + ' stuks');
+      if (item.flavor)  parts.push(flavorLabels[item.flavor] || item.flavor);
+      if (item.topper && item.topper !== '') parts.push(topperLabels[item.topper] || item.topper);
+      if (item.quantity) parts.push(`${item.quantity} stuks`);
       if (item.miniType) parts.push(item.miniType === 'mini-cupcakes' ? 'Mini cupcakes' : 'Cupcakes');
       return parts.join(' · ') || '—';
     }
 
     function clearItemForm() {
       productCards.forEach(c => c.classList.remove('selected'));
-      feesttaartFields.forEach(f => (f as HTMLElement).style.display = 'none');
-      document.getElementById('koekjes-stepper')!.style.display = 'none';
-      document.getElementById('mini-type-section')!.style.display = 'none';
-      document.getElementById('mini-amount-section')!.style.display = 'none';
-      document.getElementById('event-select')!.selectedIndex = 0;
-      document.getElementById('persons-select')!.selectedIndex = 0;
-      document.getElementById('flavor-select')!.selectedIndex = 0;
-      document.getElementById('allergies-input')!.value = '';
-      document.getElementById('message-input')!.value = '';
-      document.getElementById('koekjes-input')!.value = '24';
-      document.getElementById('mini-amount-input')!.value = '12';
+      document.querySelectorAll('.feesttaart-only').forEach(f => ((f as HTMLElement).style.display = 'none'));
+      (document.getElementById('koekjes-stepper') as HTMLElement).style.display = 'none';
+      (document.getElementById('mini-type-section') as HTMLElement).style.display = 'none';
+      (document.getElementById('mini-amount-section') as HTMLElement).style.display = 'none';
+      (document.getElementById('koekjes-flavor-section') as HTMLElement).style.display = 'none';
+      (document.getElementById('event-select') as HTMLSelectElement).selectedIndex = 0;
+      (document.getElementById('persons-select') as HTMLSelectElement).selectedIndex = 0;
+      (document.getElementById('flavor-select') as HTMLSelectElement).selectedIndex = 0;
+      (document.getElementById('flavor-select-koekjes') as HTMLSelectElement).selectedIndex = 0;
+      (document.getElementById('topper-select') as HTMLSelectElement).selectedIndex = 0;
+      (document.getElementById('allergies-input') as HTMLTextAreaElement).value = '';
+      (document.getElementById('message-input') as HTMLTextAreaElement).value = '';
+      (document.getElementById('koekjes-input') as HTMLInputElement).value = '24';
+      (document.getElementById('mini-amount-input') as HTMLInputElement).value = '12';
       (document.querySelector('input[name="mini-type"][value="cupcakes"]') as HTMLInputElement).checked = true;
-      document.getElementById('preview-image')!.classList.add('hidden');
-      document.getElementById('upload-placeholder')!.classList.remove('hidden');
+      (document.getElementById('preview-image') as HTMLImageElement).classList.add('hidden');
+      (document.getElementById('upload-placeholder') as HTMLElement).classList.remove('hidden');
     }
 
-    function loadItemIntoForm(index) {
+    function loadItemIntoForm(index: number) {
       const item = cart[index];
       if (!item) return;
       editingIndex = index;
       productCards.forEach(c => c.classList.remove('selected'));
-      document.querySelector(`#product-selection [data-product="${item.product}"]`)!.classList.add('selected');
+      document.querySelector(`[data-product="${item.product}"]`)!.classList.add('selected');
       updateProductFields(item.product);
-      document.getElementById('event-select')!.value = item.event || '';
-      document.getElementById('persons-select')!.value = item.persons || '';
-      document.getElementById('flavor-select')!.value = item.flavor || '';
-      document.getElementById('allergies-input')!.value = item.allergies || '';
-      document.getElementById('message-input')!.value = item.message || '';
+
+      (document.getElementById('event-select') as HTMLSelectElement).value = item.event || '';
+      (document.getElementById('persons-select') as HTMLSelectElement).value = item.persons || '';
+
+      const flavorElId = item.product === 'feesttaart' ? 'flavor-select' : 'flavor-select-koekjes';
+      (document.getElementById(flavorElId) as HTMLSelectElement).value = item.flavor || '';
+
+      if (item.product === 'feesttaart') {
+        (document.getElementById('topper-select') as HTMLSelectElement).value = item.topper || '';
+      }
+      (document.getElementById('allergies-input') as HTMLTextAreaElement).value = item.allergies || '';
+      (document.getElementById('message-input') as HTMLTextAreaElement).value = item.message || '';
+
       if (item.product === 'koekjes') {
-        document.getElementById('koekjes-input')!.value = String(item.quantity || 24);
+        (document.getElementById('koekjes-input') as HTMLInputElement).value = String(item.quantity || 24);
       }
       if (item.product === 'mini-gebak') {
         const radio = document.querySelector(`input[name="mini-type"][value="${item.miniType || 'cupcakes'}"]`) as HTMLInputElement;
         if (radio) radio.checked = true;
-        document.getElementById('mini-amount-input')!.value = String(item.quantity || 12);
+        (document.getElementById('mini-amount-input') as HTMLInputElement).value = String(item.quantity || 12);
         updateMiniStepper();
       }
+
       itemFormTitle.textContent = 'Product bewerken';
-      submitItemBtn.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Opslaan';
       itemFormSection.style.display = 'block';
-      submitItemBtn.style.display = 'flex';
       addProductBtn.style.display = 'none';
-      setCardsDisabled(true);
     }
 
     // ─── PRODUCT FIELD VISIBILITY ─────────────────────────────────────────
-    function updateProductFields(product) {
-      feesttaartFields.forEach(f => {
+    function updateProductFields(product: string) {
+      document.querySelectorAll('.feesttaart-only').forEach(f => {
         (f as HTMLElement).style.display = product === 'feesttaart' ? 'block' : 'none';
       });
-      const koekjesStepper = document.getElementById('koekjes-stepper') as HTMLElement;
-      const miniTypeSection = document.getElementById('mini-type-section') as HTMLElement;
-      const miniAmountSection = document.getElementById('mini-amount-section') as HTMLElement;
-      koekjesStepper.style.display = product === 'koekjes' ? 'block' : 'none';
+      const koekjesStepper   = document.getElementById('koekjes-stepper') as HTMLElement;
+      const miniTypeSection  = document.getElementById('mini-type-section') as HTMLElement;
+      const miniAmountSection= document.getElementById('mini-amount-section') as HTMLElement;
+      const koekjesFlavor    = document.getElementById('koekjes-flavor-section') as HTMLElement;
+
+      koekjesStepper.style.display    = product === 'koekjes'    ? 'block' : 'none';
+      koekjesFlavor.style.display     = (product === 'koekjes' || product === 'mini-gebak') ? 'block' : 'none';
+
       if (product === 'mini-gebak') {
-        miniTypeSection.style.display = 'block';
+        miniTypeSection.style.display   = 'block';
         miniAmountSection.style.display = 'block';
       } else {
-        miniTypeSection.style.display = 'none';
+        miniTypeSection.style.display   = 'none';
         miniAmountSection.style.display = 'none';
       }
     }
@@ -515,7 +779,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     // ─── RENDER CART ─────────────────────────────────────────────────────
     function renderCart() {
       itemsList.innerHTML = '';
-      cart.forEach((item, i) => {
+      cart.forEach((item: any, i: number) => {
         const div = document.createElement('div');
         div.className = 'cart-item flex items-center justify-between p-4 bg-white rounded-xl border border-[var(--color-border)]';
         div.innerHTML = `
@@ -538,7 +802,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
         itemsList.appendChild(div);
       });
 
-      // Attach events
       itemsList.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', () => loadItemIntoForm(parseInt((btn as HTMLElement).dataset.index!)));
       });
@@ -548,7 +811,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           cart.splice(idx, 1);
           renderCart();
           updateAddButton();
-          if (cart.length === 0) orderInfoSection.style.display = 'block';
         });
       });
 
@@ -556,28 +818,40 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     }
 
     function updateAddButton() {
+      // Button is always visible/clickable. Only hide it when the cart is full
+      // (max 6 items). Click handler validates missing fields and paints them red.
       const atMax = cart.length >= MAX_ITEMS;
-      addProductBtn.style.display = atMax ? 'none' : 'flex';
-      maxItemsHint.style.display = cart.length > 0 && atMax ? 'block' : 'none';
+      if (atMax) {
+        addProductBtn.style.display = 'none';
+        maxItemsHint.style.display = 'block';
+        return;
+      }
+      addProductBtn.style.display = 'flex';
+      addProductBtn.disabled = false;
+      maxItemsHint.style.display = 'none';
     }
 
     // ─── PRODUCT CARD SELECTION ─────────────────────────────────────────────
     productCards.forEach(card => {
       card.addEventListener('click', () => {
-        if (editingIndex !== null) return; // locked while editing
+        if (editingIndex !== null) return;
+        // First product is freely addable. Contact info is only required when
+        // adding a SECOND product (handled by addProductBtn click handler).
+        // Save scroll pos — some DOM mutations below can cause browser to scroll
+        const scrollY = window.scrollY;
         productCards.forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
         const product = card.getAttribute('data-product')!;
         updateProductFields(product);
-        // Show item details form right below the product cards
         itemFormSection.style.display = 'block';
-        submitItemBtn.style.display = 'flex';
-        addProductBtn.style.display = 'none';
+        // "Nog een product toevoegen" stays visible — it's now the primary save action.
+        // Disabled by default (cart empty) until contact info is filled.
         itemFormTitle.textContent = 'Product toevoegen';
+        // Restore scroll after browser's native scroll-to-focused-element settles
+        setTimeout(() => window.scrollTo(0, 0), 0);
       });
     });
 
-    // ─── DIM PRODUCT CARDS WHILE EDITING ──────────────────────────────────
     function setCardsDisabled(disabled: boolean) {
       productCards.forEach(c => {
         if (disabled) {
@@ -588,49 +862,82 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           (c as HTMLElement).style.pointerEvents = 'auto';
         }
       });
+      if (!disabled && !contactFilled) {
+        productCards.forEach(c => {
+          (c as HTMLElement).style.opacity = '0.4';
+          (c as HTMLElement).style.pointerEvents = 'none';
+        });
+      }
     }
 
     // ─── ADD PRODUCT BUTTON ───────────────────────────────────────────────
+    // Doubles as the primary save action. If a card is currently selected and
+    // the item form is open, the displayed product is saved to the cart first;
+    // then the form resets so the user can add another. Works for both adding
+    // a new item (cart.push) and saving an edit (cart[editingIndex] = item).
     addProductBtn.addEventListener('click', () => {
-      // Clear previous red borders
-      document.querySelectorAll('.contact-input-error').forEach(el => el.classList.remove('contact-input-error'));
-      const nameInput  = document.querySelector('[name="name"]') as HTMLInputElement;
-      const emailInput = document.querySelector('[name="email"]') as HTMLInputElement;
-      const phoneInput = document.querySelector('[name="phone"]') as HTMLInputElement;
-      const missing: HTMLInputElement[] = [];
-      if (!nameInput.value.trim())  missing.push(nameInput);
-      if (!emailInput.value.trim()) missing.push(emailInput);
-      if (!phoneInput.value.trim()) missing.push(phoneInput);
-      if (missing.length > 0) {
-        missing.forEach(inp => {
-          inp.classList.add('contact-input-error');
-          inp.style.borderColor = '#ef4444';
-        });
-        showToast('Vul eerst je contactgegevens in', 'error');
-        missing[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
+      // Always allow the click. Validate the open form + contact + date, and
+      // paint red borders on every missing field. Only proceed to save once
+      // everything is valid. Editing an in-progress item skips the
+      // contact/date gate (already provided when the item was first added).
+      const contactOk = editingIndex === null ? validateContact() : true;
+      const dateOk    = editingIndex === null ? !!getSelectedDate() : true;
+      const timeOk    = editingIndex === null ? !!getSelectedTime() : true;
+      if (!dateOk) {
+        dateInput.classList.add('contact-input-error');
+        dateInput.style.borderColor = '#ef4444';
       }
+      if (!timeOk) {
+        timeInput.classList.add('contact-input-error');
+        timeInput.style.borderColor = '#ef4444';
+      }
+
+      const selectedCard = document.querySelector('.product-card.selected');
+      const formIsOpen = selectedCard && itemFormSection.style.display !== 'none';
+      const itemOk = !formIsOpen || (() => {
+        const product = selectedCard!.getAttribute('data-product')!;
+        return !markItemErrors(product);
+      })();
+
+      // Scroll to the first missing section so the user sees what to fix
+      if (!contactOk) {
+        document.getElementById('contact-section')!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        contactFirstname.focus();
+      } else if (!dateOk) {
+        dateInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (!timeOk) {
+        timeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (!contactOk || !dateOk || !timeOk || !itemOk) return;
+
+      // All valid — save the open form to the cart.
+      if (formIsOpen && selectedCard) {
+        const item = getItemData();
+        if (!item) return;
+
+        if (editingIndex !== null) {
+          cart[editingIndex] = item;
+        } else {
+          if (cart.length >= MAX_ITEMS) {
+            showToast('Maximum van 6 producten bereikt', 'error');
+            return;
+          }
+          cart.push(item);
+        }
+      }
+
       editingIndex = null;
       clearItemForm();
       productCards.forEach(c => c.classList.remove('selected'));
       itemFormSection.style.display = 'none';
-      submitItemBtn.style.display = 'none';
-      // Scroll back to product cards so they can pick a new one
+      setCardsDisabled(false);
+      renderCart();
       document.getElementById('product-selection')!.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-
-    // ─── CLEAR ERROR BORDERS ON CONTACT INPUT ───────────────────────────────
-    document.querySelectorAll('[name="name"],[name="email"],[name="phone"]').forEach(inp => {
-      (inp as HTMLInputElement).addEventListener('input', () => {
-        inp.classList.remove('contact-input-error');
-        inp.style.borderColor = '';
-      });
     });
 
     // ─── CANCEL ITEM FORM ──────────────────────────────────────────────────
     cancelItemBtn.addEventListener('click', () => {
       itemFormSection.style.display = 'none';
-      submitItemBtn.style.display = 'none';
       editingIndex = null;
       productCards.forEach(c => c.classList.remove('selected'));
       clearItemForm();
@@ -638,33 +945,30 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       updateAddButton();
     });
 
-    // ─── SUBMIT ITEM (add to cart, close form) ─────────────────────────────
-    submitItemBtn.addEventListener('click', () => {
-      const selectedCard = document.querySelector('.product-card.selected');
-      if (!selectedCard) {
-        showToast('Kies eerst een product', 'error');
-        return;
+    // ─── SUBMIT ITEM ──────────────────────────────────────────────────────
+    function markItemErrors(product: string): boolean {
+      // Clear previous item-form error borders
+      ['event-select', 'persons-select'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('contact-input-error');
+      });
+      let invalid = false;
+      let firstBad: HTMLElement | null = null;
+      if (product === 'feesttaart') {
+        const event   = document.getElementById('event-select')   as HTMLSelectElement;
+        const persons = document.getElementById('persons-select') as HTMLSelectElement;
+        if (!event.value)   { event.classList.add('contact-input-error');   invalid = true; firstBad ??= event; }
+        if (!persons.value) { persons.classList.add('contact-input-error'); invalid = true; firstBad ??= persons; }
       }
-      const item = getItemData();
-      if (!item) return;
-      if (editingIndex !== null) {
-        cart[editingIndex] = item;
-        showToast('Product gewijzigd', 'success');
-      } else {
-        if (cart.length >= MAX_ITEMS) { showToast('Maximum van 6 producten bereikt', 'error'); return; }
-        cart.push(item);
-        showToast('Product toegevoegd', 'success');
-        // Hide order info once first product is added
-        orderInfoSection.style.display = 'none';
+      if (invalid && firstBad) {
+        firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstBad.focus();
       }
-      editingIndex = null;
-      clearItemForm();
-      itemFormSection.style.display = 'none';
-      submitItemBtn.style.display = 'none';
-      productCards.forEach(c => c.classList.remove('selected'));
-      setCardsDisabled(false);
-      renderCart();
-    });
+      return invalid;
+    }
+
+    // (The old "submitItemBtn" handler was removed. Saving a product now happens
+    //  via the "Nog een product toevoegen" button or "Aanvraag controleren".)
 
     // ─── STEPPERS ──────────────────────────────────────────────────────────
     document.getElementById('koekjes-minus')!.addEventListener('click', () => {
@@ -701,9 +1005,9 @@ import CalendarPicker from '../components/CalendarPicker.astro';
 
     // ─── IMAGE UPLOAD ─────────────────────────────────────────────────────
     const imageUploadArea = document.getElementById('image-upload-area')!;
-    const imageInput = document.getElementById('image-input') as HTMLInputElement;
-    const previewImage = document.getElementById('preview-image') as HTMLImageElement;
-    const uploadPlaceholder = document.getElementById('upload-placeholder')!;
+    const imageInput      = document.getElementById('image-input') as HTMLInputElement;
+    const previewImage    = document.getElementById('preview-image') as HTMLImageElement;
+    const uploadPlaceholder= document.getElementById('upload-placeholder')!;
 
     imageUploadArea.addEventListener('click', () => imageInput.click());
     imageUploadArea.addEventListener('dragover', e => { e.preventDefault(); imageUploadArea.classList.add('dragover'); });
@@ -711,7 +1015,8 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     imageUploadArea.addEventListener('drop', e => {
       e.preventDefault();
       imageUploadArea.classList.remove('dragover');
-      if ((e as DragEvent).dataTransfer?.files[0]) handleImage((e as DragEvent).dataTransfer!.files[0]);
+      const file = (e as DragEvent).dataTransfer?.files[0];
+      if (file) handleImage(file);
     });
     imageInput.addEventListener('change', () => { if (imageInput.files?.[0]) handleImage(imageInput.files[0]); });
 
@@ -728,86 +1033,94 @@ import CalendarPicker from '../components/CalendarPicker.astro';
 
     // ─── REVIEW ────────────────────────────────────────────────────────────
     reviewBtn.addEventListener('click', () => {
-      // If a product card is selected but form not submitted yet, auto-add it first
+      // Validate every section, painting red borders on anything missing, and
+      // only proceed once all gates pass. Scrolls to the first missing section.
+      const contactOk = validateContact();
+      const dateOk = !!getSelectedDate();
+      const timeOk = !!getSelectedTime();
+      if (!dateOk) {
+        dateInput.classList.add('contact-input-error');
+        dateInput.style.borderColor = '#ef4444';
+      }
+      if (!timeOk) {
+        timeInput.classList.add('contact-input-error');
+        timeInput.style.borderColor = '#ef4444';
+      }
+
+      // Save the open form to the cart. Handles three cases:
+      //   1. Editing an existing cart item  → update cart[editingIndex]
+      //   2. Adding a new item             → cart.push(item)
+      //   3. Nothing open                  → fall through to review
       const selectedCard = document.querySelector('.product-card.selected');
-      if (selectedCard && itemFormSection.style.display !== 'none') {
+      const formIsOpen = selectedCard && itemFormSection.style.display !== 'none';
+      const itemOk = !formIsOpen || (() => {
+        const product = selectedCard!.getAttribute('data-product')!;
+        return !markItemErrors(product);
+      })();
+
+      if (!contactOk) {
+        document.getElementById('contact-section')!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        contactFirstname.focus();
+      } else if (!dateOk) {
+        dateInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (!timeOk) {
+        timeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (!itemOk && formIsOpen) {
+        const el = document.querySelector('.contact-input-error');
+        if (el) (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (!contactOk || !dateOk || !timeOk || !itemOk) return;
+
+      if (formIsOpen && selectedCard) {
         const item = getItemData();
         if (item) {
-          if (cart.length >= MAX_ITEMS) { showToast('Maximum van 6 producten bereikt', 'error'); return; }
-          cart.push(item);
+          if (editingIndex !== null) {
+            cart[editingIndex] = item;
+          } else {
+            if (cart.length >= MAX_ITEMS) {
+              showToast('Maximum van 6 producten bereikt', 'error');
+              return;
+            }
+            cart.push(item);
+          }
         }
         editingIndex = null;
         clearItemForm();
         productCards.forEach(c => c.classList.remove('selected'));
         itemFormSection.style.display = 'none';
-        submitItemBtn.style.display = 'none';
-        addProductBtn.style.display = cart.length >= MAX_ITEMS ? 'none' : 'flex';
         renderCart();
       }
 
-      // If editing, save changes first
-      if (editingIndex !== null) {
-        const item = getItemData();
-        if (item) { cart[editingIndex] = item; }
-        editingIndex = null;
-        itemFormSection.style.display = 'none';
-        renderCart();
-      }
-
-      const nameInput  = document.querySelector('[name="name"]') as HTMLInputElement;
-      const emailInput = document.querySelector('[name="email"]') as HTMLInputElement;
-      const phoneInput = document.querySelector('[name="phone"]') as HTMLInputElement;
-      const name  = nameInput.value.trim();
-      const email = emailInput.value.trim();
-      const phone = phoneInput.value.trim();
-      const date  = (document.getElementById('date-input') as HTMLInputElement).value;
-
-      // Clear previous error borders
-      [nameInput, emailInput, phoneInput].forEach(inp => {
-        inp.classList.remove('contact-input-error');
-        inp.style.borderColor = '';
-      });
-
-      // Validate
-      const errors: string[] = [];
-      if (!name || !name.includes(' ')) {
-        nameInput.classList.add('contact-input-error');
-        nameInput.style.borderColor = '#ef4444';
-        errors.push('Vul je volledige naam in (voornaam + achternaam)');
-      }
-      if (!email || !email.includes('@') || !email.includes('.')) {
-        emailInput.classList.add('contact-input-error');
-        emailInput.style.borderColor = '#ef4444';
-        errors.push('Vul een geldig e-mailadres in');
-      }
-      if (!phone || phone.replace(/\D/g, '').length < 10) {
-        phoneInput.classList.add('contact-input-error');
-        phoneInput.style.borderColor = '#ef4444';
-        errors.push('Vul een geldig telefoonnummer in (min. 10 cijfers)');
-      }
-      if (errors.length > 0) {
-        showToast(errors[0], 'error');
-        const first = document.querySelector('.contact-input-error') as HTMLElement;
-        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (cart.length === 0) {
+        document.getElementById('product-selection')!.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
-      if (!date) { showToast('Kies een datum', 'error'); return; }
-      if (cart.length === 0)          { showToast('Voeg minimaal één product toe', 'error'); return; }
 
-      (document.getElementById('review-name-input') as HTMLInputElement).value = name;
-      (document.getElementById('review-email-input') as HTMLInputElement).value = email;
-      (document.getElementById('review-phone-input') as HTMLInputElement).value = phone;
-      (document.getElementById('review-date-input') as HTMLInputElement).value = date;
+      const firstname = contactFirstname.value.trim();
+      const lastname  = contactLastname.value.trim();
+      const email     = contactEmail.value.trim();
+      const phone     = contactPhone.value.trim();
+      const date      = getSelectedDate();
+      const time      = getSelectedTime();
+
+      (document.getElementById('review-firstname-input') as HTMLElement).textContent = firstname;
+      (document.getElementById('review-lastname-input') as HTMLElement).textContent  = lastname;
+      (document.getElementById('review-email-input') as HTMLElement).textContent = email;
+      (document.getElementById('review-phone-input') as HTMLElement).textContent = phone;
+      (document.getElementById('review-date-input') as HTMLElement).textContent = formatDateForDisplay(date);
+      (document.getElementById('review-time-input') as HTMLElement).textContent = formatTimeForDisplay(time);
 
       const reviewItems = document.getElementById('review-items')!;
       let html = '', total = 0;
-      cart.forEach(item => {
+      cart.forEach((item: any) => {
         const p = itemPrice(item);
         total += p;
         html += `<div class="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] mb-3">
           <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2"><span class="text-xl">${productIcons[item.product]}</span>
-              <span class="font-semibold text-[var(--color-text)]">${productNames[item.product]}</span></div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${productIcons[item.product]}</span>
+              <span class="font-semibold text-[var(--color-text)]">${productNames[item.product]}</span>
+            </div>
             <span class="font-bold text-[var(--color-primary)]">€${p.toFixed(2)}</span>
           </div>
           <div class="text-sm text-[var(--color-text-muted)]">
@@ -815,7 +1128,8 @@ import CalendarPicker from '../components/CalendarPicker.astro';
             ${item.persons  ? `<div><span class="font-medium">Personen:</span> ${item.persons}</div>` : ''}
             ${item.quantity ? `<div><span class="font-medium">Aantal:</span> ${item.quantity} stuks</div>` : ''}
             ${item.miniType ? `<div><span class="font-medium">Type:</span> ${item.miniType === 'mini-cupcakes' ? 'Mini cupcakes' : 'Cupcakes'}</div>` : ''}
-            ${item.flavor   ? `<div><span class="font-medium">Smaak:</span> ${item.flavor}</div>` : ''}
+            ${item.flavor   ? `<div><span class="font-medium">Smaak:</span> ${flavorLabels[item.flavor] || item.flavor}</div>` : ''}
+            ${item.topper && item.topper !== '' ? `<div><span class="font-medium">Topper:</span> ${topperLabels[item.topper] || item.topper}</div>` : ''}
             ${item.allergies ? `<div><span class="font-medium">Allergieën:</span> ${item.allergies}</div>` : ''}
             ${item.message  ? `<div><span class="font-medium">Opmerkingen:</span> ${item.message}</div>` : ''}
           </div>
@@ -826,23 +1140,21 @@ import CalendarPicker from '../components/CalendarPicker.astro';
 
       form.classList.add('hidden');
       reviewSection.classList.remove('hidden');
+      reviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     backBtn.addEventListener('click', () => {
-      (document.querySelector('[name="name"]') as HTMLInputElement).value    = (document.getElementById('review-name-input') as HTMLInputElement).value;
-      (document.querySelector('[name="email"]') as HTMLInputElement).value   = (document.getElementById('review-email-input') as HTMLInputElement).value;
-      (document.querySelector('[name="phone"]') as HTMLInputElement).value   = (document.getElementById('review-phone-input') as HTMLInputElement).value;
-      (document.getElementById('date-input') as HTMLInputElement).value      = (document.getElementById('review-date-input') as HTMLInputElement).value;
       reviewSection.classList.add('hidden');
       form.classList.remove('hidden');
-      orderInfoSection.style.display = 'block';
     });
 
     submitBtnFinal.addEventListener('click', async () => {
-      const name  = (document.getElementById('review-name-input') as HTMLInputElement).value;
-      const email = (document.getElementById('review-email-input') as HTMLInputElement).value;
-      const phone = (document.getElementById('review-phone-input') as HTMLInputElement).value;
-      const date  = (document.getElementById('review-date-input') as HTMLInputElement).value;
+      const firstname = contactFirstname.value.trim();
+      const lastname  = contactLastname.value.trim();
+      const email     = contactEmail.value.trim();
+      const phone     = contactPhone.value.trim();
+      const date      = getSelectedDate();
+      const time      = getSelectedTime();
 
       // Verify availability
       try {
@@ -853,17 +1165,32 @@ import CalendarPicker from '../components/CalendarPicker.astro';
           showToast('Deze datum is niet beschikbaar. Kies een andere.', 'error');
           return;
         }
-      } catch {
-        // Proceed if check fails
-      }
+      } catch { /* proceed if check fails */ }
 
-      const total = cart.reduce((s, item) => s + itemPrice(item), 0);
-      const orderData = { date, customer: { name, email, phone }, items: cart, total: '€' + total.toFixed(2) };
+      const total = cart.reduce((s: number, item: any) => s + itemPrice(item), 0);
+      const orderData = {
+        date,
+        time,
+        customer: { firstname, lastname, email, phone },
+        items: cart,
+        total: '€' + total.toFixed(2),
+      };
 
       try {
-        const saveRes = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData) });
-        if (!saveRes.ok) { showToast('Er ging iets mis. Probeer opnieuw.', 'error'); return; }
-      } catch { showToast('Er ging iets mis. Probeer opnieuw.', 'error'); return; }
+        const saveRes = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData),
+        });
+        if (!saveRes.ok) {
+          const err = await saveRes.json();
+          showToast(err.error || 'Er ging iets mis. Probeer opnieuw.', 'error');
+          return;
+        }
+      } catch {
+        showToast('Er ging iets mis. Probeer opnieuw.', 'error');
+        return;
+      }
 
       reviewSection.classList.add('hidden');
       successMessage.classList.remove('hidden');
@@ -879,7 +1206,10 @@ import CalendarPicker from '../components/CalendarPicker.astro';
       toast.className = `toast toast-${type}`;
       toast.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${message}</span>`;
       container.appendChild(toast);
-      setTimeout(() => { toast.style.animation = 'toastOut 0.2s ease forwards'; setTimeout(() => toast.remove(), 200); }, 3500);
+      setTimeout(() => {
+        toast.style.animation = 'toastOut 0.2s ease forwards';
+        setTimeout(() => toast.remove(), 200);
+      }, 3500);
     }
   </script>
 
@@ -888,6 +1218,7 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     .toast-error  { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
     .toast-info   { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; }
     .toast-icon { font-size: 1rem; flex-shrink: 0; }
+    .toast { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 0.75rem; font-size: 0.875rem; animation: toastIn 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     @keyframes toastIn {
       from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -930,7 +1261,6 @@ import CalendarPicker from '../components/CalendarPicker.astro';
     .quantity-only { display: none; }
     .item-form-section { animation: fadeIn 0.2s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-    .toast { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 0.75rem; font-size: 0.875rem; animation: toastIn 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .date-availability-message { display: block; font-size: 0.75rem; margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; }
     .date-availability-message.available { background: #dcfce7; color: #166534; }
     .date-availability-message.error { background: #fef2f2; color: #991b1b; }

@@ -25,7 +25,7 @@ try {
       const ext = path.extname(file).toLowerCase();
       const isVideo = ['.mp4', '.webm', '.mov'].includes(ext);
       const name = path.basename(file, ext).replace(/[-_]/g, ' ').substring(0, 50);
-      const r2Path = `${R2_BASE}/mini-collectie/${isVideo ? 'videos' : 'images'}/${file}`;
+      const r2Path = `${R2_BASE}/mini-collectie/${file}`;
       return {
         src: r2Path,
         alt: name,

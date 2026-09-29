@@ -36,7 +36,7 @@ try {
   // Upcoming orders — next 14 days, sorted by delivery date ascending
   try {
     const upcomingRes = await d1Query(`
-      SELECT o.id, o.date, o.status, o.total, c.name as customer,
+      SELECT o.id, o.date, o.status, o.total, (c.firstname || ' ' || c.lastname) as customer,
              (SELECT product FROM order_items WHERE order_id = o.id LIMIT 1) as product
       FROM orders o
       JOIN customers c ON o.customer_id = c.id
@@ -47,7 +47,7 @@ try {
     `);
     upcomingOrders = (upcomingRes.results || []).map((row: any) => ({
       id: row.id,
-      customer: row.customer || 'Onbekend',
+      customer: row.customer?.trim() || 'Onbekend',
       product: row.product || '—',
       date: row.date,
       total: row.total ? `€${Number(row.total).toFixed(2)}` : '€0.00',
@@ -56,7 +56,7 @@ try {
   } catch (e) { /* ignore */ }
 
   const ordersRes = await d1Query(`
-    SELECT o.id, o.date, o.status, o.total, c.name as customer,
+    SELECT o.id, o.date, o.status, o.total, (c.firstname || ' ' || c.lastname) as customer,
            (SELECT product FROM order_items WHERE order_id = o.id LIMIT 1) as product
     FROM orders o
     JOIN customers c ON o.customer_id = c.id
@@ -73,7 +73,7 @@ try {
     }
     return {
       id: row.id,
-      customer: row.customer || 'Onbekend',
+      customer: row.customer?.trim() || 'Onbekend',
       date: row.date || '—',
       total: totalFormatted,
       status: row.status

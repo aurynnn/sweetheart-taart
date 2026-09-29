@@ -109,6 +109,13 @@
     transform: translateY(-2px);
   }
 
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
   .btn-ghost {
     background-color: transparent;
     color: var(--color-text);
