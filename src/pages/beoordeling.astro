@@ -1,4 +1,5 @@
 ---
+import SplitHeading from '../components/ui/SplitHeading.astro';
 // Landing page for the star links in the review e-mail.
 // The page script saves the score; 5 stars → on to Google reviews, 1–4 stars → a short feedback form.
 import Layout from '../layouts/Layout.astro';
@@ -32,7 +33,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex');
     <section class="rv-hero grain">
       <div class="container relative z-10 text-center">
         <span class="rv-badge"><i class="fa-solid fa-heart" aria-hidden="true"></i> Jouw mening telt</span>
-        <h1 class="rv-title" data-split>{!valid ? 'Oeps, deze link werkt niet' : rating === 5 ? 'Joepie, dankjewel!' : 'Bedankt voor je score!'}</h1>
+        <SplitHeading class="rv-title" text={!valid ? 'Oeps, deze link werkt niet' : rating === 5 ? 'Joepie, dankjewel!' : 'Bedankt voor je score!'} />
       </div>
     </section>
 

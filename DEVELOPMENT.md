@@ -73,27 +73,42 @@ When writing HTML/Astro/Svelte code, **always** use meaningful, semantic `id` an
 ```
 src/
 ├── components/
-│   ├── Header.astro
+│   ├── Header.astro          # desktop nav + menu toggle
+│   ├── MobileMenu.astro      # slide-in menu for < lg (script: scripts/mobileMenu.ts)
+│   ├── FloatingCta.astro     # "Start je aanvraag" button that follows the scroll
+│   ├── Hero.astro            # home hero video (script: scripts/heroVideo.ts)
 │   ├── Footer.astro
 │   ├── GalleryModal.svelte
 │   ├── CollectionCard.astro
 │   ├── TestimonialCard.astro
-│   └── ContactCTA.astro
+│   ├── ContactCTA.astro
+│   ├── home/ collection/ aanvraag/ …
+│   └── ui/                   # Logo, SplitHeading, Marquee, MessagePage, …
+├── config/
+│   ├── site.ts               # business details
+│   └── navigation.ts         # main menu links (desktop + mobile)
 ├── layouts/
 │   └── Layout.astro
 ├── pages/
-│   ├── index.astro
-│   ├── feestcollectie.astro
-│   ├── mini-collectie.astro
-│   ├── koekjescollectie.astro
-│   └── bestellen.astro
+├── scripts/
+│   ├── motion/               # site-wide motion system (entry: index.ts, see its header)
+│   ├── sprinkles/            # three.js cupcake scene (entry: index.ts)
+│   ├── heroVideo.ts
+│   └── mobileMenu.ts
 ├── styles/
 │   ├── tokens.css
-│   └── global.css
+│   ├── global.css            # imports tailwind, tokens and the partials below
+│   └── partials/             # base, components, headings, motion, collection, utilities, toast
 └── data/
-    ├── collections.json
-    └── testimonials.json
 ```
+
+### Mobile guidelines
+
+- Hover effects in custom CSS go inside `@media (hover: hover)` (Tailwind's `hover:` already does this) — on touch screens they stick after a tap. Give touch feedback with `:active` instead.
+- Tap targets are at least 44×44px.
+- Above-the-fold content uses `.animate-on-load` (CSS) and `<SplitHeading>`, not `.animate-on-scroll` / `data-split`, so it appears without waiting for JavaScript.
+- Scrubbed parallax, pointer tilt/magnetic and blur-based reveals are desktop-only (see `scripts/motion/env.ts`).
+- Use `svh`/`dvh` for full-screen heights and `env(safe-area-inset-*)` near screen edges.
 
 ---
 

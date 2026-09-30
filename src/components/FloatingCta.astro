@@ -1,0 +1,76 @@
+---
+// Floating "Start je aanvraag" button: appears once the visitor scrolls past the first
+// screen and hides again near the footer so it never covers the contact details.
+// On phones it becomes a wide, thumb-reachable bar at the bottom of the screen.
+---
+
+<a href="/aanvraag" id="floating-cta" class="floating-cta btn-shine" aria-label="Start je aanvraag">
+  <i class="fa-solid fa-cake-candles" aria-hidden="true"></i>
+  <span>Start je aanvraag</span>
+</a>
+
+<script>
+  const cta = document.getElementById('floating-cta');
+  if (cta) {
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const pastHero = window.scrollY > window.innerHeight * 0.7;
+      const nearEnd = window.innerHeight + window.scrollY > document.documentElement.scrollHeight - 280;
+      const visible = pastHero && !nearEnd;
+      cta.classList.toggle('is-visible', visible);
+      // Hidden button must not be reachable by keyboard/screen readers either
+      cta.toggleAttribute('inert', !visible);
+    };
+    window.addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    update();
+  }
+</script>
+
+<style is:global>
+  .floating-cta {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    z-index: 70;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 48px;
+    padding: 0.9rem 1.4rem;
+    border-radius: 999px;
+    font-weight: 700;
+    color: #fff !important;
+    background: linear-gradient(135deg, #F2A0AA, #E8788A 55%, #D45A6A);
+    box-shadow: 0 12px 30px -8px rgba(212, 90, 106, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    transform: translateY(140%) scale(0.9);
+    opacity: 0;
+    transition: transform 600ms var(--ease-spring), opacity 300ms ease, box-shadow 300ms ease;
+    pointer-events: none;
+  }
+  .floating-cta.is-visible { transform: none; opacity: 1; pointer-events: auto; }
+  .floating-cta:active { transform: scale(0.97); transition-duration: 80ms; }
+  @media (hover: hover) {
+    .floating-cta:hover { box-shadow: 0 16px 40px -8px rgba(212, 90, 106, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+  }
+  .floating-cta i { animation: wiggle 3s ease-in-out infinite; }
+  @keyframes wiggle { 0%, 85%, 100% { transform: rotate(0); } 90% { transform: rotate(-12deg); } 95% { transform: rotate(10deg); } }
+
+  /* Phones: centred, wide bar in the thumb zone instead of a small corner pill */
+  @media (max-width: 640px) {
+    .floating-cta {
+      left: max(1rem, env(safe-area-inset-left));
+      right: max(1rem, env(safe-area-inset-right));
+      bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+      font-size: 1.05rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) { .floating-cta i { animation: none; } .floating-cta { transition: opacity 200ms ease; } }
+</style>

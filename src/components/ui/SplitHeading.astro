@@ -1,0 +1,23 @@
+---
+// Above-the-fold heading that reveals word by word using CSS only (styles/partials/motion.css
+// → .split-load). Words are split on the server, so the animation starts on first paint
+// instead of waiting for the motion bundle — no flash of the full heading on slow phones.
+// For headings further down the page, use `data-split` (scroll-triggered, JS).
+interface Props {
+  text: string;
+  as?: 'h1' | 'h2';
+  class?: string;
+  id?: string;
+}
+
+// `...rest` forwards the parent's scoped-style attribute (data-astro-cid-*), so the
+// parent's CSS for the passed class still applies.
+const { text, as: Tag = 'h1', class: className, id, ...rest } = Astro.props;
+const words = text.trim().split(/\s+/);
+---
+
+<Tag {...rest} id={id} class:list={['split-load', className]} aria-label={text}>
+  {words.map((word, i) => (
+    <><span class="split-mask" aria-hidden="true"><span class="split-word" style={`--w:${i}`}>{word}</span></span>{i < words.length - 1 && ' '}</>
+  ))}
+</Tag>

@@ -1,0 +1,103 @@
+/* ── Heading glow system: white handwriting + pink glow on pink heroes, dark on light sections ── */
+
+@layer components {
+  /* ── Glow heading style (comic/handwriting, white + pink glow) ── */
+  h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+    text-shadow:
+      /* Thin border via layered shadows */
+      1.5px 1.5px 0px #ffcce0,
+      -0.5px -0.5px 0px #ffcce0,
+      0.5px -0.5px 0px #ffcce0,
+      -0.5px 0.5px 0px #ffcce0,
+      /* Soft pastel pink glow layers */
+      0px 0px 10px #ffccd5,
+      0px 0px 20px #ffd9e6,
+      0px 0px 40px #ffe4ed,
+      0px 0px 60px #fff0f5;
+  }
+
+  /* Body/section headings below hero stay dark */
+  #home-intro h2,
+  #home-collections h2,
+  #home-testimonials h2,
+  #home-info h3,
+  .section-title {
+    color: var(--color-text) !important;
+    text-shadow: none !important;
+  }
+
+  /* Footer headings: dark text, no glow */
+  footer h4,
+  footer h3 {
+    color: var(--color-text) !important;
+    text-shadow: none !important;
+  }
+
+  /* h3 inside sections: dark, no glow */
+  section h3 {
+    color: var(--color-text) !important;
+    text-shadow: none !important;
+  }
+
+  /* Collection & tips pages: headings below the pink hero stay dark (the hero h1 keeps its glow) */
+  .collection section:not(.c-hero) h2:not(.on-dark) {
+    color: var(--color-text) !important;
+    text-shadow: none !important;
+  }
+
+  /* Collection pages: header is transparent like home, nav links keep glow + white text */
+  body.collection-page #main-header {
+    position: absolute;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.collection-page #main-header.scrolled {
+    background-color: rgba(253, 248, 245, 0.92) !important;
+    backdrop-filter: blur(12px);
+  }
+
+  /* Footer body text: normal font, no glow */
+  footer p,
+  footer li,
+  footer span,
+  footer address,
+  footer a {
+    text-shadow: none !important;
+  }
+
+  /* Subtitle glow variant — Caveat handwriting font */
+  .glow-subtitle {
+    font-family: var(--font-heading);
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow:
+      0.75px 0.75px 0px #ffcce0,
+      -0.25px -0.25px 0px #ffcce0,
+      0.25px -0.25px 0px #ffcce0,
+      -0.25px 0.25px 0px #ffcce0,
+      0px 0px 8px #ffccd5,
+      0px 0px 16px #ffd9e6,
+      0px 0px 32px #ffe4ed;
+  }
+
+  /* Logo SVG icon: white + pink glow */
+  .logo-img {
+    fill: #ffffff;
+    color: #ffffff;
+    filter: drop-shadow(0 0 6px #ffcce0) drop-shadow(0 0 12px #ffd9e6) drop-shadow(0 0 20px #ffe4ed);
+  }
+
+  #main-header:not(.scrolled) .logo-img {
+    fill: #ffffff;
+    color: #ffffff;
+    filter: drop-shadow(0 0 6px #ffcce0) drop-shadow(0 0 12px #ffd9e6) drop-shadow(0 0 20px #ffe4ed);
+  }
+
+  #main-header.scrolled .logo-img {
+    fill: var(--color-primary);
+    color: var(--color-primary);
+    filter: none;
+  }
+
+}

@@ -143,7 +143,7 @@ const knowHow = [
     background: linear-gradient(135deg, #F2A0AA, #E8788A); color: #fff; font-size: 1.35rem;
     box-shadow: 0 12px 24px -12px rgba(212, 90, 106, 0.8); transition: transform 600ms var(--ease-spring);
   }
-  .fact:hover .fact-icon { transform: rotate(-10deg) scale(1.1); }
+  @media (hover: hover) { .fact:hover .fact-icon { transform: rotate(-10deg) scale(1.1); } }
   .fact h3 { font-family: var(--font-body); font-weight: 800; font-size: 1rem; margin: 0; }
   .fact p { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--color-text-muted); }
 
@@ -162,5 +162,10 @@ const knowHow = [
   @media (max-width: 900px) {
     .layers-grid { grid-template-columns: 1fr; gap: 2rem; }
     .layer { margin-left: 0; }
+  }
+  @media (max-width: 480px) {
+    .fact { padding: 1.25rem 0.75rem; }
+    .fact-icon { width: 3rem; height: 3rem; font-size: 1.15rem; }
+    .layer { padding: 1rem 1.1rem; }
   }
 </style>

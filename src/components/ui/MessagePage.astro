@@ -1,4 +1,5 @@
 ---
+import SplitHeading from './SplitHeading.astro';
 // Small centered card page (hero + card) for confirmations like unsubscribe / reminders.
 import Layout from '../../layouts/Layout.astro';
 import Header from '../Header.astro';
@@ -14,7 +15,7 @@ const { title, badge, icon, heading } = Astro.props;
     <section class="mp-hero grain">
       <div class="container relative z-10 text-center">
         <span class="mp-badge"><i class={`fa-solid ${icon}`} aria-hidden="true"></i> {badge}</span>
-        <h1 class="mp-title" data-split>{heading}</h1>
+        <SplitHeading class="mp-title" text={heading} />
       </div>
     </section>
     <div class="container mp-body">

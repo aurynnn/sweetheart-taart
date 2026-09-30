@@ -1,19 +1,22 @@
 ---
 interface Props {
+  id?: string;
   title?: string;
   subtitle?: string;
   showCTA?: boolean;
 }
 
 const {
+  id,
   title = "De prachtigste taarten...",
   subtitle = "fijnste koekjes en heerlijkste cake, met liefde gebakken in Oostende",
   showCTA = true
 } = Astro.props;
 ---
 
-<section class="relative min-h-screen flex items-center justify-center overflow-hidden">
-  <!-- Background video -->
+<!-- svh: fills the screen on phones without jumping when the address bar hides -->
+<section id={id} class="hero relative min-h-svh flex items-center justify-center overflow-hidden">
+  <!-- Background video (trim/loop/pause logic: src/scripts/heroVideo.ts) -->
   <div class="absolute inset-0 z-0">
     <video
       id="heroVideo"
@@ -22,6 +25,9 @@ const {
       muted
       loop
       playsinline
+      disablepictureinpicture
+      disableremoteplayback
+      aria-hidden="true"
       poster="/videos/hero-pie-poster.jpg"
     >
       <source src="/videos/hero-pie.mp4" type="video/mp4" />
@@ -30,33 +36,33 @@ const {
     <div class="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/70 via-[var(--color-bg)]/50 to-[var(--color-bg)]/85"></div>
   </div>
 
-  <!-- Content -->
-  <div class="container relative z-10 text-center py-32 px-4">
+  <!-- Content: CSS load animation, visible without waiting for any script -->
+  <div class="container relative z-10 text-center py-28 sm:py-32 px-4">
     <!-- Main heading -->
-    <h1
-      class="mb-6 animate-on-scroll text-balance"
-      style="font-family: var(--font-heading); font-weight: 900; font-size: clamp(2.5rem, 5vw, 4.5rem); line-height: 1.2; color: #ffffff; text-shadow: 1.5px 1.5px 0px #ffcce0, -0.5px -0.5px 0px #ffcce0, 0.5px -0.5px 0px #ffcce0, -0.5px 0.5px 0px #ffcce0, 0px 0px 10px #ffccd5, 0px 0px 20px #ffd9e6, 0px 0px 40px #ffe4ed, 0px 0px 60px #fff0f5;"
-    >
+    <h1 class="hero-title mb-6 animate-on-load text-balance">
       {title}
     </h1>
 
     <!-- Subtitle -->
-    <p class="text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-on-scroll stagger-2 glow-subtitle">
+    <p class="text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-on-load stagger-2 glow-subtitle text-balance">
       {subtitle}
     </p>
 
     <!-- CTA Buttons -->
     {showCTA && (
-      <div class="flex justify-center animate-on-scroll stagger-3">
-        <a href="/feestcollectie" class="btn btn-primary text-lg px-8 py-4">
-          Bekijk collecties
+      <div class="flex justify-center animate-on-load stagger-3">
+        <a href="/feestcollectie" class="btn btn-primary text-lg px-8 py-4 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          Bestellen
         </a>
       </div>
     )}
   </div>
 
   <!-- Scroll indicator -->
-  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-on-scroll stagger-4">
+  <div class="scroll-hint absolute left-1/2 -translate-x-1/2 animate-on-load stagger-5" aria-hidden="true">
     <div class="flex flex-col items-center text-white/70">
       <span class="text-xs uppercase tracking-widest mb-2">Ontdek meer</span>
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -66,26 +72,21 @@ const {
   </div>
 </section>
 
-<script is:inline>
-  document.addEventListener('DOMContentLoaded', () => {
-    const video = document.getElementById('heroVideo');
-    if (video) {
-      const frameRate = 30; // Assuming 30 frames per second. Adjust if your video has a different frame rate.
-      const framesToSkipStart = 9; // Number of frames to skip from the beginning
-      const framesToSkipEnd = 12; // Number of frames to skip from the end
-
-      const startTime = framesToSkipStart / frameRate;
-      const endTimeOffset = framesToSkipEnd / frameRate;
-
-      video.addEventListener('loadedmetadata', () => {
-        video.currentTime = startTime;
-      });
-
-      video.addEventListener('timeupdate', () => {
-        if (video.duration && video.currentTime >= video.duration - endTimeOffset) {
-          video.currentTime = startTime; // Loop back to startTime
-        }
-      });
-    }
-  });
+<script>
+  import '../scripts/heroVideo';
 </script>
+
+<style>
+  .hero-title {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    line-height: 1.2;
+    color: #ffffff;
+    text-shadow: 1.5px 1.5px 0px #ffcce0, -0.5px -0.5px 0px #ffcce0, 0.5px -0.5px 0px #ffcce0, -0.5px 0.5px 0px #ffcce0, 0px 0px 10px #ffccd5, 0px 0px 20px #ffd9e6, 0px 0px 40px #ffe4ed, 0px 0px 60px #fff0f5;
+  }
+  .scroll-hint { bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); }
+  /* Short screens (landscape phones): the hint would collide with the CTA */
+  @media (max-height: 560px) { .scroll-hint { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .scroll-hint svg { animation: none; } }
+</style>

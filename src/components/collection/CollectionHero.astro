@@ -1,4 +1,5 @@
 ---
+import SplitHeading from '../ui/SplitHeading.astro';
 // Hero for the collection pages: copy on the left, a floating polaroid collage
 // of real creations on the right (parallax + gentle float).
 interface Props {
@@ -22,11 +23,11 @@ const [a, b, c] = photos;
 
   <div class="container c-hero-grid">
     <div class="c-hero-copy">
-      <span class="c-badge animate-on-scroll"><i class="fa-solid fa-heart" aria-hidden="true"></i> {badge}</span>
-      <h1 class="c-title" data-split>{title}</h1>
-      <p class="c-sub animate-on-scroll stagger-2">{subtitle}</p>
+      <span class="c-badge animate-on-load"><i class="fa-solid fa-heart" aria-hidden="true"></i> {badge}</span>
+      <SplitHeading class="c-title" text={title} />
+      <p class="c-sub animate-on-load stagger-2">{subtitle}</p>
 
-      <div class="c-actions animate-on-scroll stagger-3">
+      <div class="c-actions animate-on-load stagger-3">
         <a href={`/aanvraag?product=${product}`} class="btn btn-primary btn-shine c-cta" data-magnetic="0.2">
           <i class="fa-solid fa-cake-candles" aria-hidden="true"></i> {ctaLabel}
         </a>
@@ -34,10 +35,10 @@ const [a, b, c] = photos;
           Bekijk creaties <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
         </a>
       </div>
-      <p class="c-note animate-on-scroll stagger-4"><i class="fa-regular fa-circle-check" aria-hidden="true"></i> Vrijblijvende aanvraag — je betaalt pas na bevestiging</p>
+      <p class="c-note animate-on-load stagger-4"><i class="fa-regular fa-circle-check" aria-hidden="true"></i> Vrijblijvende aanvraag — je betaalt pas na bevestiging</p>
 
       {highlights.length > 0 && (
-        <ul class="c-highlights animate-on-scroll stagger-4">
+        <ul class="c-highlights animate-on-load stagger-4">
           {highlights.map((h) => (
             <li><i class={`fa-solid ${h.icon}`} aria-hidden="true"></i>{h.label}</li>
           ))}
@@ -45,7 +46,7 @@ const [a, b, c] = photos;
       )}
     </div>
 
-    <div class="c-collage" aria-hidden="true">
+    <div class="c-collage animate-on-load stagger-3" aria-hidden="true">
       {a && <figure class="polaroid p1" data-parallax="-0.25"><img src={a} alt="" loading="eager" /></figure>}
       {b && <figure class="polaroid p2" data-parallax="0.18"><img src={b} alt="" loading="eager" /></figure>}
       {c && <figure class="polaroid p3" data-parallax="-0.1"><img src={c} alt="" loading="lazy" /></figure>}
@@ -86,7 +87,7 @@ background: var(--hero-bg);
   .c-cta { border-radius: 999px; padding: 0.95rem 1.75rem; font-size: 1.05rem; box-shadow: 0 16px 30px -12px rgba(212, 90, 106, 0.7); }
   .c-link { font-weight: 700; color: #3d272a; display: inline-flex; align-items: center; gap: 0.5rem; }
   .c-link i { transition: transform 300ms var(--ease-spring); }
-  .c-link:hover i { transform: translateY(4px); }
+  @media (hover: hover) { .c-link:hover i { transform: translateY(4px); } }
   .c-note { margin: 1rem 0 0; font-size: 0.85rem; color: #4a3033; }
   .c-note i { color: #fff; margin-right: 0.3rem; }
   .c-highlights { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; padding: 0; margin: 1.75rem 0 0; }
@@ -117,6 +118,16 @@ background: var(--hero-bg);
     .c-actions, .c-highlights { justify-content: center; }
     .c-collage { height: 20rem; max-width: 26rem; margin: 0 auto; width: 100%; }
     .sticker { font-size: 1.1rem; }
+    /* Big blurred blobs drifting behind the content cost a lot of GPU on phones */
+    .c-hero-blob { animation: none; }
+  }
+  @media (max-width: 640px) {
+    .c-hero { padding: 6.5rem 0 4.5rem; }
+    .c-sub { font-size: 1.05rem; }
+    .c-actions { gap: 0.75rem 1.25rem; margin-top: 1.5rem; }
+    .c-link { min-height: 44px; }
+    .c-collage { height: 17rem; margin-top: 0.5rem; }
+    .c-hero-blob.one { width: 18rem; height: 18rem; }
   }
   @media (prefers-reduced-motion: reduce) {
     .c-hero-blob, .polaroid { animation: none; }

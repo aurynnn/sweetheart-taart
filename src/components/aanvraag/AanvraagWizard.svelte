@@ -703,16 +703,15 @@
   /* Product choice */
   .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; border-radius: 1.25rem; outline: none; }
   .product { position: relative; display: flex; flex-direction: column; text-align: left; background: white; border: 2px solid var(--line); border-radius: 1.25rem; overflow: hidden; cursor: pointer; font: inherit; color: inherit; padding: 0; transition: transform 400ms var(--ease-spring), border-color 250ms, box-shadow 250ms; }
-  .product:hover, .product:focus-visible { transform: translateY(-6px); border-color: var(--pink); box-shadow: 0 18px 40px -18px rgba(212,90,106,0.45); }
+  .product:focus-visible { transform: translateY(-6px); border-color: var(--pink); box-shadow: 0 18px 40px -18px rgba(212,90,106,0.45); }
+  .product:active { transform: scale(0.98); border-color: var(--pink); transition-duration: 100ms; }
   .product-img { aspect-ratio: 4 / 3; overflow: hidden; background: var(--blush); }
   .product-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 700ms var(--ease-out-expo); }
-  .product:hover .product-img img { transform: scale(1.08); }
   .product-body { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.9rem 1rem 1.1rem; }
   .product-body strong { font-size: 1.05rem; }
   .product-body span { font-size: 0.8rem; color: var(--muted); }
   .product-body em { font-style: normal; font-size: 0.8rem; font-weight: 700; color: var(--pink-dark); margin-top: 0.3rem; }
   .product-add { position: absolute; top: 0.7rem; right: 0.7rem; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: white; color: var(--pink); display: grid; place-items: center; box-shadow: 0 4px 14px rgba(0,0,0,0.12); transition: transform 400ms var(--ease-spring), background 200ms, color 200ms; }
-  .product:hover .product-add { transform: rotate(90deg) scale(1.1); background: var(--pink); color: white; }
 
   /* Cart */
   .cart { list-style: none; padding: 0; margin: 0 0 0.5rem; display: grid; gap: 0.6rem; }
@@ -727,8 +726,6 @@
   .cart-price { font-weight: 800; color: var(--pink-dark); }
   .cart-actions { display: flex; gap: 0.15rem; }
   .cart-actions button, .icon-btn { width: 2.2rem; height: 2.2rem; border-radius: 0.6rem; border: 0; background: none; color: var(--muted); cursor: pointer; transition: background 200ms, color 200ms; }
-  .cart-actions button:hover, .icon-btn:hover { background: var(--blush); color: var(--pink); }
-  .cart-actions button.danger:hover { background: #FEF2F2; color: #DC2626; }
 
   /* Editor */
   .editor { margin-top: 1rem; padding: 1.25rem; border-radius: 1.25rem; background: white; border: 2px solid var(--pink); box-shadow: 0 24px 60px -30px rgba(212,90,106,0.5); scroll-margin-top: 6rem; }
@@ -755,7 +752,6 @@
   .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
   .chip { padding: 0.55rem 0.95rem; border-radius: 999px; border: 1.5px solid var(--line); background: white; font: inherit; font-size: 0.875rem; font-weight: 600; color: var(--ink); cursor: pointer; transition: all 250ms var(--ease-spring); }
   .chip small { font-weight: 400; color: var(--muted); }
-  .chip:hover { border-color: var(--pink); transform: translateY(-1px); }
   .chip.is-on { background: var(--pink); border-color: var(--pink); color: white; transform: scale(1.04); box-shadow: 0 6px 16px -6px rgba(212,90,106,0.6); }
   .chip.is-on small { color: rgba(255,255,255,0.85); }
 
@@ -765,12 +761,10 @@
   .tile { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.85rem 0.5rem; border-radius: 1rem; border: 1.5px solid var(--line); background: white; font: inherit; color: var(--ink); cursor: pointer; transition: all 250ms var(--ease-spring); }
   .tile strong { font-size: 1.1rem; }
   .tile span { font-size: 0.75rem; color: var(--muted); }
-  .tile:hover { border-color: var(--pink); }
   .tile.is-on { border-color: var(--pink); background: var(--blush); box-shadow: inset 0 0 0 1px var(--pink); transform: translateY(-2px); }
 
   .stepper-qty { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.35rem; border-radius: 999px; background: var(--blush); }
   .stepper-qty button { width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 0; background: white; color: var(--pink); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 200ms var(--ease-spring), background 200ms, color 200ms; }
-  .stepper-qty button:hover { background: var(--pink); color: white; }
   .stepper-qty button:active { transform: scale(0.9); }
   .stepper-qty output { min-width: 7rem; text-align: center; display: grid; line-height: 1.1; }
   .stepper-qty output span { font-size: 1.5rem; font-weight: 800; grid-area: 1 / 1; }
@@ -782,7 +776,6 @@
   .times { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
   .time { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.9rem; border-radius: 1rem; border: 1.5px solid var(--line); background: white; font: inherit; font-weight: 700; color: var(--ink); cursor: pointer; transition: all 250ms var(--ease-spring); }
   .time i { color: var(--pink); }
-  .time:hover { border-color: var(--pink); }
   .time.is-on { background: var(--pink); border-color: var(--pink); color: white; transform: scale(1.03); }
   .time.is-on i { color: white; }
   .picked { margin: 1rem 0 0; padding: 0.8rem 1rem; border-radius: 0.9rem; background: #F0FDF4; color: #166534; font-weight: 600; font-size: 0.9rem; }
@@ -805,7 +798,6 @@
   .review h3 i { color: var(--pink); margin-right: 0.35rem; }
   .review h3.solo { margin-bottom: 0.5rem; }
   .review-head button { background: none; border: 0; color: var(--pink-dark); font-weight: 700; font-size: 0.85rem; cursor: pointer; }
-  .review-head button:hover { text-decoration: underline; }
   .review-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
   .review-items li { display: flex; gap: 0.75rem; align-items: flex-start; }
   .review-items li div { display: flex; flex-direction: column; flex: 1; min-width: 0; font-size: 0.875rem; }
@@ -827,7 +819,6 @@
   .btn-next { padding: 0.9rem 1.75rem; border-radius: 999px; font-size: 1.05rem; opacity: 0.75; }
   .btn-next.is-ready { opacity: 1; box-shadow: 0 12px 28px -10px rgba(212,90,106,0.7); }
   .btn-next i { transition: transform 300ms var(--ease-spring); }
-  .btn-next:hover i.fa-arrow-right { transform: translateX(4px); }
 
   /* Success */
   .success { text-align: center; padding: 1rem 0; position: relative; z-index: 1; }
@@ -847,7 +838,28 @@
   .success-hint a { font-weight: 700; }
   .success-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
 
+  /* Hover effects only with a real pointer — on touch they stick after a tap and make a
+     just-tapped choice look selected (or a deselected one still highlighted) */
+  @media (hover: hover) {
+    .product:hover { transform: translateY(-6px); border-color: var(--pink); box-shadow: 0 18px 40px -18px rgba(212,90,106,0.45); }
+    .product:hover .product-img img { transform: scale(1.08); }
+    .product:hover .product-add { transform: rotate(90deg) scale(1.1); background: var(--pink); color: white; }
+    .cart-actions button:hover, .icon-btn:hover { background: var(--blush); color: var(--pink); }
+    .cart-actions button.danger:hover { background: #FEF2F2; color: #DC2626; }
+    .chip:hover { border-color: var(--pink); transform: translateY(-1px); }
+    .tile:hover { border-color: var(--pink); }
+    .stepper-qty button:hover { background: var(--pink); color: white; }
+    .time:hover { border-color: var(--pink); }
+    .review-head button:hover { text-decoration: underline; }
+    .btn-next:hover i.fa-arrow-right { transform: translateX(4px); }
+  }
+  .chip:active, .tile:active, .time:active { transform: scale(0.96); transition-duration: 80ms; }
+  .cart-actions button:active, .icon-btn:active { background: var(--blush); color: var(--pink); }
+
   @media (max-width: 720px) {
+    /* 44px touch targets for the small icon buttons */
+    .cart-actions button, .icon-btn { width: 2.75rem; height: 2.75rem; }
+    .chip { padding: 0.65rem 1rem; }
     .product-grid { grid-template-columns: 1fr; }
     .product { flex-direction: row; align-items: stretch; }
     .product-img { aspect-ratio: auto; width: 7.5rem; flex-shrink: 0; }

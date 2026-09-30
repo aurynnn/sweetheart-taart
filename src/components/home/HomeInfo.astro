@@ -4,10 +4,10 @@
 
 <section id="home-info" class="section bg-[var(--color-surface)]">
   <div class="container">
-    <div class="grid lg:grid-cols-2 gap-8 lg:gap-12">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
       <!-- Opening Hours -->
       <div id="home-opening-hours" class="animate-on-scroll">
-        <div id="home-opening-hours-card" class="card p-8 h-full">
+        <div id="home-opening-hours-card" class="card p-6 sm:p-8 h-full">
           <div id="home-opening-hours-header" class="flex items-start gap-4 mb-6">
             <div id="home-opening-hours-icon" class="info-icon w-12 h-12 rounded-lg bg-[var(--color-secondary)] flex items-center justify-center flex-shrink-0">
               <svg id="home-opening-hours-icon-svg" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -39,7 +39,7 @@
 
       <!-- Allergies Info -->
       <div id="home-allergies" class="animate-on-scroll stagger-2">
-        <div id="home-allergies-card" class="card p-8 h-full">
+        <div id="home-allergies-card" class="card p-6 sm:p-8 h-full">
           <div id="home-allergies-header" class="flex items-start gap-4 mb-6">
             <div id="home-allergies-icon" class="info-icon w-12 h-12 rounded-lg bg-[var(--color-accent)]/10 flex items-center justify-center flex-shrink-0">
               <svg id="home-allergies-icon-svg" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -76,5 +76,7 @@
 
 <style>
   .info-icon { transition: transform 500ms var(--ease-spring); }
-  .card:hover .info-icon { transform: rotate(-8deg) scale(1.1); }
+  @media (hover: hover) {
+    .card:hover .info-icon { transform: rotate(-8deg) scale(1.1); }
+  }
 </style>
