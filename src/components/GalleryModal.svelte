@@ -19,6 +19,7 @@ let revealFrom = $state(0); // index where the latest "Toon meer" batch starts (
 let grid;
 let strip;
 let touchStartX = 0;
+let touchStartY = 0;
 
 function isVideo(item) {
   return item.type === 'video' || /\.(mp4|webm|mov)$/i.test(item.src || '');
@@ -112,11 +113,15 @@ function handleKeydown(e) {
 
 function onTouchStart(e) {
   touchStartX = e.changedTouches[0].clientX;
+  touchStartY = e.changedTouches[0].clientY;
 }
 
+// Swipe left/right to browse, swipe down to close (the usual phone photo-viewer gestures)
 function onTouchEnd(e) {
   const dx = e.changedTouches[0].clientX - touchStartX;
-  if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+  else if (dy > 90 && Math.abs(dy) > Math.abs(dx) * 1.5) closeGallery();
 }
 </script>
 
@@ -294,7 +299,7 @@ function onTouchEnd(e) {
     background: white; color: #E8788A; border: 2px solid #E8788A; border-radius: 9999px;
     font-weight: 600; cursor: pointer; transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
-  .filter-btn:hover { background: #FDEEF0; }
+  @media (hover: hover) { .filter-btn:hover { background: #FDEEF0; } }
   .filter-btn.active { background: linear-gradient(135deg, #E8788A 0%, #F2A0AA 100%); color: white; border-color: transparent; box-shadow: 0 8px 20px -8px rgba(232, 120, 138, 0.7); }
   .filter-btn .badge { background: rgba(232, 120, 138, 0.15); padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
   .filter-btn.active .badge { background: rgba(255, 255, 255, 0.25); color: white; }
@@ -311,8 +316,14 @@ function onTouchEnd(e) {
   .thumbnail.is-loaded { animation: none; background: #FDEEF0; }
   .thumbnail img, .thumbnail video { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 500ms ease, transform 600ms cubic-bezier(0.16, 1, 0.3, 1); }
   .thumbnail.is-loaded img, .thumbnail.is-loaded video { opacity: 1; }
-  .thumbnail:not(.blurred):hover { border-color: #E8788A; transform: scale(1.05); z-index: 1; }
-  .thumbnail:not(.blurred):hover img { transform: scale(1.06); }
+  /* Hover zoom only with a real pointer: on touch it would stick after tapping */
+  @media (hover: hover) {
+    .thumbnail:not(.blurred):hover { border-color: #E8788A; transform: scale(1.05); z-index: 1; }
+    .thumbnail:not(.blurred):hover img { transform: scale(1.06); }
+          .show-more-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(232, 120, 138, 0.4); }
+    .show-more-btn:hover svg { animation: nudge 800ms ease infinite; }
+        }
+  .thumbnail:not(.blurred):active { transform: scale(0.96); }
   .thumbnail.reveal { animation: popIn 550ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: var(--d); }
   @keyframes popIn { from { opacity: 0; transform: translateY(18px) scale(0.94); } }
   @keyframes shimmer { to { background-position: -250% 0; } }
@@ -343,8 +354,6 @@ function onTouchEnd(e) {
     box-shadow: 0 4px 15px rgba(232, 120, 138, 0.3);
   }
   .show-more-btn small { opacity: 0.85; font-weight: 500; }
-  .show-more-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(232, 120, 138, 0.4); }
-  .show-more-btn:hover svg { animation: nudge 800ms ease infinite; }
   @keyframes nudge { 50% { transform: translateY(3px); } }
 
   .no-content { text-align: center; padding: 2rem; color: #888; font-style: italic; }
@@ -352,7 +361,7 @@ function onTouchEnd(e) {
   /* Lightbox */
   .modal-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(20, 10, 12, 0.95); display: flex; align-items: center; justify-content: center; animation: fadeIn 200ms ease-out; }
   @keyframes fadeIn { from { opacity: 0; } }
-  .modal-content { position: relative; width: min(90vw, 1100px); max-height: 92vh; display: flex; flex-direction: column; align-items: center; }
+  .modal-content { position: relative; width: min(90vw, 1100px); max-height: 92vh; max-height: 92dvh; display: flex; flex-direction: column; align-items: center; }
   .modal-close { position: absolute; top: -3rem; right: 0; background: none; border: none; color: white; cursor: pointer; padding: 0.5rem; opacity: 0.8; }
   .modal-close:hover { opacity: 1; }
   .modal-counter { position: absolute; top: -2.6rem; left: 0; color: white; font-size: 0.875rem; opacity: 0.7; }
@@ -371,15 +380,30 @@ function onTouchEnd(e) {
   .video-indicator { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.4); color: white; }
 
   @media (max-width: 768px) {
+    .gallery-filter-buttons { gap: 0.6rem; }
+    .filter-btn { padding: 0.65rem 1.1rem; }
+    .thumbnails-grid { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+    .thumbnail { border-radius: 0.75rem; border-width: 2px; }
+
+    /* Lightbox fills the phone screen: photo in the middle, controls in the safe areas */
+    .modal-content {
+      width: 100vw; height: 100dvh; max-height: none; justify-content: center;
+      padding: calc(3.75rem + env(safe-area-inset-top, 0px)) 0 calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    }
+    .modal-close {
+      position: absolute; top: calc(0.5rem + env(safe-area-inset-top, 0px)); right: 0.5rem;
+      width: 2.75rem; height: 2.75rem; display: grid; place-items: center; opacity: 1;
+      border-radius: 999px; background: rgba(255, 255, 255, 0.12);
+    }
+    .modal-counter { top: calc(1.2rem + env(safe-area-inset-top, 0px)); left: 1rem; }
+    .modal-image-container { flex: 1; min-height: 0; height: auto; }
+    .modal-image, .modal-video { max-height: 100%; border-radius: 0.5rem; }
     .nav-prev { left: 0.25rem; }
     .nav-next { right: 0.25rem; }
     .nav-btn { padding: 0.6rem; background: rgba(0, 0, 0, 0.35); }
-    .thumbnails-grid { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
-    .modal-content { width: 100vw; }
-    .modal-close { top: -3rem; right: 0.5rem; }
-    .modal-counter { left: 1rem; }
+    .thumbnail-strip { max-width: calc(100% - 1rem); flex-shrink: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .thumbnail, .thumbnail.reveal { animation: none; }
+    .thumbnail, .thumbnail.reveal, .modal-image, .modal-video, .modal-overlay { animation: none; }
   }
 </style>

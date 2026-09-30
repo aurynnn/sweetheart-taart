@@ -1,4 +1,5 @@
 ---
+import SplitHeading from '../components/ui/SplitHeading.astro';
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -55,9 +56,9 @@ const tabs = [
   <main id="tips-main" class="collection">
     <section class="c-hero tips-hero grain">
       <div class="container relative z-10 text-center">
-        <span class="c-badge animate-on-scroll"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> Tips & info</span>
-        <h1 class="tips-title" data-split>Alles voor een perfect feest</h1>
-        <p class="tips-sub animate-on-scroll stagger-2">Van ophalen tot aansnijden — zo komt je taart er even mooi aan als ze uit het atelier vertrok.</p>
+        <span class="c-badge animate-on-load"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> Tips & info</span>
+        <SplitHeading class="tips-title" text="Alles voor een perfect feest" />
+        <p class="tips-sub animate-on-load stagger-2">Van ophalen tot aansnijden — zo komt je taart er even mooi aan als ze uit het atelier vertrok.</p>
       </div>
       <svg class="c-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
         <path d="M0,50 C300,90 520,10 780,35 C1040,60 1240,20 1440,45 L1440,80 L0,80 Z" fill="currentColor" />
@@ -205,7 +206,7 @@ const tabs = [
   .panel-action { display: flex; justify-content: center; margin-top: 0.5rem; }
   .tip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-width: 60rem; margin: 2rem auto 0; }
   .tip { display: flex; gap: 1rem; align-items: flex-start; padding: 1.25rem 1.4rem; border-radius: 1.25rem; background: #fff; border: 1px solid var(--color-border-light); box-shadow: var(--shadow-md); animation: tipIn 600ms var(--ease-out-expo) both; animation-delay: calc(var(--j) * 60ms); transition: transform 300ms var(--ease-spring), box-shadow 300ms; }
-  .tip:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -24px rgba(212, 90, 106, 0.6); }
+  @media (hover: hover) { .tip:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -24px rgba(212, 90, 106, 0.6); } }
   @keyframes tipIn { from { opacity: 0; transform: translateY(16px); } }
   .tip-icon { width: 3rem; height: 3rem; border-radius: 1rem; display: grid; place-items: center; flex-shrink: 0; background: linear-gradient(135deg, #FDEEF0, #FBD9DE); color: var(--color-primary-dark); font-size: 1.2rem; }
   .tip h3 { font-family: var(--font-body); font-weight: 800; font-size: 1rem; margin: 0.2rem 0 0; }
@@ -231,6 +232,14 @@ const tabs = [
   @media (max-width: 800px) {
     .tip-grid, .serve { grid-template-columns: 1fr; }
     .tab { padding: 0.7rem 1rem; }
+  }
+  @media (max-width: 480px) {
+    .tips-hero { padding: 6.5rem 0 4.5rem; }
+    /* Three tabs share the full width instead of scrolling sideways */
+    .tabs { width: 100%; }
+    .tab { flex: 1; justify-content: center; gap: 0.4rem; padding: 0.7rem 0.5rem; font-size: 0.92rem; }
+    .tip { padding: 1.1rem; }
+    .review { margin-top: 3.5rem; padding: 2rem 1.25rem; }
   }
   @media (prefers-reduced-motion: reduce) {
     .tip, .step, .review-stars i { animation: none; }

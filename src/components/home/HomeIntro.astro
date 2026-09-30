@@ -21,7 +21,7 @@ const pos = (d: (typeof doodles)[number]) =>
 
 <section id="home-intro" class="section intro">
   <div class="container">
-    <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
       <div>
         <span class="eyebrow animate-on-scroll">Even voorstellen</span>
         <h2 id="home-intro-title" class="font-heading text-4xl md:text-5xl lg:text-6xl font-semibold text-[var(--color-text)] mb-6" data-split>
@@ -101,13 +101,19 @@ const pos = (d: (typeof doodles)[number]) =>
     50% { transform: translateY(-12px) rotate(6deg); }
   }
 
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2.5rem 0 0; }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 2.5rem 0 0; }
   .stats div { padding: 1rem; border-radius: 1rem; background: var(--color-secondary); text-align: center; }
   .stats dt { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted); }
   .stats dd { margin: 0.2rem 0 0; font-family: var(--font-heading); font-size: 2.4rem; font-weight: 700; color: var(--color-primary-dark); line-height: 1; font-variant-numeric: tabular-nums; }
 
   @media (max-width: 640px) {
+    /* Three stat tiles must fit a 320px screen: smaller label, less padding */
+    .stats { gap: 0.5rem; margin-top: 2rem; }
+    .stats div { padding: 0.8rem 0.35rem; }
+    .stats dt { font-size: 0.6rem; letter-spacing: 0.04em; overflow-wrap: anywhere; }
     .stats dd { font-size: 1.9rem; }
+    .intro-visual { padding: 1rem 0.5rem; }
+    .intro-badge { left: -0.25rem; padding: 0.75rem 1rem; font-size: 1.15rem; }
     .doodle { opacity: 0.35; }
   }
   @media (prefers-reduced-motion: reduce) {

@@ -1,4 +1,5 @@
 ---
+import SplitHeading from '../components/ui/SplitHeading.astro';
 // "Plan je volgende taart": order now, or get a reminder a month before the occasion.
 // Opened from the review mail with a signed customer link → e-mail address pre-filled.
 import Layout from '../layouts/Layout.astro';
@@ -26,7 +27,7 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
     <section class="nt-hero grain">
       <div class="container relative z-10 text-center">
         <span class="nt-badge"><i class="fa-solid fa-cake-candles" aria-hidden="true"></i> Volgende feestje</span>
-        <h1 class="nt-title" data-split>{customer?.firstname ? `Klaar voor het volgende feest, ${customer.firstname}?` : 'Plan je volgende taart'}</h1>
+        <SplitHeading class="nt-title" text={customer?.firstname ? `Klaar voor het volgende feest, ${customer.firstname}?` : 'Plan je volgende taart'} />
         <p class="nt-sub animate-on-scroll stagger-2">Vraag meteen aan, of laat ons je een maand op voorhand een seintje geven.</p>
       </div>
     </section>

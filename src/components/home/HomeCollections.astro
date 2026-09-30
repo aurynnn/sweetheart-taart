@@ -9,7 +9,7 @@ const { collections } = Astro.props;
 
 <section id="home-collections" class="section collections bg-[var(--color-surface)]">
   <div class="container">
-    <div id="home-collections-header" class="text-center mb-14">
+    <div id="home-collections-header" class="text-center mb-10 sm:mb-14">
       <span class="eyebrow animate-on-scroll">Ontdek</span>
       <h2 id="home-collections-title" class="section-title" data-split>de collecties</h2>
       <p id="home-collections-subtitle" class="section-subtitle mx-auto animate-on-scroll stagger-1">
@@ -17,7 +17,7 @@ const { collections } = Astro.props;
       </p>
     </div>
 
-    <div id="home-collections-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+    <div id="home-collections-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
       {collections.map((collection, index) => (
         <div id={`home-collection-card-${collection.id}`} class={`animate-on-scroll stagger-${index + 1} flex`}>
           <div class="tilt-wrap" data-tilt="7">
@@ -37,5 +37,8 @@ const { collections } = Astro.props;
 <style>
   .tilt-wrap { display: flex; width: 100%; border-radius: var(--radius-xl); }
   .tilt-wrap :global(.card) { width: 100%; }
-  .tilt-wrap :global(.card:hover) { transform: none; box-shadow: 0 30px 60px -25px rgba(212, 90, 106, 0.45); }
+  .tilt-wrap :global(.card:hover) { transform: none; }
+  @media (hover: hover) {
+    .tilt-wrap :global(.card:hover) { box-shadow: 0 30px 60px -25px rgba(212, 90, 106, 0.45); }
+  }
 </style>

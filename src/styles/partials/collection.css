@@ -1,0 +1,60 @@
+/* ── Collection pages (feest / mini / koekjes / tips) ────────────────────── */
+.collection { background: var(--color-surface); }
+.c-section { position: relative; }
+.c-section:nth-of-type(even) { background: var(--color-background); }
+.c-head { text-align: center; margin-bottom: 3rem; }
+.eyebrow {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 0.75rem;
+}
+.c-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.75rem; }
+.c-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+
+
+.c-price-card {
+  display: grid; grid-template-columns: 0.8fr 1.2fr; max-width: 56rem; margin: 0 auto;
+  border-radius: 1.75rem; overflow: hidden; background: #fff;
+  border: 1px solid var(--color-border-light); box-shadow: 0 40px 80px -40px rgba(212, 90, 106, 0.45);
+}
+.c-price {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; padding: 2.5rem 1.5rem; text-align: center; color: #fff;
+  background: radial-gradient(80% 80% at 20% 10%, #F2A0AA, transparent 70%), linear-gradient(160deg, #E8788A, #D45A6A);
+}
+.c-price-label { text-transform: uppercase; letter-spacing: 0.16em; font-size: 0.75rem; font-weight: 700; opacity: 0.85; }
+.c-price-amount { font-family: var(--font-heading); font-size: 5rem; font-weight: 700; line-height: 1; }
+.c-price-unit { font-weight: 700; }
+.c-price small { opacity: 0.8; margin-top: 0.5rem; }
+.c-price-body { padding: 2.25rem; }
+.c-price-body h3 { font-family: var(--font-heading); font-size: 1.9rem; margin: 0 0 1rem; }
+.c-factors { list-style: none; padding: 0; margin: 0 0 1.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.c-factors li { display: flex; align-items: center; gap: 0.7rem; color: var(--color-text-muted); font-size: 0.92rem; }
+.c-factors li span { width: 2.3rem; height: 2.3rem; border-radius: 0.8rem; display: grid; place-items: center; background: var(--color-secondary); color: var(--color-primary-dark); flex-shrink: 0; }
+.c-cta-wide { width: 100%; border-radius: 999px; padding: 1rem 1.5rem; font-size: 1.05rem; }
+.c-small { text-align: center; font-size: 0.82rem; color: var(--color-text-muted); margin: 0.75rem 0 0; }
+
+.c-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.c-chip { padding: 0.45rem 0.95rem; border-radius: 999px; background: var(--color-secondary); color: var(--color-primary-dark); font-size: 0.88rem; font-weight: 600; transition: transform 300ms var(--ease-spring), background 200ms; }
+@media (hover: hover) {
+  .c-chip:hover { transform: translateY(-2px) rotate(-2deg); background: #FBD9DE; }
+}
+.c-chip.special { background: #F3ECFD; color: #6D4BA8; }
+
+@media (max-width: 900px) {
+  .c-head { margin-bottom: 2rem; }
+  .c-grid-3 { grid-template-columns: 1fr; max-width: 28rem; margin: 0 auto; }
+  .c-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .c-price-card { grid-template-columns: 1fr; }
+  .c-factors { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .c-grid-4 { gap: 0.75rem; }
+  .c-price { padding: 2rem 1.25rem; }
+  .c-price-amount { font-size: 4rem; }
+  .c-price-body { padding: 1.75rem 1.25rem; }
+}

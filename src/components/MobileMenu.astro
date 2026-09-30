@@ -1,0 +1,139 @@
+---
+// Slide-in navigation panel for phones and tablets (< lg). Opened by #mobile-menu-toggle
+// in Header.astro; behaviour lives in src/scripts/mobileMenu.ts.
+import { SITE } from '../config/site';
+import { NAV_LINKS, isCurrent } from '../config/navigation';
+
+const pathname = Astro.url.pathname;
+---
+
+<div id="mobile-menu" class="mobile-menu" role="dialog" aria-modal="true" aria-label="Menu" data-lenis-prevent>
+  <button type="button" class="mm-backdrop" data-menu-close aria-label="Menu sluiten" tabindex="-1"></button>
+
+  <div class="mm-panel">
+    <div class="mm-top">
+      <span class="mm-brand">Sweetheart</span>
+      <button type="button" class="mm-close" data-menu-close aria-label="Menu sluiten">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <nav class="mm-nav" aria-label="Hoofdmenu">
+      {NAV_LINKS.map((link, i) => (
+        <a
+          href={link.href}
+          class:list={['mm-link', 'mobile-nav-link', { active: isCurrent(link.href, pathname) }]}
+          aria-current={isCurrent(link.href, pathname) ? 'page' : undefined}
+          style={`--i:${i}`}
+        >
+          <span class="mm-link-icon"><i class={`fa-solid ${link.icon}`} aria-hidden="true"></i></span>
+          {link.label}
+          <i class="fa-solid fa-chevron-right mm-chevron" aria-hidden="true"></i>
+        </a>
+      ))}
+    </nav>
+
+    <div class="mm-cta">
+      <a href="/aanvraag" class="btn btn-primary btn-shine w-full">
+        <i class="fa-solid fa-cake-candles" aria-hidden="true"></i> Bestellen
+      </a>
+      <a href={SITE.reviewUrl} target="_blank" rel="noopener" class="btn btn-ghost w-full mt-2">
+        <i class="fa-solid fa-star text-[#F5B83D]" aria-hidden="true"></i> Laat een review achter
+      </a>
+      <p class="text-xs text-center text-[var(--color-text-muted)] mt-2">Vrijblijvende aanvraag — je betaalt pas na bevestiging</p>
+    </div>
+
+    <div class="mm-contact">
+      <a href={SITE.phone.href}><i class="fa-solid fa-phone" aria-hidden="true"></i> {SITE.phone.international}</a>
+      <a href={`mailto:${SITE.email}`}><i class="fa-solid fa-envelope" aria-hidden="true"></i> {SITE.email}</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  import '../scripts/mobileMenu';
+</script>
+
+<style>
+  /* Closed: invisible and unfocusable; visibility flips after the slide-out finishes */
+  .mobile-menu {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    visibility: hidden;
+    transition: visibility 0s linear 450ms;
+  }
+  .mobile-menu.is-open { visibility: visible; transition-delay: 0s; }
+  @media (min-width: 1024px) { .mobile-menu { display: none; } }
+
+  .mm-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(40, 20, 25, 0.35);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 350ms ease;
+  }
+  .is-open .mm-backdrop { opacity: 1; }
+
+  .mm-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(22rem, 88vw);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: calc(1.25rem + env(safe-area-inset-top, 0px)) calc(1.5rem + env(safe-area-inset-right, 0px)) calc(1.5rem + env(safe-area-inset-bottom, 0px)) 1.5rem;
+    background: var(--color-surface);
+    border-radius: 1.5rem 0 0 1.5rem;
+    box-shadow: -20px 0 60px -20px rgba(212, 90, 106, 0.45);
+    transform: translateX(105%);
+    transition: transform 450ms var(--ease-out-expo);
+  }
+  .is-open .mm-panel { transform: none; }
+
+  .mm-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .mm-brand { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; color: var(--color-primary); }
+  .mm-close {
+    display: grid; place-items: center; width: 2.75rem; height: 2.75rem; margin-right: -0.5rem; border-radius: 999px;
+    color: var(--color-text-muted); background: var(--color-secondary); transition: transform 150ms ease;
+  }
+  .mm-close:active { transform: scale(0.92); }
+
+  .mm-nav { display: grid; gap: 0.25rem; }
+  .mm-link {
+    display: flex; align-items: center; gap: 0.9rem; min-height: 3.25rem; padding: 0.5rem 0.75rem; border-radius: 1rem;
+    font-size: 1.15rem; font-weight: 700; color: var(--color-text);
+    transition: background 200ms ease, color 200ms ease;
+  }
+  @media (hover: hover) { .mm-link:hover { background: var(--color-secondary); } }
+  .mm-link:active, .mm-link.active { background: var(--color-secondary); color: var(--color-primary-dark); }
+  .mm-link-icon {
+    width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; display: grid; place-items: center; flex-shrink: 0;
+    background: var(--color-secondary); color: var(--color-primary); font-size: 0.95rem;
+  }
+  .mm-link.active .mm-link-icon { background: var(--color-primary); color: #fff; }
+  .mm-chevron { margin-left: auto; font-size: 0.75rem; color: var(--color-text-light); }
+
+  /* Links cascade in after the panel starts sliding */
+  .is-open .mm-link { animation: mm-link-in 500ms var(--ease-out-expo) both; animation-delay: calc(120ms + var(--i) * 45ms); }
+  @keyframes mm-link-in { from { opacity: 0; transform: translateX(24px); } }
+
+  .mm-cta { margin-top: 1.75rem; padding-top: 1.75rem; border-top: 1px solid var(--color-border); }
+  .mm-cta .btn-primary { border-radius: 999px; min-height: 3.25rem; font-size: 1.05rem; }
+
+  .mm-contact { display: grid; gap: 0.25rem; margin-top: auto; padding-top: 1.75rem; font-size: 0.9rem; }
+  .mm-contact a { display: flex; align-items: center; gap: 0.6rem; min-height: 2.75rem; color: var(--color-text-muted); }
+  .mm-contact i { color: var(--color-primary); width: 1rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-menu, .mm-backdrop, .mm-panel { transition: none; }
+    .is-open .mm-link { animation: none; }
+  }
+</style>

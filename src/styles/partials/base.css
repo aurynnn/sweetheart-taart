@@ -1,0 +1,54 @@
+/* ── Base element styles + touch-device defaults ─────────────────────────── */
+
+@layer base {
+  html {
+    /* Smooth scrolling is handled by Lenis (src/scripts/motion) */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Keep iOS from inflating text after rotating to landscape */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background-color: var(--color-background);
+    line-height: var(--leading-normal);
+    /* Decorative bands and blobs may poke out sideways; never let them add a horizontal
+       scrollbar on phones. `clip` (unlike `hidden`) keeps position: sticky working. */
+    overflow-x: clip;
+    /* The grey tap flash looks broken on pink buttons; :active states give feedback instead */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    line-height: var(--leading-tight);
+    font-weight: var(--font-semibold);
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  @media (hover: hover) {
+    a:hover {
+      color: var(--color-primary-dark);
+    }
+  }
+
+  /* No double-tap-to-zoom delay on controls */
+  a, button, summary, label, [role='button'] {
+    touch-action: manipulation;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
