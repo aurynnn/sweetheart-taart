@@ -60,20 +60,20 @@ const pathname = Astro.url.pathname;
 <MobileMenu />
 
 <script>
-  // Header stays fixed at the top; past the first few pixels it gets a solid frosted
-  // background (.scrolled) so the nav and hamburger stay readable over any content.
-  const header = document.getElementById('main-header');
-  if (header) {
-    const update = () => header.classList.toggle('scrolled', window.scrollY > 40);
+  // The header scrolls away; the hamburger stays fixed and becomes solid once the page has
+  // scrolled past the header, so it stays readable over any content.
+  const toggle = document.getElementById('mobile-menu-toggle');
+  if (toggle) {
+    const update = () => toggle.classList.toggle('is-floating', window.scrollY > 60);
     update();
     window.addEventListener('scroll', update, { passive: true });
   }
 </script>
 
 <style>
-  /* ── Fixed header: transparent over the hero, frosted cream once scrolled ── */
+  /* ── Transparent header over the hero; it scrolls away with the page ── */
   #main-header {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -81,19 +81,7 @@ const pathname = Astro.url.pathname;
     padding-top: env(safe-area-inset-top, 0px);
     background-color: transparent !important;
     box-shadow: none !important;
-    transition: background-color 300ms ease, box-shadow 300ms ease, backdrop-filter 300ms ease;
   }
-  #main-header nav { transition: height 300ms ease; }
-  :global(#main-header .header-logo) { transition: width 300ms ease, height 300ms ease, transform 150ms ease; }
-
-  #main-header.scrolled {
-    background-color: rgba(253, 248, 245, 0.92) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 6px 24px -12px rgba(60, 10, 20, 0.25) !important;
-  }
-  #main-header.scrolled nav { height: 4rem; }
-  #main-header.scrolled :global(.header-logo) { width: 3rem; height: 3rem; }
 
   /* ── Nav links: normal font + white glow on dark hero ───────────── */
   :global(.desktop-nav-link) {
@@ -193,7 +181,18 @@ const pathname = Astro.url.pathname;
     transition: background 200ms ease, transform 150ms ease;
   }
   .menu-toggle:active { transform: scale(0.94); background: rgba(255, 255, 255, 0.4); }
-  #main-header.scrolled .menu-toggle { color: #fff; background: var(--color-primary); border-color: var(--color-primary); filter: none; }
+  /* Only the hamburger stays on screen while scrolling (fixed at the spot it has in the
+     header, vertically centred in the h-20 nav); past the hero it turns solid pink */
+  .menu-toggle {
+    position: fixed;
+    z-index: 60;
+    top: calc(env(safe-area-inset-top, 0px) + 1.125rem);
+    right: calc(max(var(--space-4), env(safe-area-inset-right)) - 0.25rem);
+    margin-right: 0;
+    transition: background 250ms ease, border-color 250ms ease, box-shadow 250ms ease, transform 150ms ease;
+  }
+  @media (min-width: 640px) { .menu-toggle { right: calc(max(var(--space-6), env(safe-area-inset-right)) - 0.25rem); } }
+  .menu-toggle.is-floating { background: var(--color-primary); border-color: var(--color-primary); filter: none; box-shadow: 0 8px 20px -8px rgba(60, 10, 20, 0.45); }
   @media (min-width: 1024px) { .menu-toggle { display: none; } }
 
   /* ── Review star: small, glowing like the nav, tooltip on hover ─────── */
@@ -204,7 +203,6 @@ const pathname = Astro.url.pathname;
     filter: drop-shadow(0 0 6px #ffcce0);
     transition: transform 300ms var(--ease-spring), background 250ms ease, color 250ms ease;
   }
-  #main-header.scrolled .review-star { color: #F5B83D; background: #fff; border-color: rgba(232, 120, 138, 0.35); filter: none; }
   .review-star:hover, .review-star:focus-visible { background: #fff; color: #F5B83D; transform: scale(1.08); }
   .review-star:hover i { rotate: -14deg; transition: rotate 300ms var(--ease-spring); }
   .review-star i { animation: twinkle 5s ease-in-out infinite; }

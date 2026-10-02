@@ -39,7 +39,7 @@ if (!reduceMotion) {
     const target = document.querySelector(a.getAttribute('href')!);
     if (!target) return;
     e.preventDefault();
-    lenis!.scrollTo(target as HTMLElement, { offset: -88 }); // clear the fixed header
+    lenis!.scrollTo(target as HTMLElement, { offset: -24 });
   });
 }
 
