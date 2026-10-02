@@ -14,18 +14,19 @@ const { title, description, href, image, imageAlt = '', badge } = Astro.props;
 // R2 bucket base URL from env
 const R2_BASE = env('PUBLIC_R2_BASE_URL') || '';
 
-// Images — use local public/ files (R2 bucket is empty)
-// Real R2 paths noted for when content is uploaded there
-const realImages: Record<string, string> = {
-  'feestcollectie': '/images/trouwtaart.png',
-  'mini-collectie': '/images/cupcakes.png',
-  'koekjescollectie': '/images/koekjes.png',
-  'afternoon-tea': '/images/cupcakes.png',
-  'vaste-collectie': '/images/trouwtaart.png',
+// Card images: small WebP versions of the collection photos (public/images/cards/,
+// 640px and 1100px wide, made from the 2089px PNGs in public/images/)
+const cardImages: Record<string, string> = {
+  'feestcollectie': 'trouwtaart',
+  'mini-collectie': 'cupcakes',
+  'koekjescollectie': 'koekjes',
+  'afternoon-tea': 'cupcakes',
+  'vaste-collectie': 'trouwtaart',
 };
 
-// Get image or fallback to real image
-const displayImage = image || realImages[href.replace('/', '')] || null;
+const card = cardImages[href.replace('/', '')];
+const displayImage = image || (card ? `/images/cards/${card}-640.webp` : null);
+const srcset = !image && card ? `/images/cards/${card}-640.webp 640w, /images/cards/${card}-1100.webp 1100w` : undefined;
 ---
 
 <a href={href} class="card group block overflow-hidden h-full flex flex-col">
@@ -34,6 +35,8 @@ const displayImage = image || realImages[href.replace('/', '')] || null;
     {displayImage ? (
       <img
         src={displayImage}
+        srcset={srcset}
+        sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 380px"
         alt={imageAlt || title}
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         loading="lazy"

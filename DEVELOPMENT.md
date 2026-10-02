@@ -150,3 +150,13 @@ npx wrangler deploy
   cron trigger in `wrangler.toml` → `runScheduledJobs()` in `src/lib/scheduler.ts`.
 - The Worker runs in UTC: use the helpers in `src/lib/dates.ts` (`todayIso`,
   `belgianNow`, `belgianHour`, …) for anything that depends on "today" or "now".
+
+## Images
+
+- **Gallery photos/videos** live in R2 under `<collection>/images|videos/` and are listed live
+  by `src/lib/r2.ts`. After adding new ones, run `npm run thumbs`: it uploads a 400px
+  `<name>_thumb.webp` next to each file (needs ImageMagick + ffmpeg; skips existing thumbs).
+  The gallery grid shows the thumb, the lightbox the original.
+- **Site images** (portrait, collection cards, step bubbles) are static files in
+  `public/images/` — that folder is gitignored, so add new files with `git add -f`.
+  Use the small versions: `cards/<name>-640.webp` / `-1100.webp`, `nathalie-portret*.jpg`.

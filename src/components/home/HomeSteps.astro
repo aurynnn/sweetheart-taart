@@ -4,6 +4,8 @@
 // appear one after another, ending on the highlighted last step. No autoplay/looping.
 // On phones the steps stack vertically, so each step reveals when it scrolls into view
 // itself (every .stop is its own .animate-on-scroll trigger).
+// Tapping/clicking a step selects it (white card); on mouse devices hovering previews it.
+// With nothing selected the last step keeps its white highlight.
 import SprinkleField from '../SprinkleField.astro';
 import { STEPS } from '../../data/home';
 
@@ -21,7 +23,7 @@ const last = STEPS.length - 1;
     <ol class="journey animate-on-scroll" style={`--count:${STEPS.length}`}>
       <span class="path" aria-hidden="true"></span>
       {STEPS.map((s, i) => (
-        <li class:list={['stop', 'animate-on-scroll', { final: i === last }]} style={`--i:${i}`}>
+        <li class:list={['stop', 'animate-on-scroll', { final: i === last }]} style={`--i:${i}`} tabindex="0">
           <div class="bubble">
             <img src={s.image} alt="" loading="lazy" />
             <span class="badge">{i === last ? <i class="fa-solid fa-check" aria-hidden="true"></i> : i + 1}</span>
@@ -42,6 +44,27 @@ const last = STEPS.length - 1;
     </div>
   </div>
 </section>
+
+<script>
+  const journey = document.querySelector<HTMLElement>('#home-steps .journey');
+  if (journey) {
+    const stops = Array.from(journey.querySelectorAll<HTMLElement>('.stop'));
+    const select = (stop: HTMLElement) => {
+      const on = !stop.classList.contains('is-active');
+      stops.forEach((s) => {
+        s.classList.toggle('is-active', on && s === stop);
+        s.toggleAttribute('aria-current', on && s === stop);
+      });
+      journey.classList.toggle('has-active', on);
+    };
+    stops.forEach((stop) => {
+      stop.addEventListener('click', () => select(stop));
+      stop.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(stop); }
+      });
+    });
+  }
+</script>
 
 <style>
   .steps {
@@ -83,12 +106,32 @@ const last = STEPS.length - 1;
   .stop-card h3 i { margin-right: 0.3rem; opacity: 0.85; }
   .stop-card p { margin: 0; font-size: 0.92rem; line-height: 1.6; color: rgba(255, 255, 255, 0.88); }
 
-  /* The destination: Nathalie confirms — emphasised */
-  .final .bubble { background: #fff; box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.18), 0 24px 50px -20px rgba(60, 10, 20, 0.7); }
+  /* Highlighted step (white card): the selected/hovered one, or the last step by default */
+  .stop { cursor: pointer; -webkit-tap-highlight-color: transparent; outline: none; }
+  .stop-card h3, .stop-card p { transition: color 300ms ease; }
   .final .badge { background: #22c55e; color: #fff; }
-  .final .stop-card { background: #fff; border-color: #fff; }
-  .final .stop-card h3 { color: var(--color-primary-dark) !important; }
-  .final .stop-card p { color: var(--color-text-muted); }
+
+  .stop.is-active .bubble,
+  .journey:not(.has-active) .final .bubble { background: #fff; box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.18), 0 24px 50px -20px rgba(60, 10, 20, 0.7); }
+  .stop.is-active .stop-card,
+  .journey:not(.has-active) .final .stop-card { background: #fff; border-color: #fff; transform: translateY(-4px); }
+  .stop.is-active .stop-card h3,
+  .journey:not(.has-active) .final .stop-card h3 { color: var(--color-primary-dark) !important; }
+  .stop.is-active .stop-card p,
+  .journey:not(.has-active) .final .stop-card p { color: var(--color-text-muted); }
+  .stop:focus-visible .stop-card { outline: 3px solid #fff; outline-offset: 3px; }
+
+  /* Mouse: hovering a step previews the highlight (and dims the default/selected one) */
+  @media (hover: hover) {
+    .stop:hover .bubble { background: #fff; box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.18), 0 24px 50px -20px rgba(60, 10, 20, 0.7); }
+    .stop:hover .stop-card { background: #fff; border-color: #fff; transform: translateY(-4px); }
+    .stop:hover .stop-card h3 { color: var(--color-primary-dark) !important; }
+    .stop:hover .stop-card p { color: var(--color-text-muted); }
+    .journey:has(.stop:hover) .stop:not(:hover) .bubble { background: rgba(255, 255, 255, 0.25); box-shadow: 0 20px 40px -20px rgba(60, 10, 20, 0.6); }
+    .journey:has(.stop:hover) .stop:not(:hover) .stop-card { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.22); transform: none; }
+    .journey:has(.stop:hover) .stop:not(:hover) .stop-card h3 { color: #fff !important; }
+    .journey:has(.stop:hover) .stop:not(:hover) .stop-card p { color: rgba(255, 255, 255, 0.88); }
+  }
   .journey:global(.visible) .final .badge { animation: pop 600ms var(--ease-spring) calc(var(--i) * 350ms + 900ms) both; }
   @keyframes pop { from { transform: scale(0); } }
 

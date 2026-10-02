@@ -16,25 +16,25 @@ export const STEPS = [
     title: 'Kies je lekkers',
     text: 'Feesttaart, koekjes of mini-gebak — combineer gerust. Kies gelegenheid, aantal personen en smaak.',
     icon: 'fa-cake-candles',
-    image: '/images/trouwtaart.png',
+    image: '/images/cards/trouwtaart-640.webp',
   },
   {
     title: 'Maak het persoonlijk',
     text: 'Een thema, een naam, een figuurtje of een voorbeeldfoto? Vertel het ons, alles kan op maat.',
     icon: 'fa-wand-magic-sparkles',
-    image: '/images/koekjes.png',
+    image: '/images/cards/koekjes-640.webp',
   },
   {
     title: 'Prik een datum',
     text: 'De kalender toont live welke dagen en ophaalmomenten nog vrij zijn.',
     icon: 'fa-calendar-check',
-    image: '/images/cupcakes.png',
+    image: '/images/cards/cupcakes-640.webp',
   },
   {
     title: 'Nathalie bevestigt',
     text: 'Je krijgt een mail met de bevestiging en definitieve prijs. Daarna is het aftellen tot het feest!',
     icon: 'fa-heart',
-    image: '/images/nathalie-e1542633374448.jpg',
+    image: '/images/nathalie-portret-240.jpg',
   },
 ];
 
