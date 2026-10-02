@@ -172,23 +172,35 @@ function onTouchEnd(e) {
       >
         {#if isVideo(img)}
           <div class="thumbnail-video-wrapper">
-            <!-- #t= shows a real frame of the video as its thumbnail -->
-            <video
-              src="{img.src}#t=0.5"
-              preload="metadata"
-              muted
-              playsinline
-              class="thumbnail-video-img"
-              onloadeddata={() => markLoaded(img.src)}
-              onerror={() => markBroken(img.src)}
-            ></video>
+            {#if img.thumb}
+              <img
+                src={img.thumb}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                class="thumbnail-video-img"
+                onload={() => markLoaded(img.src)}
+                onerror={() => markBroken(img.src)}
+              />
+            {:else}
+              <!-- #t= shows a real frame of the video as its thumbnail -->
+              <video
+                src="{img.src}#t=0.5"
+                preload="metadata"
+                muted
+                playsinline
+                class="thumbnail-video-img"
+                onloadeddata={() => markLoaded(img.src)}
+                onerror={() => markBroken(img.src)}
+              ></video>
+            {/if}
             <div class="video-play-indicator">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
             </div>
           </div>
         {:else}
           <img
-            src={img.src}
+            src={img.thumb || img.src}
             alt={img.alt}
             loading="lazy"
             decoding="async"
@@ -275,11 +287,14 @@ function onTouchEnd(e) {
           {#each stripItems as img, j (img.src)}
             {@const index = stripStart + j}
             <button class="strip-thumb {index === currentIndex ? 'active' : ''}" onclick={() => { currentIndex = index; scrollStrip(); }} aria-label="Toon {index + 1}">
-              {#if isVideo(img)}
+              {#if isVideo(img) && img.thumb}
+                <img src={img.thumb} alt="" loading="lazy" />
+                <div class="video-indicator"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></div>
+              {:else if isVideo(img)}
                 <video src="{img.src}#t=0.5" preload="metadata" muted playsinline></video>
                 <div class="video-indicator"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></div>
               {:else}
-                <img src={img.src} alt="" loading="lazy" />
+                <img src={img.thumb || img.src} alt="" loading="lazy" />
               {/if}
             </button>
           {/each}

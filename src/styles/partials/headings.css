@@ -48,7 +48,6 @@
 
   /* Collection pages: header is transparent like home, nav links keep glow + white text */
   body.collection-page #main-header {
-    position: absolute;
     background-color: transparent !important;
     box-shadow: none !important;
   }

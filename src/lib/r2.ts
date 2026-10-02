@@ -11,6 +11,8 @@ export interface MediaItem {
   alt: string;
   caption: string;
   type: 'image' | 'video';
+  /** Small preview (`<name>_thumb.webp`, made by `npm run thumbs`), when it exists */
+  thumb?: string;
 }
 
 const IMAGE_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'];
@@ -60,13 +62,16 @@ export async function listMedia(collection: string, fallback: MediaItem[] = []):
   try {
     const publicBase = (env('PUBLIC_R2_BASE_URL') || env('R2_DOMAIN') || '').replace(/\/$/, '');
     const keys = await listKeys(`${collection}/`);
+    const keySet = new Set(keys);
+    const url = (key: string) => `${publicBase}/${key.split('/').map(encodeURIComponent).join('/')}`;
     const items = keys
       .map((key): MediaItem | null => {
         if (NOT_GALLERY.test(key)) return null;
         const ext = key.slice(key.lastIndexOf('.')).toLowerCase();
         const type = IMAGE_EXT.includes(ext) ? 'image' : VIDEO_EXT.includes(ext) ? 'video' : null;
         if (!type) return null;
-        return { src: `${publicBase}/${key.split('/').map(encodeURIComponent).join('/')}`, alt: ALT[collection] ?? 'Creatie van Sweetheart', caption: '', type };
+        const thumbKey = key.replace(/\.[^.]+$/, '_thumb.webp');
+        return { src: url(key), thumb: keySet.has(thumbKey) ? url(thumbKey) : undefined, alt: ALT[collection] ?? 'Creatie van Sweetheart', caption: '', type };
       })
       .filter((x): x is MediaItem => !!x)
       .sort((a, b) => b.src.localeCompare(a.src));

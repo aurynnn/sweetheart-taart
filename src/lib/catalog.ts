@@ -23,9 +23,9 @@ export interface AanvraagItem {
 }
 
 export const PRODUCTS: Array<{ id: ProductId; name: string; tagline: string; image: string; icon: string; from: string }> = [
-  { id: 'feesttaart', name: 'Feesttaart', tagline: 'Luchtige biscuit met mousse, vanaf 8 personen', image: '/images/trouwtaart.png', icon: 'fa-cake-candles', from: 'vanaf €45' },
-  { id: 'koekjes', name: 'Koekjes', tagline: 'Prachtig versierd, per 12 stuks', image: '/images/koekjes.png', icon: 'fa-cookie-bite', from: 'vanaf €12' },
-  { id: 'mini-gebak', name: 'Mini-gebak', tagline: 'Cupcakes & mini cupcakes', image: '/images/cupcakes.png', icon: 'fa-cookie', from: 'vanaf €9' },
+  { id: 'feesttaart', name: 'Feesttaart', tagline: 'Luchtige biscuit met mousse, vanaf 8 personen', image: '/images/cards/trouwtaart-640.webp', icon: 'fa-cake-candles', from: 'vanaf €45' },
+  { id: 'koekjes', name: 'Koekjes', tagline: 'Prachtig versierd, per 12 stuks', image: '/images/cards/koekjes-640.webp', icon: 'fa-cookie-bite', from: 'vanaf €12' },
+  { id: 'mini-gebak', name: 'Mini-gebak', tagline: 'Cupcakes & mini cupcakes', image: '/images/cards/cupcakes-640.webp', icon: 'fa-cookie', from: 'vanaf €9' },
 ];
 
 export const EVENTS: Option[] = [

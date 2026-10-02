@@ -59,8 +59,19 @@ const pathname = Astro.url.pathname;
 
 <MobileMenu />
 
+<script>
+  // The header scrolls away; the hamburger stays fixed and becomes solid once the page has
+  // scrolled past the header, so it stays readable over any content.
+  const toggle = document.getElementById('mobile-menu-toggle');
+  if (toggle) {
+    const update = () => toggle.classList.toggle('is-floating', window.scrollY > 60);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+  }
+</script>
+
 <style>
-  /* ── Transparent header over hero video ─────────────────────────────── */
+  /* ── Transparent header over the hero; it scrolls away with the page ── */
   #main-header {
     position: absolute;
     top: 0;
@@ -170,6 +181,18 @@ const pathname = Astro.url.pathname;
     transition: background 200ms ease, transform 150ms ease;
   }
   .menu-toggle:active { transform: scale(0.94); background: rgba(255, 255, 255, 0.4); }
+  /* Only the hamburger stays on screen while scrolling (fixed at the spot it has in the
+     header, vertically centred in the h-20 nav); past the hero it turns solid pink */
+  .menu-toggle {
+    position: fixed;
+    z-index: 60;
+    top: calc(env(safe-area-inset-top, 0px) + 1.125rem);
+    right: calc(max(var(--space-4), env(safe-area-inset-right)) - 0.25rem);
+    margin-right: 0;
+    transition: background 250ms ease, border-color 250ms ease, box-shadow 250ms ease, transform 150ms ease;
+  }
+  @media (min-width: 640px) { .menu-toggle { right: calc(max(var(--space-6), env(safe-area-inset-right)) - 0.25rem); } }
+  .menu-toggle.is-floating { background: var(--color-primary); border-color: var(--color-primary); filter: none; box-shadow: 0 8px 20px -8px rgba(60, 10, 20, 0.45); }
   @media (min-width: 1024px) { .menu-toggle { display: none; } }
 
   /* ── Review star: small, glowing like the nav, tooltip on hover ─────── */
