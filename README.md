@@ -53,6 +53,10 @@ The live domain still serves the old WordPress site. Nathalie does not use mail 
 
 **Switching the domain** (DNS to Cloudflare)
 - [ ] Move the domain's DNS to Cloudflare. No mail is used on the domain; MailerSend's DNS records (above) go in Cloudflare DNS.
+- [ ] Cloudflare → Email → Email Routing: forward `nathalie@sweetheart-taart.com` (the address shown on the site) to
+      `sweetheart.taart@gmail.com` (Nathalie's real mailbox). Cloudflare adds its own MX/SPF records; keep **one** SPF record
+      that includes both: `v=spf1 include:_spf.mx.cloudflare.net include:_spf.mailersend.net ~all`.
+- [ ] Worker secret `ADMIN_NOTIFY_EMAIL=sweetheart.taart@gmail.com` (new-order alerts + where customer replies go).
 - [ ] Add `sweetheart-taart.com` and `www.sweetheart-taart.com` as Custom Domains of the Worker
       (the site redirects www → main domain itself).
 - [ ] Old WordPress URLs are redirected (`astro.config.mjs` → `redirects`); check a few after the switch.
