@@ -34,3 +34,4 @@ public/videos/
 .env
 .wrangler/
 .dev.vars
+backups/

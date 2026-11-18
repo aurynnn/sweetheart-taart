@@ -27,34 +27,32 @@ SQL files in `migrations/`, applied by hand with
 `npx wrangler d1 execute sweetheart-db --remote --file=migrations/<file>.sql`.
 Back up first: `npx wrangler d1 export sweetheart-db --remote --output=backup-<date>.sql`.
 
-| Migration | Live DB (checked 18 nov 2026) |
+| Migration | Live DB (18 nov 2026) |
 |---|---|
 | 0004 time, topper, quantity | applied (by hand) |
-| 0005 first/last name | **not applied** — the app falls back to the single `name` column |
-| 0006 item details (mini type, per-product wishes, photo) | **not applied** — the app puts these in the order note instead |
+| 0005 first/last name | applied 18 nov 2026 (backup in `backups/`, not in git) |
+| 0006 item details (mini type, per-product wishes, photo) | applied 18 nov 2026 |
 | 0007, 0008 | tables exist (the app creates them itself) |
 
 ## Launch checklist
 
-The live domain still serves the old WordPress site (Apache host, which also handles the e-mail).
+The live domain still serves the old WordPress site. Nathalie does not use mail on the domain, so no mail records need to be kept.
 
 **Before switching the domain**
-- [ ] Fill in the KBO company number in `src/config/site.ts` (`companyNumber`) — legally required on the site.
-- [ ] Back up D1, then apply migrations 0005 and 0006 (see above).
+- [x] KBO company number (BE 0688.861.039) — shown in the footer, terms and privacy page.
+- [x] Migrations 0005 and 0006 applied; test orders/customers removed (numbering restarts at ORD-001).
 - [ ] Worker secrets set: `CLOUDFLARE_API_TOKEN`, `CF_ACCOUNT_ID`, `ADMIN_USERNAME`, `ADMIN_PASSWORD` (long, unique),
       `APP_SECRET` (random, 32+ chars), `MAILERSEND_API_KEY`, `MAIL_FROM_EMAIL`, `MAIL_FROM_NAME`, `ADMIN_NOTIFY_EMAIL`,
       `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `PUBLIC_R2_BASE_URL`, `SITE_URL=https://sweetheart-taart.com`.
 - [ ] MailerSend: verify the domain `sweetheart-taart.com` (adds DKIM + return-path DNS records) and add
       `include:_spf.mailersend.net` to the SPF record; add a DMARC record (e.g. `v=DMARC1; p=none; rua=mailto:…`).
-      Without this, order e-mails land in spam or bounce.
-- [ ] Remove test orders from the admin (the database holds 14 orders from development).
+      Without this, order e-mails land in spam or bounce. Until then the sender is a temporary address on an
+      already verified domain (`MAIL_FROM_EMAIL`); customer replies go to `ADMIN_NOTIFY_EMAIL`.
 - [ ] `npm run build && npx wrangler deploy`, then open the `*.workers.dev` URL and place one real test order end to end
       (form → e-mail to customer → e-mail to Nathalie → admin → bevestigen → bevestigingsmail).
 
 **Switching the domain** (DNS to Cloudflare)
-- [ ] Copy **all** existing DNS records first — especially `MX`, the mail host's `A` record and the SPF `TXT` —
-      so Nathalie's mailbox keeps working. The MX currently points to the old hosting (`sweetheart-taart.com`), so
-      give the mail server its own name (e.g. `mail.sweetheart-taart.com` → old host IP) before the apex moves.
+- [ ] Move the domain's DNS to Cloudflare. No mail is used on the domain; MailerSend's DNS records (above) go in Cloudflare DNS.
 - [ ] Add `sweetheart-taart.com` and `www.sweetheart-taart.com` as Custom Domains of the Worker
       (the site redirects www → main domain itself).
 - [ ] Old WordPress URLs are redirected (`astro.config.mjs` → `redirects`); check a few after the switch.
