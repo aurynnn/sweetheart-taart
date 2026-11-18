@@ -5,6 +5,8 @@ export const SITE = {
   name: 'Sweetheart',
   tagline: 'Koekjes, Cake & Taart',
   owner: 'Nathalie',
+  /** KBO-ondernemingsnummer (BE0123.456.789): legally required on the website — shown in the terms */
+  companyNumber: '',
   url: 'https://sweetheart-taart.com',
   email: 'nathalie@sweetheart-taart.com',
   phone: {

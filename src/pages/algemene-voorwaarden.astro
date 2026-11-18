@@ -3,9 +3,12 @@ import SplitHeading from '../components/ui/SplitHeading.astro';
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { SITE, fullAddress } from '../config/site';
+
+const updated = '22 oktober 2026';
 ---
 
-<Layout title="Algemene Voorwaarden" bodyClass="collection-page">
+<Layout title="Algemene Voorwaarden" description="De algemene voorwaarden voor aanvragen en bestellingen bij Sweetheart in Oostende." bodyClass="collection-page">
   <Header />
 
   <main class="collection">
@@ -18,67 +21,97 @@ import Footer from '../components/Footer.astro';
 
     <div class="container max-w-3xl legal-body">
       <div class="legal-card animate-on-scroll text-[var(--color-text-muted)] space-y-6">
-        
-        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">Verkoopvoorwaarden</h2>
-        
+
+        <p><em>Laatst bijgewerkt: {updated}</em></p>
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">1. Wie zijn wij?</h2>
         <p>
-          De taarten / cupcakes / cakepops worden alleen op bestelling gemaakt.
+          Deze voorwaarden gelden voor alle aanvragen en bestellingen bij {SITE.name} ({SITE.tagline}), een eenmanszaak van {SITE.owner},
+          {fullAddress}. E-mail: <a href={`mailto:${SITE.email}`}>{SITE.email}</a> · Telefoon: <a href={SITE.phone.href}>{SITE.phone.display}</a>{SITE.companyNumber && <> · Ondernemingsnummer: {SITE.companyNumber}</>}.
+          Door een aanvraag te versturen, verklaart u zich akkoord met deze voorwaarden.
         </p>
-        
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">2. Aanvraag en bevestiging</h2>
         <p>
-          Aanvragen worden enkel schriftelijk aanvaard. Na uw contact via email, sociale media of website ontvangt u een tegenbericht. De bestelling is definitief na het doorgeven van uw persoonlijke gegevens, zoals uw woonplaats en telefoonnummer, en het ontvangen van een vooraf afgesproken voorschot.
+          Alle taarten, koekjes en mini-gebak worden uitsluitend op bestelling en op maat gemaakt. Een aanvraag via de website, e-mail, telefoon of sociale media is vrijblijvend.
+          De overeenkomst komt pas tot stand wanneer Sweetheart de aanvraag schriftelijk (per e-mail) bevestigt. Sweetheart reageert doorgaans binnen 1 à 2 werkdagen.
         </p>
-        
         <p>
-          Sweetheart reageert doorgaans binnen 24 uur op de aanvraag. Komt hierop geen reactie van de klant/aanvrager binnen een termijn van tien dagen dan wordt uw aanvraag automatisch geannuleerd.
+          Sweetheart kan een aanvraag weigeren, bijvoorbeeld wanneer de agenda op de gevraagde datum al vol is. In dat geval bent u niets verschuldigd.
+          Vraagt Sweetheart bijkomende informatie en komt daar binnen tien dagen geen antwoord op, dan vervalt de aanvraag.
         </p>
-        
         <p>
-          Sweetheart is niet verantwoordelijk voor communicatie- en leveringsproblemen die voortvloeien uit het niet correct doorgeven van gegevens.
+          Sweetheart is niet verantwoordelijk voor problemen die ontstaan doordat de klant onjuiste of onvolledige gegevens doorgeeft (zoals naam, telefoonnummer, datum of allergieën).
         </p>
-        
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">3. Prijzen en betaling</h2>
         <p>
-          Nadat de taart is afgeleverd aan of opgehaald door de klant vervalt de verantwoordelijkheid van Sweetheart. De taarten moeten altijd in de koelkast worden bewaard. Gebeurt dit bij de klant op een andere wijze of worden er te veel dagen overheen voordat de taart wordt gegeten, dan is dit de verantwoordelijkheid van de klant.
+          De prijzen op de website en het totaal bij uw aanvraag zijn indicatief. De definitieve prijs staat in de bevestiging. Alle prijzen zijn in euro, inclusief btw indien van toepassing.
         </p>
-        
         <p>
-          Sweetheart is een eenmanszaak. In geval van een calamiteit kan het gebeuren dat een bestelling geannuleerd wordt.
+          Betaling gebeurt bij het afhalen, contant of met Payconiq, tenzij in de bevestiging iets anders is afgesproken. Voor grote of bijzondere bestellingen kan een voorschot gevraagd worden; dat wordt dan vermeld in de bevestiging.
+          Bestellingen die geleverd worden, moeten volledig betaald zijn vóór de leveringsdatum.
         </p>
-        
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">4. Afhalen en levering</h2>
         <p>
-          Indien Sweetheart door onvoorziene omstandigheden niet in staat is de bestelling te verzorgen, heeft u recht op volledige terugbetaling. Er kan in geen geval een schadevergoeding gevraagd worden.
+          Bestellingen worden afgehaald in het bakatelier op het afgesproken ophaalmoment. Levering is enkel mogelijk na afspraak. Kan u niet op het afgesproken moment komen, laat het dan zo snel mogelijk weten.
         </p>
-        
-        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">Betaling</h2>
-        
         <p>
-          Bestellingen die bezorgd moeten worden dienen volledig betaald te zijn voor het aanbreken van de bezorgdatum.
+          Vanaf het afhalen of de levering is de klant verantwoordelijk voor het vervoer en de bewaring. Bewaar taarten altijd in de koelkast en volg de bewaartips die u meekrijgt. Sweetheart is niet aansprakelijk voor schade die ontstaat door verkeerd vervoer of bewaren, of doordat het product te lang na afhaling wordt gegeten.
         </p>
-        
-        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">Annulering</h2>
-        
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">5. Allergenen</h2>
         <p>
-          Wanneer u de bestelling binnen 7 dagen voor de afgesproken leveringsdatum annuleert, zal in verband met de gemaakte voorbereidingskosten 50% van het bedrag worden ingehouden.
+          Vermeld allergieën en dieetwensen altijd bij uw aanvraag. Sweetheart houdt daar zorgvuldig rekening mee en geeft op vraag informatie over de gebruikte allergenen.
+          Omdat in hetzelfde atelier ook met onder meer gluten, ei, melk en noten gewerkt wordt, kunnen sporen van allergenen niet volledig uitgesloten worden.
         </p>
-        
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">6. Annulering en wijziging door de klant</h2>
         <p>
-          Wanneer u de bestelling binnen 5 dagen voorafgaand aan de leveringsdatum annuleert, is er geen recht meer op restitutie.
+          Omdat alles speciaal voor u gemaakt wordt en bederfelijk is, geldt het wettelijke herroepingsrecht van 14 dagen niet voor deze bestellingen (artikel VI.53, 3° en 4° van het Wetboek van economisch recht).
+          U kan een bevestigde bestelling wel annuleren onder de volgende voorwaarden:
         </p>
-        
+        <ul class="list-disc pl-6 space-y-1">
+          <li>meer dan 7 dagen vóór de afhaal- of leveringsdatum: kosteloos;</li>
+          <li>tussen 7 en 5 dagen vóór die datum: 50% van de prijs is verschuldigd, als vergoeding voor de gemaakte voorbereidingen en aankopen;</li>
+          <li>minder dan 5 dagen vóór die datum: de volledige prijs is verschuldigd.</li>
+        </ul>
         <p>
-          De datum die bij de bestelling door u is opgegeven kan niet meer worden gewijzigd indien daar geen ruimte voor is in de agenda van Sweetheart.
+          Een reeds betaald voorschot wordt verrekend met deze bedragen. Een wijziging van datum of bestelling is mogelijk zolang de agenda van Sweetheart dat toelaat.
         </p>
-        
-        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">Ontwerp</h2>
-        
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">7. Annulering door Sweetheart</h2>
         <p>
-          Aan een voorbeeldontwerp kunnen geen rechten worden ontleend. Sweetheart spant zich in om het ontwerp zoveel mogelijk te benaderen. Afwijking van het ontwerp geeft geen recht op restitutie of het niet nakomen van de afnameverplichting.
+          Sweetheart is een eenmanszaak. Kan Sweetheart een bevestigde bestelling door overmacht (zoals ziekte of een calamiteit) niet uitvoeren, dan wordt u zo snel mogelijk verwittigd en wordt een eventueel betaald bedrag volledig terugbetaald.
+          Verdere schadevergoeding is in dat geval uitgesloten, behalve bij opzet of zware fout.
         </p>
-        
-        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">Privacy</h2>
-        
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">8. Ontwerp en voorbeeldfoto's</h2>
         <p>
-          Sweetheart respecteert de privacy van alle gebruikers van haar site en gaat zorgvuldig met uw gegevens om. Uw persoonlijke informatie wordt gegarandeerd in vertrouwen behandeld. Uw gegevens worden enkel gebruikt om de bestellingen zo snel en zorgvuldig mogelijk te laten verlopen. In alle andere gevallen worden uw gegevens uitsluitend gebruikt met uw toestemming. Uw persoonlijke gegevens worden nooit verkocht aan externe partijen. Sweetheart verplicht zich ertoe deze persoonlijke informatie vertrouwelijk te behandelen.
+          Sweetheart doet haar best om een voorbeeldfoto of ontwerp zo goed mogelijk te benaderen. Omdat alles met de hand gemaakt wordt, zijn kleine afwijkingen in vorm, kleur of decoratie mogelijk. Zulke afwijkingen geven geen recht op terugbetaling of op weigering van de bestelling.
+          Door een voorbeeldfoto door te sturen, verklaart u dat u die mag gebruiken. Sweetheart maakt geen figuren of logo's na waarop rechten van derden rusten wanneer dat niet toegelaten is.
+        </p>
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">9. Klachten</h2>
+        <p>
+          Hebt u een klacht, meld die dan zo snel mogelijk, en uiterlijk binnen 24 uur na afhaling of levering, bij voorkeur met een foto, via <a href={`mailto:${SITE.email}`}>{SITE.email}</a> of {SITE.phone.display}.
+          Samen zoeken we naar een oplossing. Lukt dat niet, dan kan u terecht bij de <a href="https://consumentenombudsdienst.be" target="_blank" rel="noopener">Consumentenombudsdienst</a>.
+        </p>
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">10. Aansprakelijkheid</h2>
+        <p>
+          De aansprakelijkheid van Sweetheart is beperkt tot het bedrag van de betrokken bestelling, behalve bij opzet of zware fout en onverminderd de dwingende wettelijke bepalingen ter bescherming van de consument.
+        </p>
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">11. Privacy</h2>
+        <p>
+          Uw gegevens worden enkel gebruikt om uw aanvraag en bestelling af te handelen en worden nooit verkocht. Lees er alles over in de <a href="/privacy">privacyverklaring</a>.
+        </p>
+
+        <h2 class="text-xl font-semibold text-[var(--color-text)] mt-8">12. Toepasselijk recht</h2>
+        <p>
+          Op deze voorwaarden en alle overeenkomsten met Sweetheart is het Belgisch recht van toepassing. Geschillen worden voorgelegd aan de bevoegde rechtbanken van het gerechtelijk arrondissement West-Vlaanderen, onverminderd het recht van de consument om de rechtbank van zijn woonplaats te kiezen.
         </p>
 
       </div>
@@ -92,6 +125,7 @@ import Footer from '../components/Footer.astro';
   .legal-hero { position: relative; overflow: hidden; padding: 8.5rem 0 5rem; background: var(--hero-bg); }
   .legal-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.8); color: var(--color-primary-dark); font-weight: 700; font-size: 0.85rem; }
   .legal-title { font-family: var(--font-heading); font-weight: 900; font-size: clamp(2.8rem, 7vw, 4.5rem); margin: 1rem 0 0; }
+  .legal-card a { color: var(--color-primary-dark); text-decoration: underline; text-underline-offset: 2px; }
   .legal-body { position: relative; z-index: 2; margin-top: -3rem; padding-bottom: 5rem; }
   .legal-card { background: #fff; border-radius: 1.5rem; padding: clamp(1.5rem, 4vw, 3rem); box-shadow: 0 40px 80px -40px rgba(212, 90, 106, 0.45); border: 1px solid var(--color-border-light); line-height: 1.75; }
   .legal-card h2 { font-family: var(--font-heading); font-size: 1.9rem !important; color: var(--color-text) !important; text-shadow: none !important; margin-top: 2rem; }

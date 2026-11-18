@@ -7,12 +7,14 @@ import ContactCTA from '../components/ContactCTA.astro';
 import GalleryModal from '../components/GalleryModal.svelte';
 import CollectionHero from '../components/collection/CollectionHero.astro';
 import FeatureCard from '../components/collection/FeatureCard.astro';
-import { listMedia } from '../lib/r2';
+import { listMedia, randomHeroPhotos } from '../lib/r2';
 
 const R2 = (env('PUBLIC_R2_BASE_URL') || '').replace(/\/$/, '');
 const mini = (key: string) => `${R2}/mini-collectie/images/${key}`;
 
 const galleryImages = await listMedia('mini-collectie');
+// Three different gallery photos in the hero on every visit
+const heroPhotos = randomHeroPhotos(galleryImages, [mini('sweetheart.taart_1649007620_2808401931351114500_8631104567.jpg'), mini('mini_flamingos_thumb.jpg'), mini('sweetheart.taart_1643280926_2760362935501354155_8631104567.jpg')]);
 
 const products = [
   { title: 'Cupcakes', text: 'Prachtig versierd en vol smaak. Perfect voor feestjes, als traktatie of met je logo.', icon: 'fa-cake-candles', image: mini('sweetheart.taart_1617047349_2540299746153756543_8631104567.jpg') },
@@ -35,7 +37,7 @@ const special = ['Lavendel', 'Rozentoets', 'Koffielikeur', 'Amandellikeur'];
       subtitle="Deze mini's worden naar smaak en afwerking gemaakt volgens jouw wens. Perfect voor een elegante traktatie of als bijzondere attentie."
       product="mini-gebak"
       ctaLabel="Bestellen"
-      photos={[mini('sweetheart.taart_1649007620_2808401931351114500_8631104567.jpg'), mini('mini_flamingos_thumb.jpg'), mini('sweetheart.taart_1643280926_2760362935501354155_8631104567.jpg')]}
+      photos={heroPhotos}
       highlights={[{ icon: 'fa-wand-magic-sparkles', label: 'Volledig op maat' }, { icon: 'fa-print', label: 'Met foto of logo' }, { icon: 'fa-euro-sign', label: 'Vanaf €9 per 12' }]}
     />
 
@@ -43,7 +45,7 @@ const special = ['Lavendel', 'Rozentoets', 'Koffielikeur', 'Amandellikeur'];
     <section id="mini-producten" class="section c-section">
       <div class="container">
         <header class="c-head">
-          <span class="eyebrow animate-on-scroll">Wat we maken</span>
+          <span class="eyebrow animate-on-scroll">Wat ik maak</span>
           <h2 class="section-title" data-split>Mini's voor elk feest</h2>
         </header>
         <div class="c-grid-3">
@@ -57,7 +59,7 @@ const special = ['Lavendel', 'Rozentoets', 'Koffielikeur', 'Amandellikeur'];
       <div class="container">
         <header class="c-head">
           <span class="eyebrow animate-on-scroll">Inspiratie</span>
-          <h2 class="section-title" data-split>Bekijk onze mini's</h2>
+          <h2 class="section-title" data-split>Bekijk mijn mini's</h2>
         </header>
         <div class="animate-on-scroll">
           <GalleryModal client:visible images={galleryImages} />

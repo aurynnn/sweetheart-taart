@@ -28,7 +28,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const topics = Array.isArray(body?.topics) ? body.topics.filter((t: unknown) => TOPICS.includes(String(t))) : [];
   const feedback = typeof body?.feedback === 'string' ? body.feedback.trim().slice(0, 2000) : '';
-  if (!feedback && topics.length === 0) return json({ success: false, error: 'Vertel ons kort wat beter kon.' }, 400);
+  if (!feedback && topics.length === 0) return json({ success: false, error: 'Vertel me kort wat beter kon.' }, 400);
 
   try {
     if (Number.isInteger(rating) && rating >= 1 && rating <= 5) await saveRating(orderId, rating);

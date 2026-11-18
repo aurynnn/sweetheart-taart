@@ -16,21 +16,28 @@ const {
 
 <!-- svh: fills the screen on phones without jumping when the address bar hides -->
 <section id={id} class="hero relative min-h-svh flex items-center justify-center overflow-hidden">
-  <!-- Background video (trim/loop/pause logic: src/scripts/heroVideo.ts) -->
-  <div class="absolute inset-0 z-0">
+  <!-- Background: a slowly zooming photo on a pink gradient, so the hero looks good before the
+       video plays, or when it never does (iOS Low Power Mode, data saver, slow network).
+       The video fades in on top only once it is really playing (src/scripts/heroVideo.ts). -->
+  <div class="hero-media absolute inset-0 z-0">
+    <div class="hero-fallback" aria-hidden="true"></div>
     <video
       id="heroVideo"
-      class="w-full h-full object-cover"
+      class="hero-video w-full h-full object-cover"
       autoplay
       muted
       loop
       playsinline
+      webkit-playsinline
+      preload="auto"
       disablepictureinpicture
       disableremoteplayback
       aria-hidden="true"
       poster="/videos/hero-pie-poster.jpg"
     >
-      <source src="/videos/hero-pie.mp4" type="video/mp4" />
+      <!-- Phones get the light 720p file; faststart + no audio track so iOS Safari autoplays -->
+      <source src="/videos/hero-pie-720.mp4" type="video/mp4" media="(max-width: 767px)" />
+      <source src="/videos/hero-pie-1080.mp4" type="video/mp4" />
     </video>
     <!-- Dark overlay so text remains readable -->
     <div class="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/70 via-[var(--color-bg)]/50 to-[var(--color-bg)]/85"></div>
@@ -85,8 +92,25 @@ const {
     color: #ffffff;
     text-shadow: 1.5px 1.5px 0px #ffcce0, -0.5px -0.5px 0px #ffcce0, 0.5px -0.5px 0px #ffcce0, -0.5px 0.5px 0px #ffcce0, 0px 0px 10px #ffccd5, 0px 0px 20px #ffd9e6, 0px 0px 40px #ffe4ed, 0px 0px 60px #fff0f5;
   }
+  .hero-media { background: linear-gradient(160deg, #f9c9d2 0%, #f3a6b4 45%, #d97a8c 100%); }
+  .hero-fallback {
+    position: absolute; inset: 0;
+    background: url('/videos/hero-pie-poster.jpg') center / cover no-repeat;
+    animation: hero-kenburns 22s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes hero-kenburns {
+    from { transform: scale(1.04) translate3d(0, 0, 0); }
+    to { transform: scale(1.14) translate3d(-1.5%, -1%, 0); }
+  }
+  .hero-video { position: relative; opacity: 0; transition: opacity 900ms ease; }
+  .hero-media.is-playing .hero-video { opacity: 1; }
+  .hero-media.is-playing .hero-fallback { animation-play-state: paused; }
+  /* Never show Safari's big play button when autoplay is blocked */
+  .hero-video::-webkit-media-controls-start-playback-button { display: none !important; -webkit-appearance: none; }
+  .hero-video::-webkit-media-controls { display: none !important; }
   .scroll-hint { bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); }
   /* Short screens (landscape phones): the hint would collide with the CTA */
   @media (max-height: 560px) { .scroll-hint { display: none; } }
-  @media (prefers-reduced-motion: reduce) { .scroll-hint svg { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .scroll-hint svg, .hero-fallback { animation: none; } }
 </style>

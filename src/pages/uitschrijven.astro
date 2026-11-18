@@ -32,7 +32,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex');
 <MessagePage title="Uitschrijven" badge="E-mailvoorkeuren" icon="fa-envelope"
   heading={state === 'invalid' ? 'Deze link werkt niet' : state === 'out' ? 'Je bent uitgeschreven' : state === 'back' ? 'Welkom terug!' : 'Uitschrijven?'}>
   {state === 'invalid' && (
-    <p>Deze link is ongeldig. Wil je je uitschrijven? Stuur een mailtje en we regelen het meteen.</p>
+    <p>Deze link is ongeldig. Wil je je uitschrijven? Stuur een mailtje en ik regel het meteen.</p>
   )}
   {state === 'ask' && (
     <>
@@ -54,6 +54,6 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex');
     </>
   )}
   {state === 'back' && (
-    <p>Je ontvangt weer onze review-vragen en herinneringen. Fijn dat je er weer bij bent! 💕</p>
+    <p>Je ontvangt weer mijn review-vragen en herinneringen. Fijn dat je er weer bij bent! 💕</p>
   )}
 </MessagePage>

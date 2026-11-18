@@ -6,13 +6,12 @@ import ContactCTA from '../components/ContactCTA.astro';
 import GalleryModal from '../components/GalleryModal.svelte';
 import CollectionHero from '../components/collection/CollectionHero.astro';
 import feestcollectieMedia from '../data/feestcollectie-media.json';
-import { listMedia, type MediaItem } from '../lib/r2';
+import { listMedia, randomHeroPhotos, type MediaItem } from '../lib/r2';
 
 // Live from R2 (cached), with the checked-in list as fallback when R2 is unreachable
 const galleryImages = await listMedia('feestcollectie', feestcollectieMedia as MediaItem[]);
-// Two recent creations for the hero collage (the very newest is the same wedding cake as trouwtaart.png)
-const recent = galleryImages.filter((m) => m.type === 'image');
-const heroPhotos = [recent[3], recent[5]].filter(Boolean).map((m) => m.src);
+// Three different gallery photos in the hero on every visit
+const heroPhotos = randomHeroPhotos(galleryImages, ['/images/trouwtaart.png']);
 
 const features = [
   { icon: 'fa-user-group', title: 'Vanaf 8 personen', text: 'Eénlaagstaart' },
@@ -46,7 +45,7 @@ const knowHow = [
       subtitle="Mijn mooie, vrolijke feesttaarten bestaan uit een luchtige biscuit met heerlijke mousse-vullingen — volledig in het thema van jouw feest."
       product="feesttaart"
       ctaLabel="Bestellen"
-      photos={['/images/trouwtaart.png', ...heroPhotos]}
+      photos={heroPhotos}
     />
 
     <!-- Key facts -->
@@ -93,7 +92,7 @@ const knowHow = [
       <div class="container">
         <header class="c-head">
           <span class="eyebrow animate-on-scroll">Inspiratie</span>
-          <h2 class="section-title" data-split>Bekijk onze creaties</h2>
+          <h2 class="section-title" data-split>Bekijk mijn creaties</h2>
         </header>
         <div id="feestcollectie-gallery-modal" class="animate-on-scroll">
           <GalleryModal client:visible images={galleryImages} />

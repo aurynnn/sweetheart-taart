@@ -19,20 +19,20 @@ export const STEPS = [
     image: '/images/cards/trouwtaart-640.webp',
   },
   {
-    title: 'Maak het persoonlijk',
-    text: 'Een thema, een naam, een figuurtje of een voorbeeldfoto? Vertel het ons, alles kan op maat.',
-    icon: 'fa-wand-magic-sparkles',
-    image: '/images/cards/koekjes-640.webp',
-  },
-  {
     title: 'Prik een datum',
     text: 'De kalender toont live welke dagen en ophaalmomenten nog vrij zijn.',
     icon: 'fa-calendar-check',
     image: '/images/cards/cupcakes-640.webp',
   },
   {
-    title: 'Nathalie bevestigt',
-    text: 'Je krijgt een mail met de bevestiging en definitieve prijs. Daarna is het aftellen tot het feest!',
+    title: 'Maak het persoonlijk',
+    text: 'Een thema, een naam, een figuurtje of een voorbeeldfoto? Vertel het me, alles kan op maat.',
+    icon: 'fa-wand-magic-sparkles',
+    image: '/images/cards/koekjes-640.webp',
+  },
+  {
+    title: 'Ik bevestig',
+    text: 'Je krijgt van mij een mail met de bevestiging en definitieve prijs. Daarna is het aftellen tot het feest!',
     icon: 'fa-heart',
     image: '/images/nathalie-portret-240.jpg',
   },

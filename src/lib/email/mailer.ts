@@ -3,7 +3,7 @@
 // Env:
 //   MAILERSEND_API_KEY   required; without it e-mails are skipped (logged)
 //   MAIL_FROM_EMAIL      sender, must be on a domain verified in MailerSend
-//   MAIL_FROM_NAME       sender name (default "Sweetheart")
+//   MAIL_FROM_NAME       sender name (default "Nathalie van Sweetheart")
 //   MAIL_ENABLED         set to "false" to switch all e-mail off (e.g. while testing)
 //
 // sendEmail() never throws: an e-mail problem must never break an aanvraag.
@@ -46,7 +46,7 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
   if (!recipients.length) return { ok: false, error: 'Geen geldige ontvanger' };
 
   const body = {
-    from: { email: env('MAIL_FROM_EMAIL', SITE.email), name: env('MAIL_FROM_NAME', SITE.name) },
+    from: { email: env('MAIL_FROM_EMAIL', SITE.email), name: env('MAIL_FROM_NAME', `${SITE.owner} van ${SITE.name}`) },
     to: recipients,
     reply_to: message.replyTo,
     subject: message.subject,

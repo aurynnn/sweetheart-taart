@@ -65,13 +65,13 @@ const phoneLink = () => `<a href="${esc(SITE.phone.href)}" style="color:${COLORS
 // ── 1. Customer: aanvraag ontvangen ────────────────────────────────────────
 export function aanvraagOntvangen(order: FullOrder): RenderedEmail {
   const body = [
-    paragraph(`Hoi ${esc(firstName(order))}! 💕 Wat leuk dat je aan ons denkt. Je aanvraag is goed ontvangen — hieronder vind je een overzicht.`),
+    paragraph(`Hoi ${esc(firstName(order))}! 💕 Wat leuk dat je aan mij denkt. Je aanvraag is goed ontvangen — hieronder vind je een overzicht.`),
     pickupCard({ when: pickup(order), address: fullAddress, directionsHref: directionsUrl }),
     ticket(order),
     eyebrow('Wat gebeurt er nu?'),
     timeline([
       { title: 'Aanvraag ontvangen', text: 'Dat is gelukt!', state: 'done' },
-      { title: `${SITE.owner} bekijkt je aanvraag`, text: 'Meestal binnen 1 à 2 werkdagen.', state: 'current' },
+      { title: 'Ik bekijk je aanvraag', text: 'Meestal binnen 1 à 2 werkdagen.', state: 'current' },
       { title: 'Je krijgt een bevestiging', text: 'Per mail, met de definitieve prijs.', state: 'next' },
       { title: 'Ophalen & smullen', text: pickup(order), state: 'next' },
     ]),
@@ -81,11 +81,11 @@ export function aanvraagOntvangen(order: FullOrder): RenderedEmail {
   return {
     subject: `Joepie, je aanvraag is binnen! 🎂 (#${order.id})`,
     html: layout({
-      preheader: `Ophalen op ${pickup(order)} — ${SITE.owner} neemt snel contact op.`,
-      hero: { eyebrow: 'Aanvraag ontvangen', title: `Bedankt, ${firstName(order)}!`, subtitle: 'We gaan er iets moois van maken.', art: 'cupcake' },
+      preheader: `Ophalen op ${pickup(order)} — ik neem snel contact met je op.`,
+      hero: { eyebrow: 'Aanvraag ontvangen', title: `Bedankt, ${firstName(order)}!`, subtitle: 'Ik ga er iets moois van maken.', art: 'cupcake' },
       body,
     }),
-    text: `Bedankt, ${firstName(order)}!\n\nWe hebben je aanvraag #${order.id} goed ontvangen.\n\nOphalen: ${pickup(order)}\n${fullAddress}\n\n${itemsText(order)}\n\n${SITE.owner} bekijkt je aanvraag en bevestigt meestal binnen 1 à 2 werkdagen, met de definitieve prijs. Je betaalt nu nog niets.\n\n${contactText}`,
+    text: `Bedankt, ${firstName(order)}!\n\nIk heb je aanvraag #${order.id} goed ontvangen.\n\nOphalen: ${pickup(order)}\n${fullAddress}\n\n${itemsText(order)}\n\nIk bekijk je aanvraag en bevestig meestal binnen 1 à 2 werkdagen, met de definitieve prijs. Je betaalt nu nog niets.\n\n${contactText}`,
   };
 }
 
@@ -120,16 +120,16 @@ export function nieuweAanvraag(order: FullOrder): RenderedEmail {
 // ── 3. Customer: bevestigd ─────────────────────────────────────────────────
 export function aanvraagBevestigd(order: FullOrder): RenderedEmail {
   const body = [
-    paragraph(`Hoi ${esc(firstName(order))}, goed nieuws: je aanvraag is <strong>bevestigd</strong>! ${esc(SITE.owner)} gaat met veel liefde voor je aan de slag. 🎉`),
+    paragraph(`Hoi ${esc(firstName(order))}, goed nieuws: je aanvraag is <strong>bevestigd</strong>! Ik ga met veel liefde voor je aan de slag. 🎉`),
     pickupCard({ when: pickup(order), address: fullAddress, note: 'De bel van het atelier hangt aan de carport, naast het uithangbord.', directionsHref: directionsUrl }),
     ticket(order),
     eyebrow('Handig om te weten'),
     timeline([
-      { title: 'Aanvraag bevestigd', text: 'Je taart staat in de agenda.', state: 'done' },
+      { title: 'Aanvraag bevestigd', text: 'Je taart staat in mijn agenda.', state: 'done' },
       { title: 'Ophalen', text: `${pickup(order)} — betalen kan contant of met Payconiq.`, state: 'current' },
       { title: 'Genieten!', text: 'Haal je taart een half uurtje op voorhand uit de koelkast.', state: 'next' },
     ]),
-    paragraph(`Te laat of verhinderd? Laat het even weten via ${phoneLink()}. <a href="${esc(siteUrl('/tips#bewaren'))}" style="color:${COLORS.pinkDark};font-weight:700">Bekijk onze tips</a> om je taart mooi thuis te krijgen.`),
+    paragraph(`Te laat of verhinderd? Laat het even weten via ${phoneLink()}. <a href="${esc(siteUrl('/tips#bewaren'))}" style="color:${COLORS.pinkDark};font-weight:700">Bekijk mijn tips</a> om je taart mooi thuis te krijgen.`),
     hearts(),
   ].join('');
   return {
@@ -139,14 +139,14 @@ export function aanvraagBevestigd(order: FullOrder): RenderedEmail {
       hero: { eyebrow: 'Bevestigd', title: `Joepie, ${firstName(order)}!`, subtitle: 'Je aanvraag is in orde — tot snel!', art: 'cake' },
       body,
     }),
-    text: `Joepie ${firstName(order)}, het is in orde!\n\nJe aanvraag #${order.id} is bevestigd.\n\nOphalen: ${pickup(order)}\n${fullAddress}\nRoute: ${directionsUrl}\n\n${itemsText(order)}\n\nHet resterende bedrag betaal je bij het ophalen (contant of Payconiq).\nTips: ${siteUrl('/tips')}\n\n${contactText}`,
+    text: `Joepie ${firstName(order)}, het is in orde!\n\nJe aanvraag #${order.id} is bevestigd.\n\nOphalen: ${pickup(order)}\n${fullAddress}\nRoute: ${directionsUrl}\n\n${itemsText(order)}\n\nJe betaalt bij het ophalen (contant of Payconiq).\nTips: ${siteUrl('/tips')}\n\n${contactText}`,
   };
 }
 
 // ── 4. Customer: niet mogelijk ─────────────────────────────────────────────
 export function aanvraagGeweigerd(order: FullOrder): RenderedEmail {
   const body = [
-    paragraph(`Hoi ${esc(firstName(order))}, bedankt voor je aanvraag <strong>#${esc(order.id)}</strong> voor ${esc(pickup(order))}. Helaas lukt het ${esc(SITE.owner)} niet om deze aanvraag uit te voeren — vaak omdat de agenda op die dag al vol zit.`),
+    paragraph(`Hoi ${esc(firstName(order))}, bedankt voor je aanvraag <strong>#${esc(order.id)}</strong> voor ${esc(pickup(order))}. Helaas lukt het me niet om deze aanvraag uit te voeren — vaak omdat mijn agenda op die dag al vol zit.`),
     callout('💡', `Misschien past een <strong>andere datum</strong> wel? Bel gerust even naar ${phoneLink()} of dien een nieuwe aanvraag in — dan zoeken we samen een oplossing.`),
     button(siteUrl('/aanvraag'), 'Kies een andere datum'),
     hearts(),
@@ -155,10 +155,10 @@ export function aanvraagGeweigerd(order: FullOrder): RenderedEmail {
     subject: `Over je aanvraag bij ${SITE.name} (#${order.id})`,
     html: layout({
       preheader: 'Helaas lukt je aanvraag niet op deze datum — misschien een andere dag?',
-      hero: { eyebrow: `Aanvraag #${order.id}`, title: 'Oei, deze datum lukt niet', subtitle: 'Maar we denken graag mee over een andere dag.' },
+      hero: { eyebrow: `Aanvraag #${order.id}`, title: 'Oei, deze datum lukt niet', subtitle: 'Maar ik denk graag mee over een andere dag.' },
       body,
     }),
-    text: `Hoi ${firstName(order)},\n\nBedankt voor je aanvraag #${order.id} voor ${pickup(order)}. Helaas lukt het ${SITE.owner} niet om deze aanvraag uit te voeren.\n\nMisschien past een andere datum wel? Bel ${SITE.phone.display} of dien een nieuwe aanvraag in: ${siteUrl('/aanvraag')}\n\n${contactText}`,
+    text: `Hoi ${firstName(order)},\n\nBedankt voor je aanvraag #${order.id} voor ${pickup(order)}. Helaas lukt het me niet om deze aanvraag uit te voeren.\n\nMisschien past een andere datum wel? Bel ${SITE.phone.display} of dien een nieuwe aanvraag in: ${siteUrl('/aanvraag')}\n\n${contactText}`,
   };
 }
 
@@ -177,24 +177,24 @@ export function reviewVerzoek(order: FullOrder, links: ReviewLinks): RenderedEma
       </a>
     </td>`).join('');
   const body = [
-    paragraph(`Hoi ${esc(firstName(order))}! We hopen dat je bestelling een echte blikvanger was en dat iedereen heeft gesmuld. 🎂`),
-    paragraph(`Mogen we vragen hoe je het vond? <strong>Eén tik is genoeg:</strong>`, 'text-align:center'),
+    paragraph(`Hoi ${esc(firstName(order))}! Ik hoop dat je bestelling een echte blikvanger was en dat iedereen heeft gesmuld. 🎂`),
+    paragraph(`Mag ik vragen hoe je het vond? <strong>Eén tik is genoeg:</strong>`, 'text-align:center'),
     `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px;border-radius:18px;background:${COLORS.blush}"><tr><td align="center" style="padding:18px 8px 16px">
       <table role="presentation" class="rate" dir="rtl" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto"><tr>${stars}</tr></table>
       <p style="margin:10px 0 0;font-family:${FONT};font-size:12px;color:${COLORS.muted}">Tik op het aantal sterren · 1 = niet goed, 5 = geweldig</p>
     </td></tr></table>`,
-    paragraph(`<span style="font-size:13px;color:${COLORS.muted}">Je feedback helpt ${esc(SITE.owner)} om elke creatie nog mooier te maken. Bedankt! 💕</span>`, 'text-align:center'),
+    paragraph(`<span style="font-size:13px;color:${COLORS.muted}">Je feedback helpt mij om elke creatie nog mooier te maken. Bedankt! 💕</span>`, 'text-align:center'),
     hearts(),
   ].join('');
   return {
     subject: `Hoe was je taart, ${firstName(order)}? ⭐`,
     html: layout({
       preheader: 'Eén tik op de sterren — het duurt maar 2 seconden.',
-      hero: { eyebrow: 'We zijn benieuwd!', title: 'Hoe was het?', subtitle: 'Vertel het ons in één tik', art: 'slice' },
+      hero: { eyebrow: 'Ik ben benieuwd!', title: 'Hoe was het?', subtitle: 'Vertel het me in één tik', art: 'slice' },
       body,
       footerNote: `Liever geen mails meer zoals deze? <a href="${esc(links.unsubscribe)}" style="color:${COLORS.muted}">Uitschrijven</a>`,
     }),
-    text: `Hoi ${firstName(order)}!\n\nWe hopen dat je hebt gesmuld. Hoe vond je je bestelling?\n${[1, 2, 3, 4, 5].map((n) => `${n} ster${n === 1 ? '' : 'ren'} (${STAR_LABELS[n - 1]}): ${links.rating(n)}`).join('\n')}\n\nUitschrijven: ${links.unsubscribe}\n\n${contactText}`,
+    text: `Hoi ${firstName(order)}!\n\nIk hoop dat je hebt gesmuld. Hoe vond je je bestelling?\n${[1, 2, 3, 4, 5].map((n) => `${n} ster${n === 1 ? '' : 'ren'} (${STAR_LABELS[n - 1]}): ${links.rating(n)}`).join('\n')}\n\nUitschrijven: ${links.unsubscribe}\n\n${contactText}`,
   };
 }
 
@@ -204,11 +204,11 @@ export interface ReminderView { name: string | null; occasion: string; event_dat
 const reminderWhat = (r: ReminderView) => `${occasionLabel(r.occasion).toLowerCase()}${r.name ? ` van ${r.name}` : ''}`;
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
 
-/** Double opt-in: the address was typed on the website, so we ask to confirm it */
+/** Double opt-in: the address was typed on the website, so it has to be confirmed */
 export function herinneringBevestigen(r: ReminderView, links: { confirm: string; cancel: string }): RenderedEmail {
   const body = [
     paragraph(`Hoi! Iemand (hopelijk jij 😊) vroeg om een herinnering voor de <strong>${esc(reminderWhat(r))}</strong> op ${esc(shortDate(r.event_date))}.`),
-    paragraph(`Klik op de knop om te bevestigen. Zonder bevestiging sturen we niets.`),
+    paragraph(`Klik op de knop om te bevestigen. Zonder bevestiging stuur ik niets.`),
     button(links.confirm, '✓ Ja, herinner me'),
     paragraph(`<span style="font-size:13px;color:${COLORS.muted}">Was jij dit niet? Dan mag je deze mail negeren of <a href="${esc(links.cancel)}" style="color:${COLORS.muted}">de aanvraag annuleren</a>.</span>`, 'text-align:center'),
   ].join('');
@@ -222,29 +222,29 @@ export function herinneringBevestigen(r: ReminderView, links: { confirm: string;
 export function herinneringIngesteld(r: ReminderView, links: { cancel: string }): RenderedEmail {
   const remindOn = new Date(r.event_date + 'T00:00:00'); remindOn.setDate(remindOn.getDate() - 30);
   const body = [
-    paragraph(`Top! We sturen je een mailtje rond <strong>${esc(remindOn.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }))}</strong>, een maand voor de ${esc(reminderWhat(r))}. Zo heb je alle tijd om je taart aan te vragen.`),
-    callout('🔔', `<strong>${esc(occasionLabel(r.occasion))}${r.name ? ` · ${esc(r.name)}` : ''}</strong><br>${esc(shortDate(r.event_date))}${r.yearly ? '<br><span style="color:' + COLORS.muted + '">We herinneren je elk jaar opnieuw.</span>' : ''}`),
+    paragraph(`Top! Ik stuur je een mailtje rond <strong>${esc(remindOn.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }))}</strong>, een maand voor de ${esc(reminderWhat(r))}. Zo heb je alle tijd om je taart aan te vragen.`),
+    callout('🔔', `<strong>${esc(occasionLabel(r.occasion))}${r.name ? ` · ${esc(r.name)}` : ''}</strong><br>${esc(shortDate(r.event_date))}${r.yearly ? '<br><span style="color:' + COLORS.muted + '">Ik herinner je elk jaar opnieuw.</span>' : ''}`),
     paragraph(`<span style="font-size:13px;color:${COLORS.muted}">Toch niet meer nodig? <a href="${esc(links.cancel)}" style="color:${COLORS.muted}">Herinnering annuleren</a>.</span>`, 'text-align:center'),
     hearts(),
   ].join('');
   return {
     subject: 'Je herinnering staat klaar 🔔',
-    html: layout({ preheader: `We laten je een maand op voorhand iets weten.`, hero: { eyebrow: 'Herinnering ingesteld', title: 'Afgesproken!', subtitle: 'Wij denken eraan, jij geniet.', art: 'bell' }, body }),
-    text: `Je herinnering voor de ${reminderWhat(r)} (${shortDate(r.event_date)}) staat klaar. We mailen je een maand op voorhand.\n\nAnnuleren: ${links.cancel}\n\n${contactText}`,
+    html: layout({ preheader: `Ik laat je een maand op voorhand iets weten.`, hero: { eyebrow: 'Herinnering ingesteld', title: 'Afgesproken!', subtitle: 'Ik denk eraan, jij geniet.', art: 'bell' }, body }),
+    text: `Je herinnering voor de ${reminderWhat(r)} (${shortDate(r.event_date)}) staat klaar. Ik mail je een maand op voorhand.\n\nAnnuleren: ${links.cancel}\n\n${contactText}`,
   };
 }
 
 export function herinnering(r: ReminderView, links: { order: string; cancel: string; unsubscribe: string }): RenderedEmail {
   const body = [
-    paragraph(`Hoi! Je vroeg ons om je te herinneren: over ongeveer een maand is het de <strong>${esc(reminderWhat(r))}</strong> (${esc(shortDate(r.event_date))}). 🎉`),
-    paragraph(`De agenda loopt snel vol — vraag je taart dus op tijd aan. We maken er samen iets onvergetelijks van!`),
+    paragraph(`Hoi! Je vroeg me om je te herinneren: over ongeveer een maand is het de <strong>${esc(reminderWhat(r))}</strong> (${esc(shortDate(r.event_date))}). 🎉`),
+    paragraph(`Mijn agenda loopt snel vol — vraag je taart dus op tijd aan. We maken er samen iets onvergetelijks van!`),
     button(links.order, '🎂 Vraag nu je taart aan'),
     hearts(),
   ].join('');
   return {
     subject: `Over een maand: ${reminderWhat(r)} 🎂`,
     html: layout({
-      preheader: 'Vraag je taart op tijd aan — de agenda loopt snel vol.',
+      preheader: 'Vraag je taart op tijd aan — mijn agenda loopt snel vol.',
       hero: { eyebrow: 'Jouw herinnering', title: `Bijna ${occasionLabel(r.occasion).toLowerCase()}!`, subtitle: r.name ? `Voor ${r.name}` : undefined, art: 'bell' },
       body,
       footerNote: `${r.yearly ? 'Je krijgt deze herinnering elk jaar. ' : ''}<a href="${esc(links.cancel)}" style="color:${COLORS.muted}">Herinnering stoppen</a> · <a href="${esc(links.unsubscribe)}" style="color:${COLORS.muted}">Uitschrijven</a>`,

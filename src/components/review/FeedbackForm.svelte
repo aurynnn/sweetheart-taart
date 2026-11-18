@@ -52,7 +52,7 @@
 
   async function submit(e: SubmitEvent) {
     e.preventDefault();
-    if (!text.trim() && topics.length === 0) { error = 'Vertel ons kort wat beter kon — dat helpt ons enorm.'; return; }
+    if (!text.trim() && topics.length === 0) { error = 'Vertel me kort wat beter kon — dat helpt me enorm.'; return; }
     sending = true;
     error = '';
     try {
@@ -71,19 +71,19 @@
   <div class="thanks" in:scale={{ start: 0.9, duration: 500, easing: backOut }}>
     <div class="thanks-icon" aria-hidden="true"><i class="fa-solid fa-star"></i></div>
     <h2>Wat fijn dat je genoten hebt!</h2>
-    <p>Zou je dit ook op Google willen delen? Zo vinden andere feestvierders ons ook. We sturen je nu door…</p>
+    <p>Zou je dit ook op Google willen delen? Zo vinden andere feestvierders mij ook. Ik stuur je nu door…</p>
     <a href={reviewUrl} class="btn btn-primary"><i class="fa-brands fa-google" aria-hidden="true"></i> Review op Google</a>
   </div>
 {:else if done}
   <div class="thanks" in:scale={{ start: 0.9, duration: 500, easing: backOut }}>
     <div class="thanks-icon" aria-hidden="true"><i class="fa-solid fa-heart"></i></div>
     <h2>Dankjewel voor je eerlijke feedback!</h2>
-    <p>Nathalie leest elke reactie persoonlijk en gebruikt ze om het nog beter te doen. Heb je nog een vraag? Beantwoord gerust de e-mail die je kreeg.</p>
+    <p>Ik lees elke reactie persoonlijk en gebruik ze om het nog beter te doen. Heb je nog een vraag? Beantwoord gerust de e-mail die je kreeg.</p>
     <a href="/" class="btn btn-primary">Terug naar de website</a>
   </div>
 {:else}
   <form onsubmit={submit} in:fade>
-    <p class="intro">Jammer dat het niet helemaal perfect was. Wil je ons vertellen wat beter kon?</p>
+    <p class="intro">Jammer dat het niet helemaal perfect was. Wil je me vertellen wat beter kon?</p>
 
     <div class="stars" role="radiogroup" aria-label="Jouw score" onmouseleave={() => (hover = 0)}>
       {#each [1, 2, 3, 4, 5] as n}
@@ -111,7 +111,7 @@
 
     <label class="field">
       <span>Wat kon beter?</span>
-      <textarea rows="4" maxlength="2000" bind:value={text} placeholder="Vertel het ons gerust — we leren er graag van."></textarea>
+      <textarea rows="4" maxlength="2000" bind:value={text} placeholder="Vertel het me gerust — ik leer er graag van."></textarea>
     </label>
 
     {#if error}<p class="error" role="alert" transition:fade>{error}</p>{/if}

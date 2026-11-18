@@ -4,6 +4,9 @@ import { tableColumns } from '../../../lib/schema';
 import { listOrders } from '../../../lib/orderRepo';
 import { notifyNewAanvraag, notifyStatusChange } from '../../../lib/email';
 import { getDayAvailability } from '../../../lib/availability';
+import { syncOrder } from '../../../lib/googleCalendar';
+import { inBackground } from '../../../lib/background';
+import { clientIp } from '../../../lib/auth';
 import {
   type AanvraagItem,
   EMAIL_RE,
@@ -40,16 +43,34 @@ async function nextId(table: 'orders' | 'customers', prefix: string): Promise<st
   return `${prefix}-${String(n).padStart(3, '0')}`;
 }
 
-export const POST: APIRoute = async ({ request }) => {
+// Public form: max 5 aanvragen per IP per hour (per Worker isolate) against spam bursts
+const WINDOW_MS = 60 * 60_000;
+const hits = new Map<string, number[]>();
+function rateLimited(ip: string) {
+  const now = Date.now();
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
+  recent.push(now);
+  hits.set(ip, recent);
+  return recent.length > 5;
+}
+
+export const POST: APIRoute = async ({ request, locals, clientAddress }) => {
   let body: any;
   try {
     body = await request.json();
   } catch {
     return json({ success: false, error: 'Ongeldige aanvraag' }, 400);
   }
+  // Honeypot filled in → a bot: pretend it worked, store nothing
+  if (typeof body?.website === 'string' && body.website.trim()) return json({ success: true, orderId: 'ORD-000', total: formatEuro(0) }, 201);
+  // Logged-in admin entering a phone order is never limited
+  if (!(locals as any).admin && rateLimited(clientIp(request, clientAddress))) {
+    return json({ success: false, error: 'Te veel aanvragen na elkaar. Probeer het later opnieuw of bel me even.' }, 429);
+  }
 
   try {
-    const isAdmin = body.isAdmin === true;
+    // Only a logged-in admin may skip validation/availability (phone orders); the flag alone is not enough
+    const isAdmin = body.isAdmin === true && !!(locals as any).admin;
     const date = str(body.date, 10);
     const time = str(body.time, 5);
     const message = str(body.message, 1000);
@@ -76,7 +97,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (!firstname && !email && !phone) return json({ success: false, error: 'Vul minstens naam, e-mail of telefoon in' }, 400);
       total = parseEuro(body.total);
     } else {
-      if (!firstname || !lastname) return json({ success: false, error: 'Vul uw voor- en achternaam in' }, 400);
+      if (!firstname || !lastname) return json({ success: false, error: 'Vul je voor- en achternaam in' }, 400);
       if (!EMAIL_RE.test(email)) return json({ success: false, error: 'Vul een geldig e-mailadres in' }, 400);
       if (!isValidPhone(phone)) return json({ success: false, error: 'Vul een geldig telefoonnummer in' }, 400);
       if (!/^\d{2}:\d{2}$/.test(time)) return json({ success: false, error: 'Kies een ophaalmoment' }, 400);
@@ -172,17 +193,18 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Fire-and-forget: the customer shouldn't wait on (or be blocked by) the mail provider
-    if (!isAdmin) void notifyNewAanvraag(orderId).catch((err) => console.error('[api/orders] notify failed:', err));
+    // In the background: the customer shouldn't wait on (or be blocked by) the mail provider or Google
+    if (!isAdmin) inBackground(locals, notifyNewAanvraag(orderId), 'api/orders notify');
+    inBackground(locals, syncOrder(orderId), 'api/orders calendar');
 
     return json({ success: true, orderId, total: formatEuro(total) }, 201);
   } catch (error: any) {
     console.error('[api/orders] POST failed:', error);
-    return json({ success: false, error: 'Er ging iets mis bij het opslaan. Probeer het opnieuw of bel ons even.' }, 500);
+    return json({ success: false, error: 'Er ging iets mis bij het opslaan. Probeer het opnieuw of bel me even.' }, 500);
   }
 };
 
-export const PATCH: APIRoute = async ({ request }) => {
+export const PATCH: APIRoute = async ({ request, locals }) => {
   try {
     const body = await request.json();
     const { orderId, status, notify = true } = body;
@@ -201,6 +223,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (!previous) return json({ success: false, error: 'Aanvraag niet gevonden' }, 404);
 
     await d1Query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
+    if (previous !== status) inBackground(locals, syncOrder(orderId), 'api/orders calendar');
 
     // Only e-mail the customer on a real change (not when re-saving the same status)
     const mail = notify !== false && previous !== status

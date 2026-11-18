@@ -2,10 +2,10 @@
 import { INTRO_STATS } from '../../data/home';
 import { SITE } from '../../config/site';
 
-interface Props { collectionCount: number }
-const { collectionCount } = Astro.props;
+interface Props { cakesBaked: number }
+const { cakesBaked } = Astro.props;
 
-const stats = [...INTRO_STATS, { label: 'Collecties', value: collectionCount, from: 0, suffix: '' }];
+const stats = [...INTRO_STATS, { label: 'Taarten gebakken', value: cakesBaked, from: 0, suffix: '' }];
 
 // Small, slow-floating doodles around the photo — decoration only
 const doodles = [
@@ -34,9 +34,6 @@ const pos = (d: (typeof doodles)[number]) =>
           <p class="animate-on-scroll stagger-2">
             Vandaar dat ik enkele jaren terug besloot om daar ook effectief iets mee te gaan doen. Zo maakte ons tuinhuis net voor de zomer van 2018 plaats voor een bakatelier waar ik me naar hartelust kan uitleven.
           </p>
-          <p class="animate-on-scroll stagger-3">
-            Ik werk met kwaliteitsvolle ingrediënten zoals speltbloem en bio-eitjes, en hou rekening met allergieën en dieetwensen. Lactose-intolerantie of glutenallergie? Geen probleem!
-          </p>
         </div>
 
         <dl class="stats animate-on-scroll stagger-4">
@@ -62,7 +59,7 @@ const pos = (d: (typeof doodles)[number]) =>
             src="/images/nathalie-portret.jpg"
             srcset="/images/nathalie-portret.jpg 640w, /images/nathalie-portret-896.jpg 896w"
             sizes="(max-width: 900px) 90vw, 440px"
-            alt={`${SITE.owner} in haar bakatelier`}
+            alt={`${SITE.owner} in mijn bakatelier`}
             class="intro-img"
             data-parallax="0.12"
             loading="lazy"

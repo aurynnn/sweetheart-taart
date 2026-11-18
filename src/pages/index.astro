@@ -13,10 +13,12 @@ import HomeInfo from '../components/home/HomeInfo.astro';
 
 import collectionsData from '../data/collections.json';
 import { OCCASIONS } from '../data/home';
+import { cakesBakedCount } from '../lib/orderRepo';
 
 const collections = collectionsData.collections
   .filter((c) => c.id !== 'vaste-collectie' && c.id !== 'afternoon-tea')
   .slice(0, 3);
+const cakesBaked = await cakesBakedCount();
 ---
 
 <Layout title="Home">
@@ -25,7 +27,7 @@ const collections = collectionsData.collections
   <main id="home-main">
     <Hero id="home-hero" />
     <Marquee items={OCCASIONS} label="Gelegenheden" />
-    <HomeIntro collectionCount={collections.length} />
+    <HomeIntro cakesBaked={cakesBaked} />
     <HomeCollections collections={collections} />
     <HomeSteps />
     <HomeTestimonials />

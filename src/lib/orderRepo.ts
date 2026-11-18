@@ -106,3 +106,20 @@ export async function getOrder(id: string): Promise<FullOrder | null> {
   const [order] = await listOrders({ id });
   return order ?? null;
 }
+
+// Cakes baked before the website counted them; every order placed since then adds one
+const CAKES_BAKED_BASE = 820;
+const CAKES_BAKED_SINCE = '2026-10-21';
+
+/** Running "taarten gebakken" total for the home page; falls back to the base if D1 is unreachable */
+export async function cakesBakedCount(): Promise<number> {
+  try {
+    const { results } = await d1Query(
+      `SELECT COUNT(*) as n FROM orders WHERE status != 'cancelled' AND created_at >= ?`,
+      [CAKES_BAKED_SINCE],
+    );
+    return CAKES_BAKED_BASE + Number(results[0]?.n ?? 0);
+  } catch {
+    return CAKES_BAKED_BASE;
+  }
+}

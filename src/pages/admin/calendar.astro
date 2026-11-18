@@ -5,6 +5,9 @@ import CalendarAlerts from '../../components/admin/calendar/CalendarAlerts.astro
 import CalendarTabs from '../../components/admin/calendar/CalendarTabs.astro';
 import CalendarMonthView from '../../components/admin/calendar/CalendarMonthView.astro';
 import CalendarBlockView from '../../components/admin/calendar/CalendarBlockView.astro';
+import CalendarConnection from '../../components/admin/calendar/CalendarConnection.astro';
+import { getConnection, googleConfigured } from '../../lib/googleCalendar';
+import { getFeedToken } from '../../lib/calendarFeed';
 import CalendarHoursView from '../../components/admin/calendar/CalendarHoursView.astro';
 import PickupTimesEditor from '../../components/admin/pickup/PickupTimesEditor.svelte';
 import { d1Query } from '../../lib/d1';
@@ -13,10 +16,15 @@ const url = Astro.url;
 const connected = url.searchParams.get('connected') === 'true';
 const disconnected = url.searchParams.get('disconnected') === 'true';
 const error = url.searchParams.get('error');
+const synced = url.searchParams.get('synced');
+const failed = url.searchParams.get('failed');
+const feedReset = url.searchParams.get('feedReset') === 'true';
+const calendarConnection = await getConnection();
+const feedUrl = await getFeedToken().then((t) => `${Astro.url.origin}/agenda/${t}.ics`).catch(() => null);
 
 // Defaults; lead time and pickup times come from D1 below
 function loadSettings() {
-  return { maxOrdersPerDay: 3, googleConnected: false, recurringUnavailableDays: [0], availableDays: [1, 2, 3, 4, 5, 6] };
+  return { maxOrdersPerDay: 3, recurringUnavailableDays: [0], availableDays: [1, 2, 3, 4, 5, 6] };
 }
 
 // Load leadTimeDays from D1
@@ -37,7 +45,8 @@ const settings = { ...baseSettings, leadTimeDays };
 
 <AdminLayout title="Beschikbaarheid">
   <CalendarHeader />
-  <CalendarAlerts connected={connected} disconnected={disconnected} error={error} />
+  <CalendarAlerts connected={connected} disconnected={disconnected} error={error} synced={synced} failed={failed} feedReset={feedReset} />
+  <CalendarConnection connection={calendarConnection} configured={googleConfigured()} feedUrl={feedUrl} />
   <CalendarTabs />
   <CalendarMonthView />
   <CalendarBlockView />
@@ -95,50 +104,6 @@ const settings = { ...baseSettings, leadTimeDays };
     color: #92400e;
   }
 
-  /* Connection Card */
-  .connection-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .connection-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .connection-icon {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 50%;
-    background: #f1f5f9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #64748b;
-  }
-
-  .connection-icon.connected {
-    background: #dcfce7;
-    color: #16a34a;
-  }
-
-  .connection-info strong {
-    display: block;
-    margin-bottom: 0.25rem;
-  }
-
-  .connection-info p {
-    margin: 0;
-    font-size: 0.875rem;
-    color: #64748b;
-  }
 
   /* Tabs */
   .tabs {
@@ -731,11 +696,6 @@ const settings = { ...baseSettings, leadTimeDays };
       inp.value = '';
       if (status) status.textContent = 'Datum toegevoegd (lokaal).';
     }
-  }
-
-  function addBlockedDateGoogle() {
-    var status = document.getElementById('block-status');
-    if (status) status.textContent = 'Google Calendar integratie coming soon.';
   }
 
   // Format date as YYYY-MM-DD in local time

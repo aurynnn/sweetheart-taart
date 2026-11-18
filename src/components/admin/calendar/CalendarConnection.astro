@@ -1,12 +1,19 @@
 ---
-// CalendarConnection.astro — Google Calendar connect / disconnect card
+// CalendarConnection.astro — Orders in her agenda: one-click subscription (default),
+// or the direct Google koppeling when GOOGLE_CLIENT_ID/SECRET are set.
+import type { CalendarConnection } from '../../../lib/googleCalendar';
+import { formatDateTime } from '../../../lib/dates';
 
-const { googleConnected = false } = Astro.props;
+interface Props { connection: CalendarConnection | null; configured: boolean; feedUrl: string | null }
+const { connection, configured, feedUrl } = Astro.props;
+
+const webcal = feedUrl?.replace(/^https?:/, 'webcal:');
+const googleSubscribe = webcal && `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcal)}`;
 ---
 
 <div class="connection-card">
   <div class="connection-info">
-    <div class={`connection-icon ${googleConnected ? 'connected' : ''}`}>
+    <div class={`connection-icon ${connection ? 'connected' : ''}`}>
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
         <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -15,17 +22,91 @@ const { googleConnected = false } = Astro.props;
       </svg>
     </div>
     <div>
-      <strong>Google Agenda {googleConnected ? 'verbonden' : 'niet verbonden'}</strong>
-      <p>{googleConnected ? 'Je agenda wordt automatisch gesynchroniseerd.' : 'Verbind om events automatisch te blokkeren.'}</p>
+      {connection ? (
+        <>
+          <strong>Google Agenda direct verbonden{connection.email && ` · ${connection.email}`}</strong>
+          <p>Elke aanvraag staat meteen in de agenda <em>Sweetheart bestellingen</em>: geel = nog te bevestigen, roze = bevestigd, grijs = opgehaald. Geannuleerd verdwijnt vanzelf.</p>
+          {connection.lastSyncAt && <p class="connection-meta">Laatst bijgewerkt: {formatDateTime(connection.lastSyncAt)}</p>}
+          {connection.lastError && <p class="connection-error">⚠ Laatste synchronisatie mislukt: {connection.lastError}. Probeer "Nu synchroniseren" of verbind opnieuw.</p>}
+        </>
+      ) : (
+        <>
+          <strong>Bestellingen in je agenda</strong>
+          <p>Klik op de knop, bevestig in Google Agenda met "Toevoegen" en klaar: al je aanvragen en bestellingen verschijnen in een aparte agenda <em>Sweetheart bestellingen</em>, met de klant, de details en het ophaaluur.</p>
+          <p class="connection-meta">Google ververst zo'n agenda zelf, meestal een paar keer per dag. Een nieuwe aanvraag kan er dus enkele uren later pas in staan; in het dashboard en je mail zie je ze meteen. Op iPhone/Mac gaat het sneller.</p>
+          {!feedUrl && <p class="connection-error">De agenda-link kon niet geladen worden. Herlaad de pagina.</p>}
+        </>
+      )}
     </div>
   </div>
   <div class="connection-actions">
-    {googleConnected ? (
-      <form method="POST" action="/admin/api/calendar/disconnect">
-        <button type="submit" class="btn btn-secondary">Ontkoppelen</button>
-      </form>
-    ) : (
-      <a href="/admin/api/calendar/connect" class="btn btn-primary">Verbinden</a>
+    {connection ? (
+      <>
+        <form method="POST" action="/admin/api/calendar/sync">
+          <button type="submit" class="btn btn-primary">Nu synchroniseren</button>
+        </form>
+        <form method="POST" action="/admin/api/calendar/disconnect" onsubmit="return confirm('Google Agenda ontkoppelen? De agenda blijft in je Google-account staan, maar wordt niet meer bijgewerkt.')">
+          <button type="submit" class="btn btn-secondary">Ontkoppelen</button>
+        </form>
+      </>
+    ) : feedUrl && (
+      <>
+        <a href={googleSubscribe} target="_blank" rel="noopener" class="btn btn-primary">Toevoegen aan Google Agenda</a>
+        <a href={webcal} class="btn btn-secondary">iPhone / Mac</a>
+        <button type="button" class="btn btn-secondary" data-copy={feedUrl}>Link kopiëren</button>
+      </>
     )}
   </div>
 </div>
+
+{!connection && feedUrl && (
+  <div class="connection-extra">
+    <form method="POST" action="/admin/api/calendar/feed-reset" onsubmit="return confirm('Nieuwe link maken? De oude link stopt meteen met werken; je moet de agenda daarna opnieuw toevoegen.')">
+      Link per ongeluk gedeeld? <button type="submit" class="link-btn">Maak een nieuwe link</button>
+    </form>
+    {configured && <span>· Liever meteen bijgewerkt? <a href="/admin/api/calendar/connect">Directe Google-koppeling</a></span>}
+  </div>
+)}
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy!);
+        const label = btn.textContent;
+        btn.textContent = 'Gekopieerd ✓';
+        setTimeout(() => { btn.textContent = label; }, 2000);
+      } catch {
+        prompt('Kopieer deze link:', btn.dataset.copy);
+      }
+    });
+  });
+</script>
+
+<style>
+  .connection-card {
+    display: flex; justify-content: space-between; align-items: center; gap: 1.5rem;
+    background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.5rem; margin-bottom: 0.75rem;
+  }
+  .connection-info { display: flex; align-items: center; gap: 1rem; }
+  .connection-icon {
+    flex: none; width: 3rem; height: 3rem; border-radius: 50%; background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center; color: #64748b;
+  }
+  .connection-icon.connected { background: #dcfce7; color: #16a34a; }
+  .connection-info strong { display: block; margin-bottom: 0.25rem; }
+  .connection-info p { margin: 0; font-size: 0.875rem; color: #64748b; }
+  .connection-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; flex: none; max-width: 22rem; justify-content: flex-end; }
+  .connection-actions form { margin: 0; }
+  .connection-info .connection-meta { margin-top: 0.35rem; font-size: 0.75rem; }
+  .connection-info .connection-error { margin-top: 0.35rem; color: #b91c1c; }
+  .connection-extra { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 1.5rem 0.25rem; font-size: 0.8rem; color: #64748b; }
+  .connection-extra form { margin: 0; }
+  .connection-extra a, .link-btn { color: #be185d; text-decoration: underline; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+  @media (max-width: 640px) {
+    .connection-card { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .connection-info { align-items: flex-start; }
+    .connection-actions { max-width: none; justify-content: stretch; }
+    .connection-actions > * { flex: 1 1 100%; text-align: center; }
+  }
+</style>

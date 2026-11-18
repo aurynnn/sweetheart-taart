@@ -25,6 +25,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     return json({ success: false, error: 'Te veel aanvragen. Probeer het later opnieuw.' }, 429);
   }
   const body = await request.json().catch(() => null);
+  // Honeypot filled in → a bot: pretend it worked, store nothing
+  if (typeof body?.website === 'string' && body.website.trim()) return json({ success: true, status: 'pending', emailed: true }, 201);
   const email = String(body?.email ?? '').trim().toLowerCase();
   const name = String(body?.name ?? '').trim().slice(0, 60);
   const occasion = String(body?.occasion ?? '');

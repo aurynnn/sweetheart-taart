@@ -27,7 +27,7 @@ if (valid) {
 Astro.response.headers.set('X-Robots-Tag', 'noindex');
 ---
 
-<Layout title="Bedankt voor je beoordeling" description="Laat ons weten hoe je bestelling bij Sweetheart was.">
+<Layout title="Bedankt voor je beoordeling" description="Laat me weten hoe je bestelling bij Sweetheart was.">
   <Header />
   <main class="collection">
     <section class="rv-hero grain">
@@ -43,7 +43,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex');
           <FeedbackForm client:load orderId={orderId} token={token} rating={rating} alreadySent={alreadyFeedback} reviewUrl={SITE.reviewUrl} />
         ) : (
           <div class="rv-invalid">
-            <p>Deze beoordelingslink is ongeldig of verlopen. Wil je ons toch iets laten weten? Stuur gerust een mail naar <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+            <p>Deze beoordelingslink is ongeldig of verlopen. Wil je me toch iets laten weten? Stuur gerust een mail naar <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
             <a href="/" class="btn btn-primary">Naar de homepage</a>
           </div>
         )}

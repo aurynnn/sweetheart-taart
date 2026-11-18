@@ -128,7 +128,7 @@ export const socialBlock = () => {
     </a>`;
   return table(`<tr><td align="center" style="padding:24px 20px;border-radius:18px;background:${COLORS.cream};border:1px dashed ${COLORS.pinkLight}">
     <p style="margin:0 0 4px;font-family:${SCRIPT_FONT};font-size:26px;font-weight:700;color:${COLORS.pinkDark}">Zin in meer inspiratie?</p>
-    <p style="margin:0 0 16px;font-family:${FONT};font-size:14px;color:${COLORS.muted}">Volg ons voor de nieuwste taarten, koekjes en mini's.</p>
+    <p style="margin:0 0 16px;font-family:${FONT};font-size:14px;color:${COLORS.muted}">Volg mij voor de nieuwste taarten, koekjes en mini's.</p>
     ${icon(SITE.social.instagram, 'instagram.png', 'Instagram')}${icon(SITE.social.facebook, 'facebook.png', 'Facebook')}
   </td></tr>`, 'margin:8px 0 24px');
 };

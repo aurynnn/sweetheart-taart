@@ -8,12 +8,14 @@ import GalleryModal from '../components/GalleryModal.svelte';
 import CollectionHero from '../components/collection/CollectionHero.astro';
 import FeatureCard from '../components/collection/FeatureCard.astro';
 import Marquee from '../components/ui/Marquee.astro';
-import { listMedia } from '../lib/r2';
+import { listMedia, randomHeroPhotos } from '../lib/r2';
 
 const R2 = (env('PUBLIC_R2_BASE_URL') || '').replace(/\/$/, '');
 const img = (key: string) => `${R2}/koekjescollectie/images/${key}`;
 
 const galleryImages = await listMedia('koekjescollectie');
+// Three different gallery photos in the hero on every visit
+const heroPhotos = randomHeroPhotos(galleryImages, [img('koekejs.png'), img('sweetheart.taart_1641141988_2742420221900333997_8631104567.jpg'), img('sweetheart.taart_1557306214_2039154781586553919_8631104567.jpg')]);
 
 const presentations = [
   { title: 'Op stok', text: 'Perfect als attentie, bedankje of in een mooi potje als blikvanger.', icon: 'fa-gift', image: img('koek_geel.jpg') },
@@ -49,7 +51,7 @@ const priceFactors = [
       subtitle="Koekjes op stok, in een zakje of op een schaaltje… een heerlijke traktatie voor geboorte, verjaardag, lentefeest, communie, huwelijk en meer."
       product="koekjes"
       ctaLabel="Bestellen"
-      photos={[img('koekejs.png'), img('sweetheart.taart_1641141988_2742420221900333997_8631104567.jpg'), img('sweetheart.taart_1557306214_2039154781586553919_8631104567.jpg')]}
+      photos={heroPhotos}
       highlights={[{ icon: 'fa-wheat-awn', label: 'Speltkoekjes' }, { icon: 'fa-paintbrush', label: 'Versierd naar wens' }, { icon: 'fa-euro-sign', label: 'Vanaf €2 per koekje' }]}
     />
 
@@ -76,7 +78,7 @@ const priceFactors = [
       <div class="container">
         <header class="c-head">
           <span class="eyebrow animate-on-scroll">Inspiratie</span>
-          <h2 class="section-title" data-split>Onze koekjes</h2>
+          <h2 class="section-title" data-split>Mijn koekjes</h2>
         </header>
         <div class="animate-on-scroll">
           <GalleryModal client:visible images={galleryImages} />
@@ -104,7 +106,7 @@ const priceFactors = [
             <a href="/aanvraag?product=koekjes" class="btn btn-primary btn-shine c-cta-wide" data-magnetic="0.15">
               Vraag je koekjes aan <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </a>
-            <p class="c-small">Vrijblijvend — Nathalie bevestigt je aanvraag met de definitieve prijs.</p>
+            <p class="c-small">Vrijblijvend — ik bevestig je aanvraag met de definitieve prijs.</p>
           </div>
         </div>
       </div>

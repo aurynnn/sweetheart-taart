@@ -1,22 +1,14 @@
 import type { APIRoute } from 'astro';
-import { env } from '../../../../lib/env';
+import { randomBytes } from 'node:crypto';
+import { getAuthUrl, googleConfigured } from '../../../../lib/googleCalendar';
+import { isSecureRequest } from '../../../../lib/auth';
 
-export const GET: APIRoute = async ({ redirect }) => {
-  const clientId = (env('GOOGLE_CLIENT_ID') ?? '');
-  const redirectUri = `${env('PUBLIC_SITE_URL') || 'http://localhost:4321'}/admin/api/calendar/callback`;
-  
-  const scopes = [
-    'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/calendar.events'
-  ].join(' ');
-
-  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  authUrl.searchParams.set('client_id', clientId);
-  authUrl.searchParams.set('redirect_uri', redirectUri);
-  authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', scopes);
-  authUrl.searchParams.set('access_type', 'offline');
-  authUrl.searchParams.set('prompt', 'consent');
-
-  return redirect(authUrl.toString());
+// Sends the owner to Google's consent screen; `state` guards the callback against forged requests
+export const GET: APIRoute = async ({ url, request, cookies, redirect }) => {
+  if (!googleConfigured()) return redirect('/admin/calendar?error=not_configured');
+  const state = randomBytes(16).toString('hex');
+  cookies.set('sh_gcal_state', state, {
+    path: '/admin/api/calendar', httpOnly: true, sameSite: 'lax', secure: isSecureRequest(request, url), maxAge: 600,
+  });
+  return redirect(getAuthUrl(url.origin, state));
 };

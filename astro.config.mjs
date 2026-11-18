@@ -18,6 +18,8 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    // Older iPhones (iOS 15+): adds -webkit- prefixes (e.g. backdrop-filter) and lowers syntax
+    build: { cssTarget: ['safari15', 'ios15', 'chrome100', 'firefox100', 'edge100'] },
     server: {
       allowedHosts: ['.trycloudflare.com', '.cloudflareaccess.com'],
     },

@@ -1,11 +1,7 @@
 import type { APIRoute } from 'astro';
+import { disconnect } from '../../../../lib/googleCalendar';
 
 export const POST: APIRoute = async ({ redirect }) => {
-  // In production, revoke tokens in database
-  // TODO: Revoke Google token: await fetch('https://oauth2.googleapis.com/revoke', ...)
-  // TODO: Clear tokens from database
-
-  console.log('Google Calendar disconnected');
-
+  await disconnect();
   return redirect('/admin/calendar?disconnected=true');
 };

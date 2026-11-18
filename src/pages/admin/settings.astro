@@ -5,7 +5,6 @@ import AdminLayout from '../../layouts/admin/AdminLayout.astro';
 const settings = {
   maxOrdersPerDay: 3,
   leadTimeDays: 0,
-  googleConnected: false,
   recurringUnavailableDays: [0],
   availableDays: [1, 2, 3, 4, 5, 6]
 };
@@ -20,64 +19,22 @@ const dayNames = [
   { num: 6, name: 'Zaterdag' },
 ];
 import EmailSettings from '../../components/admin/EmailSettings.svelte';
+import CalendarConnection from '../../components/admin/calendar/CalendarConnection.astro';
+import { getConnection, googleConfigured } from '../../lib/googleCalendar';
+import { getFeedToken } from '../../lib/calendarFeed';
+
+const calendarConnection = await getConnection();
+const feedUrl = await getFeedToken().then((t) => `${Astro.url.origin}/agenda/${t}.ics`).catch(() => null);
 ---
 
 <AdminLayout title="Instellingen">
   <div class="settings-section">
-    <h2>Google Agenda Verbinding</h2>
+    <h2>Agenda</h2>
     <p class="section-description">
-      Verbind je Google Agenda om beschikbaarheid automatisch te synchroniseren. 
-      Dit stelt klanten in staat om alleen tijdsloten te boeken wanneer je beschikbaar bent.
+      Zet al je aanvragen en bestellingen automatisch in je Google Agenda (of op je iPhone), met de klant en alle details.
     </p>
     
-    <div class="connection-card">
-      <div class="connection-status">
-        {settings.googleConnected ? (
-          <>
-            <div class="status-indicator connected"></div>
-            <div class="status-text">
-              <strong>Verbonden</strong>
-              <span>Laatst gesynchroniseerd: 2 minuten geleden</span>
-            </div>
-          </>
-        ) : (
-          <>
-            <div class="status-indicator disconnected"></div>
-            <div class="status-text">
-              <strong>Niet verbonden</strong>
-              <span>Verbind om beschikbaarheid te synchroniseren</span>
-            </div>
-          </>
-        )}
-      </div>
-      
-      <div class="connection-actions">
-        {settings.googleConnected ? (
-          <>
-            <a href="/admin/api/calendar/sync" class="btn btn-secondary">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              </svg>
-              Synchroniseer Nu
-            </a>
-            <button class="btn btn-danger" onclick="disconnectCalendar()">
-              Ontkoppelen
-            </button>
-          </>
-        ) : (
-          <a href="/admin/api/calendar/connect" class="btn btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-              <polyline points="10 17 15 12 10 7"></polyline>
-              <line x1="15" y1="12" x2="3" y2="12"></line>
-            </svg>
-            Verbind met Google
-          </a>
-        )}
-      </div>
-    </div>
+    <CalendarConnection connection={calendarConnection} configured={googleConfigured()} feedUrl={feedUrl} />
   </div>
 
   <div class="settings-section">
@@ -188,12 +145,6 @@ import EmailSettings from '../../components/admin/EmailSettings.svelte';
     input.value = String(newValue);
   }
 
-  function disconnectCalendar() {
-    if (confirm('Weet je zeker dat je de Google Agenda wilt ontkoppelen?')) {
-      fetch('/admin/api/calendar/disconnect', { method: 'POST' })
-        .then(() => window.location.reload());
-    }
-  }
 
   document.getElementById('saveSettingsBtn')?.addEventListener('click', async () => {
     const btn = document.getElementById('saveSettingsBtn') as HTMLButtonElement;
@@ -273,59 +224,6 @@ import EmailSettings from '../../components/admin/EmailSettings.svelte';
   font-size: 0.875rem;
   color: #64748b;
   margin: 0 0 1.5rem 0;
-}
-
-.connection-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.connection-status {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.status-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.status-indicator.connected {
-  background: #22c55e;
-  box-shadow: 0 0 0 4px #dcfce7;
-}
-
-.status-indicator.disconnected {
-  background: #94a3b8;
-  box-shadow: 0 0 0 4px #f1f5f9;
-}
-
-.status-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.status-text strong {
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.status-text span {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.connection-actions {
-  display: flex;
-  gap: 0.75rem;
 }
 
 .settings-card {

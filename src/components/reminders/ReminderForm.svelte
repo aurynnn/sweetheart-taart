@@ -12,6 +12,7 @@
   } = $props();
 
   let email = $state(initialEmail);
+  let website = $state(''); // honeypot
   let editingEmail = $state(!initialEmail);
   let name = $state('');
   let occasion = $state('verjaardag');
@@ -44,13 +45,13 @@
     if (!EMAIL_RE.test(email.trim())) { error = 'Vul een geldig e-mailadres in.'; return; }
     if (!date) { error = 'Kies de dag en maand van het feest.'; return; }
     if (!yearly && date < today) { error = 'Deze datum ligt in het verleden.'; return; }
-    if (!consent) { error = 'Vink aan dat we je hiervoor mogen mailen.'; return; }
+    if (!consent) { error = 'Vink aan dat ik je hiervoor mag mailen.'; return; }
     sending = true;
     try {
       const res = await fetch('/api/reminders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), name, occasion, date, yearly, consent, c: customerId, t: token }),
+        body: JSON.stringify({ email: email.trim(), name, occasion, date, yearly, consent, c: customerId, t: token, website }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error);
@@ -68,10 +69,10 @@
     <div class="done-icon" aria-hidden="true"><i class="fa-solid {result === 'active' ? 'fa-bell' : 'fa-envelope-open-text'}"></i></div>
     {#if result === 'active'}
       <h3>Afgesproken!</h3>
-      <p>We sturen je een mailtje een maand voor het feest. Je ontvangt zo meteen een bevestiging.</p>
+      <p>Ik stuur je een mailtje een maand voor het feest. Je ontvangt zo meteen een bevestiging.</p>
     {:else}
       <h3>Check je mailbox 📬</h3>
-      <p>We stuurden een bevestigingslink naar <strong>{email}</strong>. Klik erop om je herinnering te activeren.</p>
+      <p>Ik stuurde een bevestigingslink naar <strong>{email}</strong>. Klik erop om je herinnering te activeren.</p>
     {/if}
     <button type="button" class="again" onclick={() => { result = null; name = ''; day = ''; month = ''; consent = false; }}>+ Nog een herinnering</button>
   </div>
@@ -129,9 +130,12 @@
       <span><strong>Elk jaar herinneren</strong> — handig voor verjaardagen</span>
     </label>
 
+    <!-- Honeypot: invisible to people, bots fill it in -->
+    <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" bind:value={website} />
+
     <label class="check consent">
       <input type="checkbox" bind:checked={consent} />
-      <span>Ik wil een herinneringsmail ontvangen, een maand voor deze datum. Uitschrijven kan altijd met één klik. Lees onze <a href="/privacy" target="_blank" rel="noopener">privacyverklaring</a>.</span>
+      <span>Ik wil een herinneringsmail ontvangen, een maand voor deze datum. Uitschrijven kan altijd met één klik. Lees mijn <a href="/privacy" target="_blank" rel="noopener">privacyverklaring</a>.</span>
     </label>
 
     {#if error}<p class="error" role="alert" transition:slide>{error}</p>{/if}
@@ -175,4 +179,6 @@
   .again { border: 0; background: none; color: var(--color-primary-dark); font-weight: 700; cursor: pointer; }
   @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
   @media (prefers-reduced-motion: reduce) { .done-icon { animation: none; } }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 </style>
+

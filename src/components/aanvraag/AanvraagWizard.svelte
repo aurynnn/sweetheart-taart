@@ -37,6 +37,7 @@
   let contact = $state({ firstname: '', lastname: '', email: '', phone: '' });
   let touched = $state<Record<string, boolean>>({});
   let message = $state('');
+  let website = $state(''); // honeypot
   let agreed = $state(false);
   let submitting = $state(false);
   let submitError = $state('');
@@ -218,7 +219,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          date, time, message: message.trim(),
+          date, time, message: message.trim(), website,
           customer: {
             firstname: contact.firstname.trim(), lastname: contact.lastname.trim(),
             email: contact.email.trim(), phone: contact.phone.trim(),
@@ -275,7 +276,7 @@
       </p>
 
       <ol class="next-steps">
-        <li><span>1</span><div><strong>Nathalie bekijkt je aanvraag</strong><p>Meestal binnen 1 à 2 werkdagen.</p></div></li>
+        <li><span>1</span><div><strong>Ik bekijk je aanvraag</strong><p>Meestal binnen 1 à 2 werkdagen.</p></div></li>
         <li><span>2</span><div><strong>Je krijgt een bevestiging</strong><p>Per mail of telefoon, met de definitieve prijs.</p></div></li>
         <li><span>3</span><div><strong>Ophalen & smullen</strong><p>{formatDate(date)} om {time}, {fullAddress}.</p><a class="route" href={directionsUrl} target="_blank" rel="noopener"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Route plannen</a></div></li>
       </ol>
@@ -324,7 +325,7 @@
     {#if restored && step === 0}
       <div class="restored" transition:slide>
         <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
-        <span>We hebben je vorige aanvraag bewaard.</span>
+        <span>Je vorige aanvraag is bewaard.</span>
         <button type="button" onclick={startOver}>Opnieuw beginnen</button>
         <button type="button" class="restored-close" aria-label="Melding sluiten" onclick={() => (restored = false)}>
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -504,7 +505,7 @@
             <header class="panel-head">
               <p class="eyebrow">Stap 2 van 4</p>
               <h2 id="step-title-1">Wanneer kom je ophalen?</h2>
-              <p class="muted">Kies een vrije dag en een ophaalmoment in ons bakatelier in Oostende.</p>
+              <p class="muted">Kies een vrije dag en een ophaalmoment in mijn bakatelier in Oostende.</p>
             </header>
 
             {#if submitError}
@@ -544,13 +545,13 @@
           {:else if step === 2}
             <header class="panel-head">
               <p class="eyebrow">Stap 3 van 4</p>
-              <h2 id="step-title-2">Hoe bereiken we je?</h2>
-              <p class="muted">We gebruiken je gegevens enkel om je aanvraag te bevestigen.</p>
+              <h2 id="step-title-2">Hoe bereik ik je?</h2>
+              <p class="muted">Ik gebruik je gegevens enkel om je aanvraag te bevestigen.</p>
             </header>
 
             <div class="grid-2">
               {#each [
-                { key: 'firstname', label: 'Voornaam', type: 'text', auto: 'given-name', placeholder: 'Nathalie' },
+                { key: 'firstname', label: 'Voornaam', type: 'text', auto: 'given-name', placeholder: 'Emma' },
                 { key: 'lastname', label: 'Achternaam', type: 'text', auto: 'family-name', placeholder: 'Peeters' },
                 { key: 'email', label: 'E-mailadres', type: 'email', auto: 'email', placeholder: 'jij@voorbeeld.be' },
                 { key: 'phone', label: 'Telefoon', type: 'tel', auto: 'tel', placeholder: '0486 12 34 56' },
@@ -576,8 +577,10 @@
               {/each}
             </div>
 
+            <!-- Honeypot: invisible to people, bots fill it in -->
+            <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" bind:value={website} />
             <label class="field">
-              <span class="legend">Nog iets dat we moeten weten? <small>(optioneel)</small></span>
+              <span class="legend">Nog iets dat ik moet weten? <small>(optioneel)</small></span>
               <textarea rows="3" maxlength="1000" placeholder="bv. levering bespreken, budget, vragen…" bind:value={message}></textarea>
             </label>
 
@@ -631,7 +634,7 @@
 
               <label class="agree" class:needs-attention={stepAttempted && !agreed}>
                 <input type="checkbox" bind:checked={agreed} />
-                <span>Ik ga akkoord met de <a href="/algemene-voorwaarden" target="_blank" rel="noopener">algemene voorwaarden</a> en de <a href="/privacy" target="_blank" rel="noopener">privacyverklaring</a>. Eventuele allergieën gebruiken we enkel om je bestelling veilig te maken.</span>
+                <span>Ik ga akkoord met de <a href="/algemene-voorwaarden" target="_blank" rel="noopener">algemene voorwaarden</a> en de <a href="/privacy" target="_blank" rel="noopener">privacyverklaring</a>. Eventuele allergieën gebruik ik enkel om je bestelling veilig te maken.</span>
               </label>
 
               {#if submitError}
@@ -883,4 +886,6 @@
     .needs-attention { animation: none; }
     .success-badge circle, .success-badge path { animation: none; stroke-dashoffset: 0; }
   }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 </style>
+

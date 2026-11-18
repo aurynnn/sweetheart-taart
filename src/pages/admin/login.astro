@@ -22,14 +22,14 @@ if (Astro.request.method === 'POST') {
 
   if (!credentialsConfigured()) {
     error = 'Inloggen is nog niet ingesteld (ADMIN_USERNAME / ADMIN_PASSWORD in .env).';
-  } else if (isLockedOut(ip)) {
+  } else if ((Astro.locals as any).rateLimited || await isLockedOut(ip)) {
     error = 'Te veel mislukte pogingen. Probeer het over 15 minuten opnieuw.';
   } else if (checkCredentials(username, password)) {
-    clearFailures(ip);
+    await clearFailures(ip);
     setSessionCookie(Astro.cookies, username.trim(), isSecureRequest(Astro.request, Astro.url));
     return Astro.redirect(next);
   } else {
-    registerFailure(ip);
+    await registerFailure(ip);
     // Small delay slows down guessing further
     await new Promise((r) => setTimeout(r, 600));
     error = 'Gebruikersnaam of wachtwoord klopt niet.';

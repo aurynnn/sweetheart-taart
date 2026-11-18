@@ -22,3 +22,15 @@ crons = ["0 * * * *"]
 binding = "DB"
 database_name = "sweetheart-db"
 database_id = "d4378307-5a1d-46b1-9c74-7097551a5006"
+
+# Built-in rate limiting per IP (see src/lib/rateLimit.ts). Period is 10 or 60 seconds.
+# namespace_id is any number unique within the Cloudflare account.
+[[ratelimits]]
+name = "LOGIN_LIMITER"
+namespace_id = "7301"
+simple = { limit = 5, period = 60 }
+
+[[ratelimits]]
+name = "FORM_LIMITER"
+namespace_id = "7302"
+simple = { limit = 20, period = 60 }

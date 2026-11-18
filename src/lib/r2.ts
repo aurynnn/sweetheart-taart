@@ -83,6 +83,20 @@ export async function listMedia(collection: string, fallback: MediaItem[] = []):
   }
 }
 
+/**
+ * A different set of gallery photos on every visit, for the collection hero collage.
+ * Falls back to fixed photos when the gallery is empty or unreachable.
+ */
+export function randomHeroPhotos(items: MediaItem[], fallback: string[], count = 3): string[] {
+  const pool = items.filter((m) => m.type === 'image').map((m) => m.src);
+  if (pool.length < count) return [...new Set([...pool, ...fallback])].slice(0, count);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
+}
+
 export async function putObject(key: string, body: ArrayBuffer | Uint8Array, contentType: string) {
   const { client, base } = r2();
   const res = await client.fetch(`${base}/${key}`, {

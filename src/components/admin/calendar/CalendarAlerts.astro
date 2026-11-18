@@ -1,7 +1,14 @@
 ---
 // CalendarAlerts.astro — success / error / disconnected banners
 
-const { connected, disconnected, error } = Astro.props;
+const { connected, disconnected, error, synced, failed, feedReset } = Astro.props;
+
+const ERRORS: Record<string, string> = {
+  access_denied: 'Je hebt de toegang in Google geweigerd. Probeer opnieuw en klik op "Toestaan".',
+  not_configured: 'Google Agenda is nog niet ingesteld op de server (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).',
+  state: 'De koppeling is verlopen of kwam niet van deze pagina. Probeer opnieuw.',
+  token_exchange_failed: 'Google kon de koppeling niet afronden. Probeer opnieuw.',
+};
 ---
 
 {connected && (
@@ -10,7 +17,7 @@ const { connected, disconnected, error } = Astro.props;
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
       <polyline points="22 4 12 14.01 9 11.01"></polyline>
     </svg>
-    <span><strong>Succes!</strong> Je Google Agenda is succesvol verbonden.</span>
+    <span><strong>Verbonden!</strong> Je bestellingen worden nu in de agenda <em>Sweetheart bestellingen</em> gezet. Dat kan een minuutje duren.</span>
   </div>
 )}
 
@@ -32,6 +39,18 @@ const { connected, disconnected, error } = Astro.props;
       <line x1="15" y1="9" x2="9" y2="15"></line>
       <line x1="9" y1="9" x2="15" y2="15"></line>
     </svg>
-    <span><strong>Fout:</strong> Er ging iets mis bij het verbinden.</span>
+    <span><strong>Fout:</strong> {ERRORS[error] ?? 'Er ging iets mis bij het verbinden.'}</span>
+  </div>
+)}
+
+{synced !== null && synced !== undefined && (
+  <div class={`alert ${failed ? 'alert-warning' : 'alert-success'}`}>
+    <span><strong>Gesynchroniseerd.</strong> {synced} bestelling{synced === '1' ? '' : 'en'} bijgewerkt in Google Agenda{failed ? `, ${failed} mislukt` : ''}.</span>
+  </div>
+)}
+
+{feedReset && (
+  <div class="alert alert-warning">
+    <span><strong>Nieuwe link gemaakt.</strong> De oude agenda-link werkt niet meer. Verwijder de oude agenda in Google en klik opnieuw op "Toevoegen aan Google Agenda".</span>
   </div>
 )}

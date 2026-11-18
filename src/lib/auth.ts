@@ -7,22 +7,55 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type { AstroCookies } from 'astro';
 import { env } from './env';
+import { d1Query } from './d1';
 
 export const SESSION_COOKIE = 'sh_admin';
 const SESSION_HOURS = 12;
 
 // ── Brute-force protection: max 5 failed attempts per IP per 15 minutes ──
+// Stored in D1 so the count holds across all Worker instances; the Map is the fallback
+// when the database can't be reached.
 const WINDOW_MS = 15 * 60_000;
 const MAX_FAILS = 5;
 const fails = new Map<string, number[]>();
+let tableReady = false;
 
-export function isLockedOut(ip: string): boolean {
+async function failuresTable(): Promise<void> {
+  if (tableReady) return;
+  await d1Query('CREATE TABLE IF NOT EXISTS login_failures (ip TEXT NOT NULL, at INTEGER NOT NULL)');
+  await d1Query('CREATE INDEX IF NOT EXISTS idx_login_failures_ip ON login_failures (ip, at)');
+  tableReady = true;
+}
+
+function memoryCount(ip: string): number {
   const recent = (fails.get(ip) ?? []).filter((t) => Date.now() - t < WINDOW_MS);
   fails.set(ip, recent);
-  return recent.length >= MAX_FAILS;
+  return recent.length;
 }
-export const registerFailure = (ip: string) => fails.set(ip, [...(fails.get(ip) ?? []), Date.now()]);
-export const clearFailures = (ip: string) => fails.delete(ip);
+
+export async function isLockedOut(ip: string): Promise<boolean> {
+  try {
+    await failuresTable();
+    const res = await d1Query('SELECT COUNT(*) as n FROM login_failures WHERE ip = ? AND at > ?', [ip, Date.now() - WINDOW_MS]);
+    return Number(res.results?.[0]?.n ?? 0) >= MAX_FAILS;
+  } catch {
+    return memoryCount(ip) >= MAX_FAILS;
+  }
+}
+
+export async function registerFailure(ip: string): Promise<void> {
+  fails.set(ip, [...(fails.get(ip) ?? []), Date.now()]);
+  try {
+    await failuresTable();
+    await d1Query('INSERT INTO login_failures (ip, at) VALUES (?, ?)', [ip, Date.now()]);
+    await d1Query('DELETE FROM login_failures WHERE at < ?', [Date.now() - 24 * 3600_000]);
+  } catch { /* memory fallback already counted it */ }
+}
+
+export async function clearFailures(ip: string): Promise<void> {
+  fails.delete(ip);
+  try { await d1Query('DELETE FROM login_failures WHERE ip = ?', [ip]); } catch { /* ignore */ }
+}
 
 export function credentialsConfigured(): boolean {
   return !!env('ADMIN_USERNAME') && !!env('ADMIN_PASSWORD');

@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /admin
+Disallow: /api/
+Disallow: /agenda/
+Disallow: /beoordeling
+Disallow: /herinnering
+Disallow: /uitschrijven
+
+Sitemap: https://sweetheart-taart.com/sitemap.xml

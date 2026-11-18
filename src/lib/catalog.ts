@@ -46,7 +46,7 @@ export const PERSONS: Option[] = [
 ];
 
 export const FLAVORS: Option[] = [
-  { value: '', label: 'Geen voorkeur', hint: 'Nathalie adviseert' },
+  { value: '', label: 'Geen voorkeur', hint: 'Ik adviseer je graag' },
   { value: 'vanille-bisquit-slagroom', label: 'Vanille biscuit met slagroom' },
   { value: 'vanille-bisquit-aardbei', label: 'Vanille biscuit met aardbei' },
   { value: 'chocolade-bisquit-framboos', label: 'Chocolade biscuit met framboos' },

@@ -148,7 +148,7 @@
 
   <p class="cal-hint" aria-live="polite">
     {#if hint}<i class="fa-solid fa-circle-info" aria-hidden="true"></i> {hint}
-    {:else if failed}Beschikbaarheid kon niet geladen worden — we controleren je datum bij het versturen.
+    {:else if failed}Beschikbaarheid kon niet geladen worden — ik controleer je datum bij het versturen.
     {:else}
       <span class="legend-item"><span class="sw open"></span>vrij</span>
       <span class="legend-item"><span class="sw limited"></span>bijna volzet</span>

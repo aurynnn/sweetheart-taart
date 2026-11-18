@@ -10,6 +10,7 @@ import { listOrders, type FullOrder } from './orderRepo';
 import { ensureReminderTables, listReminders, listOptouts, type Reminder } from './reminders';
 import { ensureReviewTable } from './reviews';
 import { deleteObject } from './r2';
+import { removeOrderEvents } from './googleCalendar';
 
 export interface CustomerSummary {
   id: string;
@@ -157,6 +158,9 @@ export async function eraseCustomer(id: string): Promise<boolean> {
     await d1Query(`UPDATE order_items SET ${itemSets.join(', ')} WHERE order_id IN (${inList})`, orderIds);
     await d1Query(`UPDATE review_requests SET feedback = NULL, liked = NULL WHERE order_id IN (${inList})`, orderIds);
   }
+
+  // 4. Calendar events carry name, phone and allergies → remove them from Google Agenda
+  if (orderIds.length) await removeOrderEvents(orderIds);
 
   // 4. Reminders and opt-out entry contain the e-mail address → delete
   await ensureReminderTables();
