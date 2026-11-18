@@ -1,5 +1,6 @@
 ---
 import { formatDate } from '../../../lib/dates';
+import { flavorLabel } from '../../../lib/catalog';
 export interface OrderItem {
   product: string;
   event?: string;
@@ -110,7 +111,7 @@ const sc = statusConfig[order.status] || statusConfig.pending;
           <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
           </svg>
-          {firstItem.flavor}
+          {flavorLabel(firstItem.flavor)}
         </span>
       )}
     </div>

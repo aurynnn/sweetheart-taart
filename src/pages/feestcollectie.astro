@@ -7,6 +7,8 @@ import GalleryModal from '../components/GalleryModal.svelte';
 import CollectionHero from '../components/collection/CollectionHero.astro';
 import feestcollectieMedia from '../data/feestcollectie-media.json';
 import { listMedia, randomHeroPhotos, type MediaItem } from '../lib/r2';
+import { CAKE_SIZES, CAKE_FLAVORS, FLAVOR_CATEGORIES, formatEuroNl } from '../lib/catalog';
+import { SITE } from '../config/site';
 
 // Live from R2 (cached), with the checked-in list as fallback when R2 is unreachable
 const galleryImages = await listMedia('feestcollectie', feestcollectieMedia as MediaItem[]);
@@ -14,27 +16,41 @@ const galleryImages = await listMedia('feestcollectie', feestcollectieMedia as M
 const heroPhotos = randomHeroPhotos(galleryImages, ['/images/trouwtaart.png']);
 
 const features = [
-  { icon: 'fa-user-group', title: 'Vanaf 8 personen', text: 'Eénlaagstaart' },
-  { icon: 'fa-layer-group', title: 'Vanaf 15 personen', text: 'Stapeltaart' },
-  { icon: 'fa-ruler-vertical', title: '8 cm hoog', text: 'Ruime porties' },
-  { icon: 'fa-wand-magic-sparkles', title: 'Op maat', text: 'Per laag een andere smaak' },
+  { icon: 'fa-user-group', title: 'Vanaf 8 personen', text: 'Eénlaagstaart tot 20 personen' },
+  { icon: 'fa-layer-group', title: 'Vanaf 16 personen', text: '2-laagstaart, per laag een smaak' },
+  { icon: 'fa-crown', title: 'Vanaf 36 personen', text: '3-laagstaart' },
+  { icon: 'fa-wand-magic-sparkles', title: 'Volledig in thema', text: 'Eetbare print inbegrepen' },
 ];
 
 const layers = [
-  { icon: 'fa-cake-candles', title: 'Luchtige biscuit', text: 'De basis van elke feesttaart, vers gebakken met speltbloem en bio-eitjes.' },
-  { icon: 'fa-ice-cream', title: 'Mousse-vulling', text: 'Aardbeien, frambozen, bananen of bosvruchten — of een rijke chocolademousse.' },
-  { icon: 'fa-brush', title: 'Afwerking', text: 'Afgesmeerd met botercrème of chocoladeganache en versierd volgens jouw thema.' },
+  { icon: 'fa-cake-candles', title: 'Luchtige biscuit', text: 'Vers en ambachtelijk gebakken met hoogwaardige ingrediënten.' },
+  { icon: 'fa-ice-cream', title: 'Romige vulling', text: 'Elke vulling is opgebouwd op een rijke, luchtige crème van verse room en mascarpone — enkel de cream cheese is een uitzondering.' },
+  { icon: 'fa-brush', title: 'Afwerking', text: 'Afgesmeerd met zijdezachte Swiss Meringue botercrème en volledig gedecoreerd in jouw thema, inclusief eetbare print.' },
 ];
 
 const knowHow = [
-  'Taarten worden meegegeven in aangepaste dozen',
-  'Bewaren: koel en droog',
-  'Per laag kan een verschillende smaak gekozen worden',
-  'Allergieën? Ik denk graag mee!',
+  'Eetbare print & thema-decoratie inbegrepen',
+  'Figuren, 3D of kunststof toppers: meerprijs na afspraak',
+  'Bewaren in de koelkast, 30–45 min. voor het aansnijden eruit',
+  'Kan sporen van gluten, noten en zuivel bevatten',
 ];
+
+// Price tables straight from the catalog, so page, form and stored totals always match
+const priceRows = (layers: 1 | 2) => CAKE_SIZES.filter(s => s.layers === layers).map(s => ({
+  persons: s.persons,
+  prices: FLAVOR_CATEGORIES.map(c => formatEuroNl(s.base + c.surcharge * s.persons)),
+  deposit: formatEuroNl(s.deposit),
+}));
+const priceTables = [
+  { title: 'Eénlaagstaart', sub: '8 tot 20 personen', rows: priceRows(1) },
+  { title: '2-laagstaart', sub: '16 tot 34 personen', rows: priceRows(2) },
+];
+const threeLayer = CAKE_SIZES.find(s => s.layers === 3)!;
+const flavorGroups = FLAVOR_CATEGORIES.map(c => ({ ...c, flavors: CAKE_FLAVORS.filter(f => f.category === c.id) }));
+const minPrice = CAKE_SIZES[0].base;
 ---
 
-<Layout title="Feestcollectie" description="Feestelijke taarten voor elke gelegenheid. Van verjaardag tot jubileum, met heerlijke mousse-vullingen en ambachtelijke afwerking." bodyClass="collection-page">
+<Layout title="Feestcollectie" description="Feesttaarten op maat vanaf 8 personen (€88): vullingen met verse room en mascarpone, Swiss Meringue botercrème, volledig in jouw thema. Smaken en tarieven." bodyClass="collection-page">
   <Header />
 
   <main id="feestcollectie-main" class="collection">
@@ -42,7 +58,7 @@ const knowHow = [
       id="feestcollectie-hero"
       badge="Feestcollectie"
       title="De prachtigste feesttaarten"
-      subtitle="Mijn mooie, vrolijke feesttaarten bestaan uit een luchtige biscuit met heerlijke mousse-vullingen — volledig in het thema van jouw feest."
+      subtitle="Vers en ambachtelijk gebakken, gevuld met een luchtige crème van verse room en mascarpone en volledig gedecoreerd in het thema van jouw feest."
       product="feesttaart"
       ctaLabel="Bestellen"
       photos={heroPhotos}
@@ -70,7 +86,7 @@ const knowHow = [
           <span class="eyebrow animate-on-scroll">Wat zit erin?</span>
           <h2 class="section-title" data-split>Laag voor laag lekker</h2>
           <p class="text-[var(--color-text-muted)] leading-relaxed animate-on-scroll stagger-1">
-            Ze worden gevuld met een heerlijke vruchten- of chocolademousse. Als basis bied ik aardbeien-, frambozen-, bananen- of bosvruchtenmousse aan. Dit geheel wordt afgesmeerd met botercrème of chocoladeganache voor een perfecte afwerking.
+            Uniek aan mijn taarten: álle vullingen zijn opgebouwd op een rijke, luchtige crème van verse room en mascarpone, zodat het eindresultaat licht blijft. Elke taart wordt afgesmeerd met Swiss Meringue botercrème en volledig in jouw thema gedecoreerd — een taart voor de basisprijs is dus al helemaal af, zonder meerkost.
           </p>
         </div>
         <ol class="layers">
@@ -84,6 +100,62 @@ const knowHow = [
             </li>
           ))}
         </ol>
+      </div>
+    </section>
+
+    <!-- Smaken -->
+    <section id="smaken" class="section c-section">
+      <div class="container">
+        <header class="c-head">
+          <span class="eyebrow animate-on-scroll">Smaken</span>
+          <h2 class="section-title" data-split>Kies je smaakcombinatie</h2>
+          <p class="c-lead animate-on-scroll">De prijs hangt af van de luxe van de ingrediënten en de vulling. Een toeslag geldt per persoon.</p>
+        </header>
+        <div class="flavor-grid">
+          {flavorGroups.map((g, i) => (
+            <div class={`flavor-card animate-on-scroll stagger-${i + 1}`}>
+              <h3>{g.name}<span>{g.surcharge ? `+ ${formatEuroNl(g.surcharge)} p.p.` : 'inbegrepen'}</span></h3>
+              <ul>
+                {g.flavors.map(f => (<li><strong>{f.label}</strong><p>{f.description}</p></li>))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Prijzen -->
+    <section id="prijzen" class="section c-section">
+      <div class="container">
+        <header class="c-head">
+          <span class="eyebrow animate-on-scroll">Prijzen</span>
+          <h2 class="section-title" data-split>Tarieven</h2>
+          <p class="c-lead animate-on-scroll">Het opstarten van de keuken en het handwerk kost voor elke taart bijna evenveel tijd. Daarom een eerlijke staffelprijs: hoe groter de taart, hoe voordeliger per persoon.</p>
+        </header>
+        {priceTables.map(t => (
+          <div class="price-table-wrap animate-on-scroll">
+            <h3>{t.title} <small>{t.sub}</small></h3>
+            <div class="price-scroll">
+              <table class="price-table">
+                <thead>
+                  <tr><th scope="col">Personen</th>{FLAVOR_CATEGORIES.map(c => (<th scope="col">{c.name}<small>{c.surcharge ? `+ ${formatEuroNl(c.surcharge)} p.p.` : 'Luxe Vanille'}</small></th>))}<th scope="col">Voorschot</th></tr>
+                </thead>
+                <tbody>
+                  {t.rows.map(r => (<tr><th scope="row">{r.persons}</th>{r.prices.map(p => (<td>{p}</td>))}<td class="dep">{r.deposit}</td></tr>))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+        <p class="price-note animate-on-scroll">
+          <strong>3-laagstaart voor {threeLayer.persons} personen:</strong> vanaf {formatEuroNl(threeLayer.base)} (inclusief stapeltoeslag), voorschot {formatEuroNl(threeLayer.deposit)}. Meer dan {threeLayer.persons} personen? <a href={`mailto:${SITE.email}`}>Mail me</a> voor een prijs op maat.
+        </p>
+        <p class="price-note animate-on-scroll">
+          Van 16 tot 20 personen kies je zelf tussen één of twee lagen; een gestapelde taart kost iets meer omdat het stapelen extra werk is. Bij een gestapelde taart mag elke laag een andere smaak hebben: de duurste gekozen smaak bepaalt de toeslag voor alle personen. Bestellen kan per 2 personen, je kiest zelf naar welk formaat je afrondt.
+        </p>
+        <p class="price-note animate-on-scroll">
+          Je bestelling is definitief zodra het voorschot betaald is via de betaallink die je van mij krijgt (binnen 3 dagen). Het saldo betaal je bij het afhalen, contant of met Payconiq. Geboetseerde figuren, 3D-taarten of kunststof caketoppers kunnen mits vooraf afgesproken meerprijs.
+        </p>
       </div>
     </section>
 
@@ -106,8 +178,8 @@ const knowHow = [
         <div class="c-price-card animate-on-scroll" data-tilt="3">
           <div class="c-price">
             <span class="c-price-label">Vanaf</span>
-            <span class="c-price-amount">€<span data-counter="45" data-counter-from="0">45</span></span>
-            <span class="c-price-unit">per feesttaart</span>
+            <span class="c-price-amount">€<span data-counter={minPrice} data-counter-from="0">{minPrice}</span></span>
+            <span class="c-price-unit">voor 8 personen</span>
             <small>indicatie · definitieve prijs na bevestiging</small>
           </div>
           <div class="c-price-body">
@@ -156,15 +228,45 @@ const knowHow = [
   .layer-icon { width: 3rem; height: 3rem; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; background: var(--color-secondary); color: var(--color-primary-dark); font-size: 1.2rem; }
   .layer h3 { font-family: var(--font-heading); font-size: 1.5rem; margin: 0; }
   .layer p { margin: 0.2rem 0 0; color: var(--color-text-muted); font-size: 0.92rem; line-height: 1.6; }
+  .c-lead { max-width: 42rem; margin: 0.75rem auto 0; color: var(--color-text-muted); line-height: 1.7; }
+
+  .flavor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+  .flavor-card { padding: 1.5rem 1.6rem; border-radius: 1.25rem; background: #fff; border: 1px solid var(--color-border-light); box-shadow: var(--shadow-md); }
+  .flavor-card h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin: 0 0 0.9rem; font-family: var(--font-heading); font-size: 1.6rem; }
+  .flavor-card h3 span { font-family: var(--font-body); font-size: 0.8rem; font-weight: 800; color: var(--color-primary-dark); background: var(--color-secondary); padding: 0.25rem 0.7rem; border-radius: 999px; white-space: nowrap; }
+  .flavor-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+  .flavor-card strong { font-size: 0.95rem; }
+  .flavor-card p { margin: 0.1rem 0 0; font-size: 0.86rem; line-height: 1.55; color: var(--color-text-muted); }
+
+  .price-table-wrap { margin: 0 auto 2rem; max-width: 56rem; }
+  .price-table-wrap h3 { font-family: var(--font-heading); font-size: 1.7rem; margin: 0 0 0.6rem; }
+  .price-table-wrap h3 small { font-family: var(--font-body); font-size: 0.85rem; color: var(--color-text-muted); font-weight: 600; margin-left: 0.4rem; }
+  .price-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 1.1rem; border: 1px solid var(--color-border-light); background: #fff; box-shadow: var(--shadow-md); }
+  .price-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+  .price-table th, .price-table td { padding: 0.65rem 0.9rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--color-border-light); }
+  .price-table thead th { background: var(--color-secondary); color: var(--color-primary-dark); font-size: 0.8rem; font-weight: 800; vertical-align: bottom; }
+  .price-table thead th small { display: block; font-weight: 500; color: var(--color-text-muted); }
+  .price-table th:first-child { text-align: left; position: sticky; left: 0; background: #fff; }
+  .price-table thead th:first-child { background: var(--color-secondary); }
+  .price-table tbody tr:last-child th, .price-table tbody tr:last-child td { border-bottom: 0; }
+  .price-table td.dep { color: var(--color-text-muted); }
+  .price-note a { color: var(--color-primary-dark); font-weight: 700; }
+  .price-note { max-width: 56rem; margin: 0 auto 1rem; color: var(--color-text-muted); line-height: 1.7; font-size: 0.95rem; }
+
   .order-intro { color: var(--color-text-muted); margin: 0 0 1.25rem; }
 
   @media (max-width: 900px) {
     .layers-grid { grid-template-columns: 1fr; gap: 2rem; }
     .layer { margin-left: 0; }
+    .flavor-grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 480px) {
     .fact { padding: 1.25rem 0.75rem; }
     .fact-icon { width: 3rem; height: 3rem; font-size: 1.15rem; }
     .layer { padding: 1rem 1.1rem; }
+    .flavor-card { padding: 1.2rem 1.1rem; }
+    .flavor-card h3 { font-size: 1.35rem; }
+    .price-table { font-size: 0.85rem; }
+    .price-table th, .price-table td { padding: 0.55rem 0.65rem; }
   }
 </style>

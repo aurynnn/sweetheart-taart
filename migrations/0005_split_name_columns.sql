@@ -11,3 +11,7 @@ UPDATE customers SET
   firstname = TRIM(SUBSTR(name, 1, INSTR(name || ' ', ' ') - 1)),
   lastname  = TRIM(SUBSTR(name, INSTR(name, ' ') + 1))
 WHERE name LIKE '% %';
+
+-- One-word names (no space): keep the whole name as firstname
+UPDATE customers SET firstname = TRIM(name), lastname = ''
+WHERE firstname IS NULL AND name NOT LIKE '% %';

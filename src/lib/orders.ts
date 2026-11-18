@@ -1,6 +1,6 @@
 // src/lib/orders.ts — Shared order rendering helpers for the admin panel
 
-import { EVENTS, FLAVORS, MINI_TYPES, TOPPERS, optionLabel, productName } from './catalog';
+import { EVENTS, MINI_TYPES, cakeSize, flavorLabel, topperLabel, optionLabel, productName } from './catalog';
 
 export interface OrderItem {
   product?: string;
@@ -109,9 +109,9 @@ export function renderOrderDetail(input: Order): string {
     const icon = productIcons[item.product || ''] || '<i class="fa-solid fa-box"></i>';
     const price = item.price ? `€${Number(item.price).toFixed(2)}` : '—';
     const fields: string[] = [];
-    if (item.persons)  fields.push(fieldHtml('Aantal personen', esc(item.persons)));
-    if (item.flavor)   fields.push(fieldHtml('Smaak', esc(optionLabel(FLAVORS, item.flavor))));
-    if (item.topper)   fields.push(fieldHtml('Taarttopper', esc(optionLabel(TOPPERS, item.topper))));
+    if (item.persons)  fields.push(fieldHtml('Aantal personen', esc(cakeSize(item) ? `${cakeSize(item)!.label} (${cakeSize(item)!.hint})` : item.persons)));
+    if (item.flavor)   fields.push(fieldHtml('Smaak', esc(flavorLabel(item.flavor))));
+    if (item.topper)   fields.push(fieldHtml('Taarttopper', esc(topperLabel(item.topper))));
     if (item.miniType) fields.push(fieldHtml('Type', esc(optionLabel(MINI_TYPES, item.miniType))));
     if (item.quantity && item.product !== 'feesttaart') fields.push(fieldHtml('Aantal', `${esc(item.quantity)} stuks`));
     return `

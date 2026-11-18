@@ -124,7 +124,19 @@ export function isSecureRequest(request: Request, url: URL): boolean {
 }
 
 /** Which requests need a logged-in admin */
-export function requiresAdmin(pathname: string, method: string): boolean {
+/**
+ * One spelling per route for security checks: Astro also serves "/api/availability/"
+ * and "//api/availability", so exact comparisons on the raw path could be bypassed.
+ */
+export function normalizePath(pathname: string): string {
+  let p = pathname;
+  try { p = decodeURIComponent(p); } catch { /* keep raw */ }
+  p = p.toLowerCase().replace(/\/{2,}/g, '/');
+  return p.length > 1 ? p.replace(/\/+$/, '') : p;
+}
+
+export function requiresAdmin(rawPath: string, method: string): boolean {
+  const pathname = normalizePath(rawPath);
   if (pathname === '/admin/login' || pathname === '/admin/logout') return false;
   if (pathname === '/admin' || pathname.startsWith('/admin/')) return true;
   // Order data and status changes; placing an aanvraag (POST) stays public

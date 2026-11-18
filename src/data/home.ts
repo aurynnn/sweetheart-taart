@@ -32,7 +32,7 @@ export const STEPS = [
   },
   {
     title: 'Ik bevestig',
-    text: 'Je krijgt van mij een mail met de bevestiging en definitieve prijs. Daarna is het aftellen tot het feest!',
+    text: 'Je krijgt van mij een mail met de bevestiging en definitieve prijs. Voor een taart betaal je een voorschot, daarna is het aftellen tot het feest!',
     icon: 'fa-heart',
     image: '/images/nathalie-portret-240.jpg',
   },

@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import FloatingCta from '../components/FloatingCta.astro';
+import { SITE } from '../config/site';
 
 interface Props {
   title: string;
@@ -10,6 +11,23 @@ interface Props {
 
 const { title, description = "Sweetheart – Koekjes, Cake en Taart. Ambachtelijke Belgische bakkerij in Oostende. Feesttaarten, koekjes, mini-gebak en meer.", bodyClass = "" } = Astro.props;
 const showFloatingCta = !Astro.url.pathname.startsWith('/aanvraag');
+// Always the public domain (not localhost or a tunnel), without query string or trailing slash
+const canonical = SITE.url + (Astro.url.pathname === '/' ? '/' : Astro.url.pathname.replace(/\/+$/, ''));
+const ogImage = `${SITE.url}/images/trouwtaart.png`;
+// Lets Google show the bakery with address, phone and price range (home page only)
+const isHome = Astro.url.pathname === '/';
+const businessLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Bakery',
+  name: `${SITE.name} – ${SITE.tagline}`,
+  url: SITE.url,
+  image: ogImage,
+  telephone: SITE.phone.international,
+  email: SITE.email,
+  priceRange: '€€',
+  address: { '@type': 'PostalAddress', streetAddress: SITE.address.street, postalCode: SITE.address.postalCode, addressLocality: SITE.address.city, addressCountry: 'BE' },
+  sameAs: [SITE.social.facebook, SITE.social.instagram],
+};
 ---
 
 <!doctype html>
@@ -24,12 +42,18 @@ const showFloatingCta = !Astro.url.pathname.startsWith('/aanvraag');
     <meta property="og:title" content={`${title} | Sweetheart Taart`} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content={new URL("/images/trouwtaart.png", Astro.url).href} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Sweetheart Taart" />
+    <meta property="og:locale" content="nl_BE" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href={canonical} />
+    {isHome && <script type="application/ld+json" set:html={JSON.stringify(businessLd)} />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700;900&display=swap" rel="stylesheet" />
+    <!-- Caveat is self-hosted (public/fonts): no visitor IP addresses go to Google -->
+    <link rel="preload" href="/fonts/caveat-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>{title} | Sweetheart Taart</title>
   </head>
   <body class={`min-h-screen flex flex-col ${bodyClass}`}>

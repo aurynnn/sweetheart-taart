@@ -1,7 +1,7 @@
 // src/lib/email/templates.ts — The e-mails Sweetheart sends. Each returns subject + HTML + plain text.
 
 import { SITE, fullAddress, directionsUrl } from '../../config/site';
-import { itemPrice, itemSummary, productName, formatEuro, type AanvraagItem } from '../catalog';
+import { itemPrice, itemDeposit, itemSummary, productName, formatEuro, type AanvraagItem } from '../catalog';
 import type { FullOrder } from '../orderRepo';
 import { occasionLabel } from '../reminders';
 import {
@@ -59,11 +59,15 @@ function itemsText(order: FullOrder): string {
   }).join('\n') + `\nTotaal (indicatie): ${order.total}`;
 }
 
+/** Fixed deposit for the feesttaarten in this order (0 when there are none). */
+const orderDeposit = (order: FullOrder) => order.items.reduce((s, i) => s + itemDeposit(i as AanvraagItem), 0);
+
 const contactText = `${SITE.owner} — ${SITE.name}\n${fullAddress}\n${SITE.phone.display} · ${SITE.email}`;
 const phoneLink = () => `<a href="${esc(SITE.phone.href)}" style="color:${COLORS.pinkDark};font-weight:700">${esc(SITE.phone.display)}</a>`;
 
 // ── 1. Customer: aanvraag ontvangen ────────────────────────────────────────
 export function aanvraagOntvangen(order: FullOrder): RenderedEmail {
+  const deposit = orderDeposit(order);
   const body = [
     paragraph(`Hoi ${esc(firstName(order))}! 💕 Wat leuk dat je aan mij denkt. Je aanvraag is goed ontvangen — hieronder vind je een overzicht.`),
     pickupCard({ when: pickup(order), address: fullAddress, directionsHref: directionsUrl }),
@@ -71,11 +75,12 @@ export function aanvraagOntvangen(order: FullOrder): RenderedEmail {
     eyebrow('Wat gebeurt er nu?'),
     timeline([
       { title: 'Aanvraag ontvangen', text: 'Dat is gelukt!', state: 'done' },
-      { title: 'Ik bekijk je aanvraag', text: 'Meestal binnen 1 à 2 werkdagen.', state: 'current' },
-      { title: 'Je krijgt een bevestiging', text: 'Per mail, met de definitieve prijs.', state: 'next' },
+      { title: 'Ik bekijk je aanvraag', text: 'Zo snel mogelijk — soms duurt het een paar dagen.', state: 'current' },
+      { title: 'Je krijgt een bevestiging', text: deposit ? `Per mail, met de definitieve prijs en een betaallink voor het voorschot van ${formatEuro(deposit)}.` : 'Per mail, met de definitieve prijs.', state: 'next' },
       { title: 'Ophalen & smullen', text: pickup(order), state: 'next' },
     ]),
-    paragraph(`Dit is een <strong>vrijblijvende aanvraag</strong> — je betaalt nu nog niets. Iets wijzigen of een vraag? Beantwoord gewoon deze mail of bel ${phoneLink()}.`),
+    paragraph(`Ik doe mijn uiterste best om zo snel mogelijk te antwoorden. Omdat ik een eenmanszaak ben en de meeste uren gezellig in de keuken sta te bakken, kan het soms een paar dagen duren. Heb je binnen 5 dagen nog niets van mij gehoord? Trek dan gerust even aan mijn oren — dan is je aanvraag waarschijnlijk per ongeluk tussen de bloem en de suiker beland!`),
+    paragraph(`Dit is een <strong>vrijblijvende aanvraag</strong> — je betaalt nu nog niets.${deposit ? ` Je datum staat pas definitief vast zodra het voorschot betaald is.` : ''} Iets wijzigen of een vraag? Beantwoord gewoon deze mail of bel ${phoneLink()}.`),
     hearts(),
   ].join('');
   return {
@@ -85,7 +90,7 @@ export function aanvraagOntvangen(order: FullOrder): RenderedEmail {
       hero: { eyebrow: 'Aanvraag ontvangen', title: `Bedankt, ${firstName(order)}!`, subtitle: 'Ik ga er iets moois van maken.', art: 'cupcake' },
       body,
     }),
-    text: `Bedankt, ${firstName(order)}!\n\nIk heb je aanvraag #${order.id} goed ontvangen.\n\nOphalen: ${pickup(order)}\n${fullAddress}\n\n${itemsText(order)}\n\nIk bekijk je aanvraag en bevestig meestal binnen 1 à 2 werkdagen, met de definitieve prijs. Je betaalt nu nog niets.\n\n${contactText}`,
+    text: `Bedankt, ${firstName(order)}!\n\nIk heb je aanvraag #${order.id} goed ontvangen.\n\nOphalen: ${pickup(order)}\n${fullAddress}\n\n${itemsText(order)}\n\nIk bekijk je aanvraag zo snel mogelijk en stuur je een bevestiging met de definitieve prijs${deposit ? ` en een betaallink voor het voorschot van ${formatEuro(deposit)}` : ''}. Omdat ik een eenmanszaak ben en meestal in de keuken sta, kan dat soms een paar dagen duren. Na 5 dagen nog niets gehoord? Stuur me gerust een geheugensteuntje.\n\nJe betaalt nu nog niets.\n\n${contactText}`,
   };
 }
 
@@ -119,17 +124,28 @@ export function nieuweAanvraag(order: FullOrder): RenderedEmail {
 
 // ── 3. Customer: bevestigd ─────────────────────────────────────────────────
 export function aanvraagBevestigd(order: FullOrder): RenderedEmail {
+  const deposit = orderDeposit(order);
+  const depositText = `Je ontvangt van mij een betaallink voor het voorschot van ${formatEuro(deposit)}. Betaal het binnen 3 dagen, dan staat je bestelling definitief in mijn agenda; anders vervalt de optie.`;
   const body = [
     paragraph(`Hoi ${esc(firstName(order))}, goed nieuws: je aanvraag is <strong>bevestigd</strong>! Ik ga met veel liefde voor je aan de slag. 🎉`),
+    deposit ? paragraph(`<strong>Voorschot:</strong> ${esc(depositText)}`) : '',
     pickupCard({ when: pickup(order), address: fullAddress, note: 'De bel van het atelier hangt aan de carport, naast het uithangbord.', directionsHref: directionsUrl }),
     ticket(order),
     eyebrow('Handig om te weten'),
     timeline([
-      { title: 'Aanvraag bevestigd', text: 'Je taart staat in mijn agenda.', state: 'done' },
-      { title: 'Ophalen', text: `${pickup(order)} — betalen kan contant of met Payconiq.`, state: 'current' },
-      { title: 'Genieten!', text: 'Haal je taart een half uurtje op voorhand uit de koelkast.', state: 'next' },
+      ...(deposit
+        ? [
+            { title: 'Aanvraag bevestigd', text: 'Je datum wordt voor je vrijgehouden.', state: 'done' as const },
+            { title: 'Voorschot betalen', text: `${formatEuro(deposit)} via de betaallink, binnen 3 dagen.`, state: 'current' as const },
+            { title: 'Ophalen', text: `${pickup(order)} — het saldo betaal je contant of met Payconiq.`, state: 'next' as const },
+          ]
+        : [
+            { title: 'Aanvraag bevestigd', text: 'Je bestelling staat in mijn agenda.', state: 'done' as const },
+            { title: 'Ophalen', text: `${pickup(order)} — betalen kan contant of met Payconiq.`, state: 'current' as const },
+          ]),
+      { title: 'Genieten!', text: 'Bewaar je taart in de koelkast en haal ze 30 à 45 minuten voor het aansnijden eruit.', state: 'next' },
     ]),
-    paragraph(`Te laat of verhinderd? Laat het even weten via ${phoneLink()}. <a href="${esc(siteUrl('/tips#bewaren'))}" style="color:${COLORS.pinkDark};font-weight:700">Bekijk mijn tips</a> om je taart mooi thuis te krijgen.`),
+    paragraph(`Vervoer de taartdoos altijd plat op de vloer van de passagierskant of in een vlakke koffer — nooit op schoot of op een autostoel. Te laat of verhinderd? Laat het even weten via ${phoneLink()}. <a href="${esc(siteUrl('/tips#bewaren'))}" style="color:${COLORS.pinkDark};font-weight:700">Bekijk mijn tips</a> om je taart mooi thuis te krijgen.`),
     hearts(),
   ].join('');
   return {
@@ -139,7 +155,7 @@ export function aanvraagBevestigd(order: FullOrder): RenderedEmail {
       hero: { eyebrow: 'Bevestigd', title: `Joepie, ${firstName(order)}!`, subtitle: 'Je aanvraag is in orde — tot snel!', art: 'cake' },
       body,
     }),
-    text: `Joepie ${firstName(order)}, het is in orde!\n\nJe aanvraag #${order.id} is bevestigd.\n\nOphalen: ${pickup(order)}\n${fullAddress}\nRoute: ${directionsUrl}\n\n${itemsText(order)}\n\nJe betaalt bij het ophalen (contant of Payconiq).\nTips: ${siteUrl('/tips')}\n\n${contactText}`,
+    text: `Joepie ${firstName(order)}, het is in orde!\n\nJe aanvraag #${order.id} is bevestigd.\n\nOphalen: ${pickup(order)}\n${fullAddress}\nRoute: ${directionsUrl}\n\n${itemsText(order)}\n\n${deposit ? `${depositText}\nHet saldo betaal je bij het ophalen (contant of Payconiq).` : 'Je betaalt bij het ophalen (contant of Payconiq).'}\nVervoer de taartdoos plat op de vloer van de auto of in een vlakke koffer, nooit op schoot.\nTips: ${siteUrl('/tips')}\n\n${contactText}`,
   };
 }
 

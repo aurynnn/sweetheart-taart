@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "sweetheart-test": {
+      "command": "node",
+      "args": ["mcp/server.mjs"],
+      "env": {
+        "SWEETHEART_BASE_URL": "http://localhost:4321"
+      }
+    }
+  }
+}

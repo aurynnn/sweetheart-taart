@@ -7,15 +7,16 @@
   import { cubicOut, backOut } from 'svelte/easing';
   import {
     type AanvraagItem, type ProductId,
-    PRODUCTS, EVENTS, PERSONS, FLAVORS, TOPPERS, MINI_TYPES, KOEKJES_QTY, MINI_MAX, MAX_ITEMS,
-    EMAIL_RE, isValidPhone, itemPrice, itemSummary, validateItem, formatEuro, optionLabel, productName,
+    PRODUCTS, EVENTS, CAKE_SIZES, CAKE_FLAVORS, FLAVOR_CATEGORIES, FLAVORS, TOPPERS, MINI_TYPES, KOEKJES_QTY, MINI_MAX, MAX_ITEMS,
+    EMAIL_RE, isValidPhone, itemPrice, itemSummary, validateItem, formatEuro, optionLabel, productName, itemDeposit, cakeFlavor, cakeSize, layerFlavors, flavorCategory, MAX_FORM_PERSONS,
   } from '../../lib/catalog';
   import AanvraagCalendar from './AanvraagCalendar.svelte';
   import Confetti from './Confetti.svelte';
   import { SITE, fullAddress, directionsUrl } from '../../config/site';
   import ImageDrop from './ImageDrop.svelte';
 
-  const DRAFT_KEY = 'sweetheart-aanvraag-draft-v1';
+  const DRAFT_KEY = 'sweetheart-aanvraag-draft-v2'; // v2: new cake sizes & flavours (nov 2026)
+  const SIZE_GROUPS = ([1, 2, 3] as const).map(layers => ({ layers, sizes: CAKE_SIZES.filter(s => s.layers === layers) }));
   const STEPS = [
     { id: 'producten', label: 'Producten', icon: 'fa-cake-candles' },
     { id: 'ophalen', label: 'Ophalen', icon: 'fa-calendar-day' },
@@ -53,6 +54,36 @@
   });
 
   let total = $derived(items.reduce((s, i) => s + itemPrice(i), 0));
+
+  // ── Flavour per layer (stacked cakes) ─────────────────────────────────
+  // Stored comma-separated in editor.flavor, bottom → top; the price follows the most expensive one.
+  const LAYER_LABELS: Record<number, string[]> = { 2: ['Onderste laag', 'Bovenste laag'], 3: ['Onderste laag', 'Middelste laag', 'Bovenste laag'] };
+  let layerCount = $derived(editor?.product === 'feesttaart' ? (cakeSize(editor)?.layers ?? 1) : 1);
+  let perLayer = $derived(!!layerFlavors(editor?.flavor));
+  function layerValues(): string[] {
+    const parts = layerFlavors(editor?.flavor) ?? [];
+    return Array.from({ length: layerCount }, (_, i) => parts[i] ?? '');
+  }
+  function setPerLayer(on: boolean) {
+    if (!editor) return;
+    const first = (layerFlavors(editor.flavor) ?? [editor.flavor ?? ''])[0] ?? '';
+    // A list of identical values marks "per layer" mode even before a choice differs
+    editor.flavor = on ? Array.from({ length: layerCount }, () => first).join(',') : first;
+  }
+  function setLayerFlavor(i: number, value: string) {
+    const parts = layerValues();
+    parts[i] = value;
+    editor!.flavor = parts.join(',');
+  }
+  // Fewer layers after changing the size: drop the extra flavours (back to one flavour for 1 layer)
+  $effect(() => {
+    if (!editor || editor.product !== 'feesttaart') return;
+    const parts = layerFlavors(editor.flavor);
+    if (!parts) return;
+    if (layerCount === 1) editor.flavor = parts[0] ?? '';
+    else if (parts.length !== layerCount) editor.flavor = layerValues().join(',');
+  });
+  let deposit = $derived(items.reduce((s, i) => s + itemDeposit(i), 0));
   let contactErrors = $derived({
     firstname: contact.firstname.trim() ? '' : 'Vul je voornaam in',
     lastname: contact.lastname.trim() ? '' : 'Vul je achternaam in',
@@ -276,8 +307,8 @@
       </p>
 
       <ol class="next-steps">
-        <li><span>1</span><div><strong>Ik bekijk je aanvraag</strong><p>Meestal binnen 1 à 2 werkdagen.</p></div></li>
-        <li><span>2</span><div><strong>Je krijgt een bevestiging</strong><p>Per mail of telefoon, met de definitieve prijs.</p></div></li>
+        <li><span>1</span><div><strong>Ik bekijk je aanvraag</strong><p>Zo snel mogelijk, soms duurt het een paar dagen. Na 5 dagen niets gehoord? Laat het me gerust weten.</p></div></li>
+        <li><span>2</span><div><strong>Je krijgt een bevestiging</strong><p>Per mail of telefoon, met de definitieve prijs{deposit ? ` en een betaallink voor het voorschot van ${formatEuro(deposit)}` : ""}.</p></div></li>
         <li><span>3</span><div><strong>Ophalen & smullen</strong><p>{formatDate(date)} om {time}, {fullAddress}.</p><a class="route" href={directionsUrl} target="_blank" rel="noopener"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Route plannen</a></div></li>
       </ol>
 
@@ -397,13 +428,17 @@
 
                   <fieldset class="field" class:needs-attention={editorHasError('personen')} tabindex="-1">
                     <legend>Aantal personen <span class="req">*</span></legend>
-                    <div class="tiles tiles-4">
-                      {#each PERSONS as o}
-                        <button type="button" class="tile" class:is-on={editor.persons === o.value} aria-pressed={editor.persons === o.value} onclick={() => (editor!.persons = o.value)}>
-                          <strong>{o.label}</strong><span>{o.hint}</span>
-                        </button>
-                      {/each}
-                    </div>
+                    {#each SIZE_GROUPS as g}
+                      <p class="size-group">{g.layers === 1 ? 'Eénlaagstaart' : `${g.layers}-laagstaart`}</p>
+                      <div class="tiles tiles-sizes">
+                        {#each g.sizes as o}
+                          <button type="button" class="tile" class:is-on={editor.persons === o.value} aria-pressed={editor.persons === o.value} onclick={() => (editor!.persons = o.value)}>
+                            <strong>{o.persons}</strong><span>pers. · {formatEuro(o.base)}</span>
+                          </button>
+                        {/each}
+                      </div>
+                    {/each}
+                    <p class="hint">Bestellen kan per 2 personen: kies zelf naar welk formaat je afrondt. Van 16 tot 20 personen kies je tussen één of twee lagen; een gestapelde taart kost iets meer door het extra werk. Meer dan {MAX_FORM_PERSONS} personen? <a href="mailto:{SITE.email}?subject=Aanvraag%20taart%20voor%20meer%20dan%20{MAX_FORM_PERSONS}%20personen">Mail me gerust</a>, dan maak ik een prijs op maat.</p>
                     {#if editorHasError('personen')}<p class="error" transition:slide>Kies het aantal personen</p>{/if}
                   </fieldset>
 
@@ -411,9 +446,10 @@
                     <legend>Taarttopper</legend>
                     <div class="chips">
                       {#each TOPPERS as o}
-                        <button type="button" class="chip" class:is-on={editor.topper === o.value} aria-pressed={editor.topper === o.value} onclick={() => (editor!.topper = o.value)}>{o.label}</button>
+                        <button type="button" class="chip" class:is-on={editor.topper === o.value} aria-pressed={editor.topper === o.value} onclick={() => (editor!.topper = o.value)}>{o.label}{#if o.hint}<small> · {o.hint}</small>{/if}</button>
                       {/each}
                     </div>
+                    <p class="hint">Elke taart wordt volledig in jouw thema gedecoreerd, inclusief eetbare print. Figuren, 3D-taarten en kunststof toppers kosten extra, altijd vooraf afgesproken.</p>
                   </fieldset>
                 {/if}
 
@@ -444,6 +480,49 @@
                   </div>
                 {/if}
 
+                {#if editor.product === 'feesttaart'}
+                <fieldset class="field">
+                  <legend>Smaak</legend>
+                  {#if layerCount > 1}
+                    <div class="layer-mode" role="group" aria-label="Smaak per laag">
+                      <button type="button" class="chip" class:is-on={!perLayer} aria-pressed={!perLayer} onclick={() => setPerLayer(false)}>Eén smaak voor de hele taart</button>
+                      <button type="button" class="chip" class:is-on={perLayer} aria-pressed={perLayer} onclick={() => setPerLayer(true)}>Elke laag een andere smaak</button>
+                    </div>
+                  {/if}
+                  {#if perLayer && layerCount > 1}
+                    <div class="layer-selects" transition:slide>
+                      {#each layerValues() as value, i}
+                        <label class="layer-select">
+                          <span>{LAYER_LABELS[layerCount]?.[i] ?? `Laag ${i + 1}`}</span>
+                          <select value={value} onchange={(e) => setLayerFlavor(i, (e.currentTarget as HTMLSelectElement).value)}>
+                            <option value="">Geen voorkeur</option>
+                            {#each FLAVOR_CATEGORIES as c}
+                              <optgroup label={`${c.name}${c.surcharge ? ` (+ ${formatEuro(c.surcharge)} p.p.)` : ''}`}>
+                                {#each CAKE_FLAVORS.filter(f => f.category === c.id) as o}<option value={o.value}>{o.label}</option>{/each}
+                              </optgroup>
+                            {/each}
+                          </select>
+                        </label>
+                      {/each}
+                      <p class="hint">De prijs volgt de duurste gekozen smaak: <strong>{flavorCategory(editor.flavor).name}</strong>{flavorCategory(editor.flavor).surcharge ? ` (+ ${formatEuro(flavorCategory(editor.flavor).surcharge)} per persoon)` : ''}.</p>
+                    </div>
+                  {:else}
+                  {#each FLAVOR_CATEGORIES as c}
+                    <p class="size-group">{c.name} <small>{c.surcharge ? `+ ${formatEuro(c.surcharge)} per persoon` : 'inbegrepen in de basisprijs'}</small></p>
+                    <div class="chips">
+                      {#each CAKE_FLAVORS.filter(f => f.category === c.id) as o}
+                        <button type="button" class="chip" class:is-on={editor.flavor === o.value} aria-pressed={editor.flavor === o.value} title={o.description} onclick={() => (editor!.flavor = editor!.flavor === o.value ? '' : o.value)}>{o.label}</button>
+                      {/each}
+                    </div>
+                  {/each}
+                  {#if cakeFlavor(editor.flavor)}
+                    <p class="hint flavor-desc" transition:slide>{cakeFlavor(editor.flavor)?.description}</p>
+                  {:else}
+                    <p class="hint">Nog geen keuze? Dan adviseer ik je graag. Elke vulling is gemaakt met verse room en mascarpone; de taart wordt afgesmeerd met Swiss Meringue botercrème.</p>
+                  {/if}
+                  {/if}
+                </fieldset>
+                {:else}
                 <fieldset class="field">
                   <legend>Smaak</legend>
                   <div class="chips">
@@ -454,6 +533,7 @@
                     {/each}
                   </div>
                 </fieldset>
+                {/if}
 
                 <div class="field">
                   <span class="legend">Voorbeeldfoto <small>(optioneel — bv. een inspiratiebeeld of thema)</small></span>
@@ -464,6 +544,7 @@
                   <label class="field">
                     <span class="legend">Allergieën <small>(optioneel)</small></span>
                     <textarea rows="2" maxlength="500" placeholder="bv. glutenvrij, lactosevrij, noten…" bind:value={editor.allergies}></textarea>
+                    <small class="hint">Let op: al mijn taarten kunnen sporen van gluten, noten en zuivel bevatten.</small>
                   </label>
                   <label class="field">
                     <span class="legend">Wensen & thema <small>(optioneel)</small></span>
@@ -472,7 +553,7 @@
                 </div>
 
                 <div class="editor-foot">
-                  <span class="price-tag">Indicatie <strong>{formatEuro(itemPrice(editor))}</strong></span>
+                  <span class="price-tag">{editor.product === 'feesttaart' && !editor.persons ? 'Vanaf' : 'Indicatie'} <strong>{formatEuro(itemPrice(editor))}</strong>{#if itemDeposit(editor)}<small> · voorschot {formatEuro(itemDeposit(editor))}</small>{/if}</span>
                   <button type="button" class="btn btn-ghost" onclick={closeEditor}>Annuleren</button>
                   <button type="button" class="btn btn-primary" onclick={saveEditor} disabled={photoBusy} title={photoBusy ? 'Even geduld, de foto wordt geüpload' : undefined}>
                     <i class="fa-solid fa-check" aria-hidden="true"></i>
@@ -631,6 +712,9 @@
                 <span>Totaal <small>(indicatie, definitieve prijs na bevestiging)</small></span>
                 <strong>{formatEuro(total)}</strong>
               </div>
+              {#if deposit}
+                <p class="deposit-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Na mijn bevestiging krijg je een betaallink voor het voorschot van <strong>{formatEuro(deposit)}</strong>. Pas dan staat je datum definitief vast (betalen binnen 3 dagen). Het saldo betaal je bij het afhalen, contant of met Payconiq.</p>
+              {/if}
 
               <label class="agree" class:needs-attention={stepAttempted && !agreed}>
                 <input type="checkbox" bind:checked={agreed} />
@@ -737,6 +821,22 @@
   .editor-head .icon-btn { margin-left: auto; }
   .editor-foot { display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--line); }
   .price-tag { margin-right: auto; color: var(--muted); font-size: 0.9rem; }
+  .price-tag small { font-size: 0.78rem; }
+  .size-group { margin: 0.6rem 0 0.4rem; font-size: 0.8rem; font-weight: 800; color: var(--ink); }
+  .size-group:first-of-type { margin-top: 0; }
+  .size-group small { font-weight: 500; color: var(--muted); margin-left: 0.25rem; }
+  .tiles-sizes { grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); }
+  .tiles-sizes .tile { padding: 0.6rem 0.4rem; }
+  .hint { display: block; margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.5; color: var(--muted); }
+  .flavor-desc { padding: 0.6rem 0.8rem; border-radius: 0.8rem; background: var(--blush); color: var(--ink); }
+  .layer-mode { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.75rem; }
+  .layer-selects { display: grid; gap: 0.6rem; }
+  .layer-select { display: grid; gap: 0.25rem; font-size: 0.8rem; font-weight: 800; }
+  .layer-select select { font: inherit; font-size: 1rem; font-weight: 500; padding: 0.7rem 0.85rem; border-radius: 0.9rem; border: 1.5px solid var(--line); background: white; color: var(--ink); }
+  .layer-select select:focus { outline: none; border-color: var(--pink); box-shadow: 0 0 0 3px rgba(232,120,138,0.18); }
+  .hint a { color: var(--pink-dark); font-weight: 700; }
+  .deposit-note { margin: 0.75rem 0 0; font-size: 0.85rem; line-height: 1.55; color: var(--muted); }
+  .deposit-note i { color: var(--pink); margin-right: 0.25rem; }
   .price-tag strong { color: var(--pink-dark); font-size: 1.1rem; margin-left: 0.25rem; }
 
   /* Fields */
